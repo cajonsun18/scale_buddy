@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'models/workflow_step.dart';
+import 'widgets/step_detail_view.dart';
+import 'widgets/workflow_sidebar.dart';
 
 void main() {
   runApp(const ScaleBuddyApp());
 }
 
+/// Wurzel-Widget der ScaleBuddy-App.
+///
+/// Hier wird das allgemeine App-Thema (Material 3, Farben, Schriften) definiert.
 class ScaleBuddyApp extends StatelessWidget {
   const ScaleBuddyApp({super.key});
 
@@ -14,17 +20,21 @@ class ScaleBuddyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        // Primärfarbe: Modernes technisches Blau
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5), // Blau akzentuiert
+          seedColor: const Color(0xFF1E88E5),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF1F5F9), // Helles Slate-Grau
+        scaffoldBackgroundColor: const Color(0xFFF1F5F9),
       ),
       home: const MainLayoutScreen(),
     );
   }
 }
 
+/// Hauptbildschirm der Anwendung (StatefulWidget).
+///
+/// Verwaltet den Zustand des aktiven Workflow-Schritts und die Statusanzeige.
 class MainLayoutScreen extends StatefulWidget {
   const MainLayoutScreen({super.key});
 
@@ -33,10 +43,53 @@ class MainLayoutScreen extends StatefulWidget {
 }
 
 class _MainLayoutScreenState extends State<MainLayoutScreen> {
+  /// Gibt an, welcher der 4 Schritte links aktuell geöffnet/ausgewählt ist.
+  /// Standardmäßig startet der Ablauf bei Schritt 1: "Datei laden".
+  WorkflowStepType _activeStep = WorkflowStepType.file;
+
+  /// Speichert den Status (offen, aktiv, erledigt) für jeden der 4 Schritte.
+  final Map<WorkflowStepType, StepStatus> _stepStatuses = {
+    WorkflowStepType.file: StepStatus.active,
+    WorkflowStepType.perspective: StepStatus.open,
+    WorkflowStepType.calibrate: StepStatus.open,
+    WorkflowStepType.measure: StepStatus.open,
+  };
+
+  /// Speichert zur Veranschaulichung das zuletzt angeklickte Unterwerkzeug.
+  String? _lastSelectedTool;
+
+  /// Wechselt das aktive Workflow-Menü, wenn der Nutzer links auf eine Karte klickt.
+  void _handleStepSelected(WorkflowStepType step) {
+    setState(() {
+      _activeStep = step;
+
+      // Wenn der Schritt noch nicht erledigt ist, setzen wir ihn auf "aktiv"
+      if (_stepStatuses[step] != StepStatus.completed) {
+        _stepStatuses[step] = StepStatus.active;
+      }
+    });
+  }
+
+  /// Ändert den Status eines Schrittes (z. B. wenn er als erledigt abgehakt wird).
+  void _handleStatusChanged(StepStatus newStatus) {
+    setState(() {
+      _stepStatuses[_activeStep] = newStatus;
+    });
+  }
+
+  /// Reagiert auf den Klick eines Werkzeugs innerhalb der geöffneten Menükarte.
+  void _handleToolSelected(WorkflowStepType step, String toolName) {
+    setState(() {
+      _lastSelectedTool = toolName;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Obere Leiste (AppBar) mit Titel und globalen Aktionen
+      // =========================================================================
+      // 1. OBERE LEISTE (AppBar)
+      // =========================================================================
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
@@ -77,9 +130,12 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           ],
         ),
         actions: [
-          // Beispiel-Aktionsbuttons für die Desktop-Top-Leiste
+          // Schnellauswahl-Aktionen in der Kopfleiste
           FilledButton.tonalIcon(
-            onPressed: () {},
+            onPressed: () {
+              _handleStepSelected(WorkflowStepType.file);
+              _handleToolSelected(WorkflowStepType.file, 'Bildschirmbereich aufnehmen (Snip)');
+            },
             icon: const Icon(Icons.crop, size: 18),
             label: const Text('Weitere Messung'),
           ),
@@ -98,113 +154,39 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         ],
       ),
 
-      // Hauptbereich: Aufgeteilt in linke Sidebar und rechte Arbeitsfläche
+      // =========================================================================
+      // 2. HAUPTBEREICH: Linke Sidebar (4 Menüs) + Rechte Arbeitsfläche
+      // =========================================================================
       body: Column(
         children: [
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. LINKE SIDEBAR (Feste Breite für die 4 Menüpunkte)
-                Container(
-                  width: 300,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Sidebar-Kopfbereich
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ARBEITSABLAUF',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade600,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Folge den 4 Schritten von oben nach unten.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-                      // Platzhalter für Schritt 2 (wird im nächsten Schritt befüllt)
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Platzhalter:\nHier entstehen die 4 Workflow-Menüs\n(Schritt 2)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                // LINKS: Die 4 Workflow-Menüs (anklickbar & ausklappbar)
+                WorkflowSidebar(
+                  activeStep: _activeStep,
+                  stepStatuses: _stepStatuses,
+                  onStepSelected: _handleStepSelected,
+                  onToolSelected: _handleToolSelected,
                 ),
 
-                // 2. RECHTER ARBEITSBEREICH (Canvas / Zeichenfläche)
+                // RECHTS: Die zum geöffneten Menü passende Arbeits- und Detailansicht
                 Expanded(
-                  child: Container(
-                    color: const Color(0xFF1E293B), // Dunkler CAD-Hintergrund für Zeichnungen
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_search,
-                            size: 64,
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Arbeitsbereich / Canvas',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Hier wird später das Bild, die Entzerrung und die Messung angezeigt.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: StepDetailView(
+                    activeStep: _activeStep,
+                    currentStatus: _stepStatuses[_activeStep] ?? StepStatus.open,
+                    lastSelectedTool: _lastSelectedTool,
+                    onStatusChanged: _handleStatusChanged,
                   ),
                 ),
               ],
             ),
           ),
 
+          // =====================================================================
           // 3. UNTERE STATUSLEISTE (StatusBar)
+          // =====================================================================
           Container(
             height: 30,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -218,11 +200,21 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               children: [
                 Icon(Icons.check_circle_outline, size: 14, color: Colors.green.shade600),
                 const SizedBox(width: 8),
-                Text(
-                  'Bereit.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                Expanded(
+                  child: Text(
+                    _lastSelectedTool != null
+                        ? 'Aktives Menü: ${_stepTitleFor(_activeStep)}  •  Werkzeug: $_lastSelectedTool'
+                        : 'Aktives Menü: ${_stepTitleFor(_activeStep)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 12),
                 Text(
                   'Maßstab: Nicht kalibriert  |  Zoom: 100%',
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
@@ -233,5 +225,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         ],
       ),
     );
+  }
+
+  String _stepTitleFor(WorkflowStepType step) {
+    return WorkflowStepData.allSteps.firstWhere((s) => s.type == step).title;
   }
 }
