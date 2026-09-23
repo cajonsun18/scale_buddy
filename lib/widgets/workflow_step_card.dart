@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/workflow_step.dart';
 
 /// Eine klickbare Menükarte für einen einzelnen Workflow-Schritt in der linken Seitenleiste.
@@ -41,7 +42,9 @@ class WorkflowStepCard extends StatelessWidget {
     // Rahmenfarbe: Aktiv = Akzentfarbe, sonst dezentes Grau
     final borderColor = isActive
         ? activeColor
-        : (status == StepStatus.completed ? Colors.green.shade300 : const Color(0xFFE2E8F0));
+        : (status == StepStatus.completed
+              ? Colors.green.shade300
+              : const Color(0xFFE2E8F0));
 
     // Hintergrundfarbe: Leicht getönt wenn aktiv
     final cardBgColor = isActive
@@ -91,8 +94,12 @@ class WorkflowStepCard extends StatelessWidget {
                             stepData.title,
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                              color: isActive ? activeColor : const Color(0xFF1E293B),
+                              fontWeight: isActive
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
+                              color: isActive
+                                  ? activeColor
+                                  : const Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -111,7 +118,9 @@ class WorkflowStepCard extends StatelessWidget {
 
                     // Ausklapp-Indikator (Pfeil nach oben bei offen, nach unten bei geschlossen)
                     Icon(
-                      isActive ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      isActive
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       color: isActive ? activeColor : Colors.grey.shade400,
                       size: 20,
                     ),
@@ -122,7 +131,9 @@ class WorkflowStepCard extends StatelessWidget {
                 AnimatedCrossFade(
                   firstChild: const SizedBox.shrink(),
                   secondChild: _buildExpandedContent(context),
-                  crossFadeState: isActive ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  crossFadeState: isActive
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 200),
                 ),
               ],
@@ -153,9 +164,7 @@ class WorkflowStepCard extends StatelessWidget {
       width: 26,
       height: 26,
       decoration: BoxDecoration(
-        color: isActive
-            ? theme.colorScheme.primary
-            : const Color(0xFFE2E8F0),
+        color: isActive ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -200,7 +209,10 @@ class WorkflowStepCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
@@ -241,17 +253,39 @@ class WorkflowStepCard extends StatelessWidget {
 
   /// Passendes Mini-Symbol für das jeweilige Werkzeug.
   IconData _iconForTool(String toolName) {
-    if (toolName.contains('Aufnehmen') || toolName.contains('Snip')) return Icons.crop;
-    if (toolName.contains('Öffnen') || toolName.contains('laden')) return Icons.folder_open;
-    if (toolName.contains('Automatisch')) return Icons.auto_fix_high;
-    if (toolName.contains('4-Punkt')) return Icons.filter_center_focus;
-    if (toolName.contains('Rotation')) return Icons.rotate_right;
-    if (toolName.contains('Strecke')) return Icons.timeline;
-    if (toolName.contains('Rechteck')) return Icons.crop_square;
-    if (toolName.contains('Dreieck')) return Icons.change_history;
-    if (toolName.contains('Polygon')) return Icons.polyline;
-    if (toolName.contains('Dach')) return Icons.roofing;
-    if (toolName.contains('Einheit')) return Icons.tune;
+    if (toolName.contains('Aufnehmen') || toolName.contains('Snip')) {
+      return Icons.crop;
+    }
+    if (toolName.contains('Öffnen') || toolName.contains('laden')) {
+      return Icons.folder_open;
+    }
+    if (toolName.contains('Automatisch')) {
+      return Icons.auto_fix_high;
+    }
+    if (toolName.contains('4-Punkt')) {
+      return Icons.filter_center_focus;
+    }
+    if (toolName.contains('Rotation')) {
+      return Icons.rotate_right;
+    }
+    if (toolName.contains('Strecke')) {
+      return Icons.timeline;
+    }
+    if (toolName.contains('Rechteck')) {
+      return Icons.crop_square;
+    }
+    if (toolName.contains('Dreieck')) {
+      return Icons.change_history;
+    }
+    if (toolName.contains('Polygon')) {
+      return Icons.polyline;
+    }
+    if (toolName.contains('Dach')) {
+      return Icons.roofing;
+    }
+    if (toolName.contains('Einheit')) {
+      return Icons.tune;
+    }
     return Icons.arrow_right;
   }
 }
