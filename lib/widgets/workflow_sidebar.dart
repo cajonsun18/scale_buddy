@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../models/workflow_step.dart';
 import 'workflow_step_card.dart';
 
@@ -19,9 +20,11 @@ class WorkflowSidebar extends StatelessWidget {
   final ValueChanged<WorkflowStepType> onStepSelected;
 
   /// Optionaler Callback, wenn innerhalb eines Menüs ein konkretes Werkzeug angeklickt wird.
-  final void Function(WorkflowStepType step, String toolName)? onToolSelected;
+  final void Function(WorkflowStepType step, ToolAction action)? onToolSelected;
+  final bool isNextEnabled;
 
   const WorkflowSidebar({
+    this.isNextEnabled = true,
     super.key,
     required this.activeStep,
     required this.stepStatuses,
@@ -35,10 +38,10 @@ class WorkflowSidebar extends StatelessWidget {
 
     return Container(
       width: 320,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC), // Leicht abgesetztes, helles Slate-Hintergrundgrau
+      decoration: BoxDecoration(
+        color: AppColors.of(context).sidebarBg, // Leicht abgesetztes, helles Slate-Hintergrundgrau
         border: Border(
-          right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          right: BorderSide(color: AppColors.of(context).sidebarBorder, width: 1),
         ),
       ),
       child: Column(
@@ -95,7 +98,7 @@ class WorkflowSidebar extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: AppColors.of(context).sidebarBorder),
 
           // 2. SCROLLBARE LISTE DER 4 MENÜPUNKTE
           Expanded(
@@ -113,8 +116,8 @@ class WorkflowSidebar extends StatelessWidget {
                   status: status,
                   // Beim Klick auf eine Karte wird diese im State aktiviert/geöffnet
                   onTap: () => onStepSelected(step.type),
-                  onToolSelected: (toolName) {
-                    onToolSelected?.call(step.type, toolName);
+                  onToolSelected: (action) {
+                    onToolSelected?.call(step.type, action);
                   },
                 );
               },
@@ -135,17 +138,17 @@ class WorkflowSidebar extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          top: BorderSide(color: AppColors.of(context).sidebarBorder, width: 1),
         ),
       ),
       child: Row(
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: hasNext
+              onPressed: (hasNext && isNextEnabled)
                   ? () {
                       final nextStep = WorkflowStepData.allSteps[currentIndex + 1].type;
                       onStepSelected(nextStep);
@@ -177,3 +180,6 @@ class WorkflowSidebar extends StatelessWidget {
     }
   }
 }
+
+
+

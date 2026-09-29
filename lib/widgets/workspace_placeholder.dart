@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../models/workflow_step.dart';
 
 class WorkspacePlaceholder extends StatelessWidget {
@@ -21,33 +22,33 @@ class WorkspacePlaceholder extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.18),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Bild in den Workspace laden',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE2E8F0),
+                  color: AppColors.of(context).sidebarBorder,
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Klicke oben auf "Datei laden…", ziehe eine Bilddatei '
                 'in diesen Bereich oder füge sie mit Strg+V ein.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF94A3B8),
+                  color: AppColors.of(context).inputBorder,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Unterstützte Formate: PNG, JPG, JPEG, BMP, WEBP, GIF',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Color(0xFF64748B),
+                  color: AppColors.of(context).inputBorder,
                   letterSpacing: 0.3,
                 ),
               ),
@@ -58,3 +59,6 @@ class WorkspacePlaceholder extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,72 +1,107 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/workspace_controller.dart';
+import '../models/workspace_state.dart';
 
-class WorkspaceToolbar extends StatelessWidget {
-  final WorkspaceController controller;
-
-  const WorkspaceToolbar({super.key, required this.controller});
+class WorkspaceToolbar extends ConsumerWidget {
+  const WorkspaceToolbar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(workspaceControllerProvider);
+    final controller = ref.watch(workspaceControllerProvider.notifier);
+
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).toolbarBg,
+        border: Border(bottom: BorderSide(color: AppColors.of(context).toolbarBorder, width: 1)),
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.image,
-            size: 18,
-            color: Colors.white.withValues(alpha: 0.7),
+          const Text('Ansicht:', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 12),
+          _ToolbarButton(
+            icon: Icons.image,
+            label: 'Original',
+            isActive: state.loadedImage != null,
+            onPressed: () {},
           ),
           const SizedBox(width: 8),
-          Text(
-            controller.loadedImage != null
-                ? 'Workspace: ${controller.loadedImage!.fileName}'
-                : 'Workspace: Kein Bild geladen',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-            overflow: TextOverflow.ellipsis,
+          _ToolbarButton(
+            icon: Icons.layers,
+            label: 'Messungen',
+            isActive: state.loadedImage != null,
+            onPressed: () {},
           ),
           const Spacer(),
-          FilledButton.tonalIcon(
-            onPressed: controller.isLoading ? null : controller.loadFromPicker,
+          if (state.status == LoadingStatus.loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            ),
+          FilledButton.icon(
+            onPressed: state.status == LoadingStatus.loading ? null : () => controller.loadFromPicker(),
             icon: const Icon(Icons.folder_open, size: 16),
-            label: const Text('Datei laden…'),
-          ),
-          const SizedBox(width: 6),
-          OutlinedButton.icon(
-            onPressed: controller.isLoading ? null : controller.pasteFromClipboard,
-            icon: const Icon(Icons.content_paste, size: 16),
-            label: const Text('Einfügen'),
-            style: OutlinedButton.styleFrom(
+            label: const Text('Datei laden…', style: TextStyle(fontSize: 13)),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
-              side: const BorderSide(color: Color(0xFF475569)),
+              minimumSize: const Size(0, 36),
             ),
           ),
-          const SizedBox(width: 6),
-          OutlinedButton.icon(
-            onPressed: controller.isLoading ? null : controller.loadSample,
-            icon: const Icon(Icons.auto_awesome, size: 16),
-            label: const Text('Beispiel'),
-            style: OutlinedButton.styleFrom(
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: state.status == LoadingStatus.loading ? null : () => controller.loadSample(),
+            icon: const Icon(Icons.science, size: 16),
+            label: const Text('Beispiel laden', style: TextStyle(fontSize: 13)),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.of(context).toolbarBorder,
               foregroundColor: Colors.white,
-              side: const BorderSide(color: Color(0xFF475569)),
+              minimumSize: const Size(0, 36),
             ),
           ),
-          if (controller.loadedImage != null) ...[
-            const SizedBox(width: 6),
+          const SizedBox(width: 8),
+          if (state.loadedImage != null)
             IconButton(
               tooltip: 'Bild entfernen',
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              onPressed: controller.isLoading ? null : controller.clearImage,
+              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error, size: 20),
+              onPressed: state.status == LoadingStatus.loading ? null : () => controller.clearImage(),
             ),
-          ],
         ],
       ),
     );
   }
 }
+
+class _ToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _ToolbarButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: isActive ? onPressed : null,
+      icon: Icon(icon, size: 16, color: isActive ? AppColors.of(context).iconActive : AppColors.of(context).iconInactive),
+      label: Text(label, style: TextStyle(fontSize: 13, color: isActive ? AppColors.of(context).iconActive : AppColors.of(context).iconInactive)),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: const Size(0, 36),
+        backgroundColor: isActive ? Colors.blue.withValues(alpha: 0.2) : Colors.transparent,
+      ),
+    );
+  }
+}
+
+

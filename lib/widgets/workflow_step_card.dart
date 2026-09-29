@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 import '../models/workflow_step.dart';
 
@@ -22,7 +23,7 @@ class WorkflowStepCard extends StatelessWidget {
   final VoidCallback onTap;
 
   /// Optionaler Callback, wenn innerhalb des geöffneten Menüs ein Werkzeug angeklickt wird.
-  final ValueChanged<String>? onToolSelected;
+  final ValueChanged<ToolAction>? onToolSelected;
 
   const WorkflowStepCard({
     super.key,
@@ -43,8 +44,8 @@ class WorkflowStepCard extends StatelessWidget {
     final borderColor = isActive
         ? activeColor
         : (status == StepStatus.completed
-              ? Colors.green.shade300
-              : const Color(0xFFE2E8F0));
+              ? AppColors.of(context).success.withValues(alpha: 0.5)
+              : AppColors.of(context).sidebarBorder);
 
     // Hintergrundfarbe: Leicht getönt wenn aktiv
     final cardBgColor = isActive
@@ -99,7 +100,7 @@ class WorkflowStepCard extends StatelessWidget {
                                   : FontWeight.w600,
                               color: isActive
                                   ? activeColor
-                                  : const Color(0xFF1E293B),
+                                  : AppColors.of(context).toolbarBg,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -153,7 +154,7 @@ class WorkflowStepCard extends StatelessWidget {
         width: 26,
         height: 26,
         decoration: BoxDecoration(
-          color: Colors.green.shade600,
+          color: AppColors.of(context).success,
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.check, color: Colors.white, size: 16),
@@ -164,7 +165,7 @@ class WorkflowStepCard extends StatelessWidget {
       width: 26,
       height: 26,
       decoration: BoxDecoration(
-        color: isActive ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+        color: isActive ? theme.colorScheme.primary : AppColors.of(context).sidebarBorder,
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -185,9 +186,9 @@ class WorkflowStepCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8.0),
-          child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Divider(height: 1, color: AppColors.of(context).sidebarBorder),
         ),
         Text(
           'VERFÜGBARE WERKZEUGE:',
@@ -201,11 +202,11 @@ class WorkflowStepCard extends StatelessWidget {
         const SizedBox(height: 6),
 
         // Liste der für diesen Schritt verfügbaren Werkzeug-Schaltflächen
-        ...stepData.availableTools.map((toolName) {
+        ...stepData.availableTools.map((toolDef) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 3.0),
             child: InkWell(
-              onTap: () => onToolSelected?.call(toolName),
+              onTap: () => onToolSelected?.call(toolDef.action),
               borderRadius: BorderRadius.circular(6),
               child: Container(
                 width: double.infinity,
@@ -216,23 +217,23 @@ class WorkflowStepCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: AppColors.of(context).sidebarBorder),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      _iconForTool(toolName),
+                      _iconForTool(toolDef.action),
                       size: 14,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        toolName,
-                        style: const TextStyle(
+                        toolDef.label,
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF334155),
+                          color: AppColors.of(context).toolbarBorder,
                         ),
                       ),
                     ),
@@ -251,41 +252,38 @@ class WorkflowStepCard extends StatelessWidget {
     );
   }
 
-  /// Passendes Mini-Symbol für das jeweilige Werkzeug.
-  IconData _iconForTool(String toolName) {
-    if (toolName.contains('Aufnehmen') || toolName.contains('Snip')) {
-      return Icons.crop;
+    IconData _iconForTool(ToolAction action) {
+    switch (action) {
+      case ToolAction.snipScreen:
+        return Icons.crop;
+      case ToolAction.openFile:
+        return Icons.folder_open;
+      case ToolAction.autoPerspective:
+        return Icons.auto_fix_high;
+      case ToolAction.manualPerspective:
+        return Icons.filter_center_focus;
+      case ToolAction.fineRotation:
+        return Icons.rotate_right;
+      case ToolAction.measureDistance:
+        return Icons.timeline;
+      case ToolAction.measureRectArea:
+        return Icons.crop_square;
+      case ToolAction.measureTriangleArea:
+        return Icons.change_history;
+      case ToolAction.measurePolygon:
+        return Icons.polyline;
+      case ToolAction.measureRoofAngle:
+      case ToolAction.measureSlopedRoof:
+        return Icons.roofing;
+      case ToolAction.selectUnit:
+        return Icons.tune;
+      default:
+        return Icons.arrow_right;
     }
-    if (toolName.contains('Öffnen') || toolName.contains('laden')) {
-      return Icons.folder_open;
-    }
-    if (toolName.contains('Automatisch')) {
-      return Icons.auto_fix_high;
-    }
-    if (toolName.contains('4-Punkt')) {
-      return Icons.filter_center_focus;
-    }
-    if (toolName.contains('Rotation')) {
-      return Icons.rotate_right;
-    }
-    if (toolName.contains('Strecke')) {
-      return Icons.timeline;
-    }
-    if (toolName.contains('Rechteck')) {
-      return Icons.crop_square;
-    }
-    if (toolName.contains('Dreieck')) {
-      return Icons.change_history;
-    }
-    if (toolName.contains('Polygon')) {
-      return Icons.polyline;
-    }
-    if (toolName.contains('Dach')) {
-      return Icons.roofing;
-    }
-    if (toolName.contains('Einheit')) {
-      return Icons.tune;
-    }
-    return Icons.arrow_right;
   }
 }
+
+
+
+
+

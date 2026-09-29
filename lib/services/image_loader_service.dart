@@ -7,9 +7,43 @@ import 'package:flutter/services.dart';
 import 'package:pasteboard/pasteboard.dart';
 
 import '../models/loaded_image_info.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final imageLoaderServiceProvider = Provider<ImageLoaderService>((ref) => ImageLoaderService());
 
 /// Hilfsklasse zum Laden und Erzeugen von Bauzeichnungen.
+class MockBlueprintColors {
+  static const background = Color(0xFFF8FAFC);
+  static const gridLines = Color(0xFFE2E8F0);
+  static const textDark = Color(0xFF0F172A);
+  static const textLight = Color(0xFF64748B);
+  static const wallDark = Color(0xFF1E293B);
+  static const wallLight = Color(0xFFF1F5F9);
+  static const wallOutline = Color(0xFF334155);
+  static const measureLine = Color(0xFFDC2626);
+  static const secondaryText = Color(0xFF475569);
+}
+
 class ImageLoaderService {
+  Future<LoadedImageInfo?> loadFromPaths(List<String> paths) async {
+    for (final p in paths) {
+      final ext = p.toLowerCase();
+      final looksLikeImage = ['.png', '.jpg', '.jpeg', '.bmp', '.webp', '.gif'].any((e) => ext.endsWith(e));
+      if (!looksLikeImage) continue;
+      
+      final file = File(p);
+      if (!await file.exists()) continue;
+      
+      final bytes = await file.readAsBytes();
+      final info = await loadFromBytes(
+        bytes,
+        fileName: p.split(Platform.pathSeparator).last,
+      );
+      if (info != null) return info;
+    }
+    return null;
+  }
+
   static const List<String> _kAllowedExtensions = [
     'png',
     'jpg',
@@ -22,7 +56,7 @@ class ImageLoaderService {
   /// Öffnet den systemweiten Dateidialog zur Auswahl einer Bilddatei.
   ///
   /// Wird vom "Datei laden"-Button in [StepDetailView] aufgerufen.
-  static Future<LoadedImageInfo?> pickImageFromFile() async {
+  Future<LoadedImageInfo?> pickImageFromFile() async {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
@@ -50,7 +84,7 @@ class ImageLoaderService {
   /// Lädt ein Bild aus rohen Bytes (z. B. aus Drag-and-Drop).
   ///
   /// [fileName] ist optional und wird als Anzeigename verwendet.
-  static Future<LoadedImageInfo?> loadFromBytes(
+  Future<LoadedImageInfo?> loadFromBytes(
     Uint8List bytes, {
     String? fileName,
   }) {
@@ -72,8 +106,8 @@ class ImageLoaderService {
   ///
   /// Hinweis: Für "echtes" Bild-Paste aus der Zwischenablage kann auf
   /// Desktop-Plattformen optional das Paket `pasteboard` eingebunden
-  /// werden – die API hier ist plattformneutral gehalten.
-  static Future<LoadedImageInfo?> pasteFromClipboard() async {
+  /// werden â€“ die API hier ist plattformneutral gehalten.
+  Future<LoadedImageInfo?> pasteFromClipboard() async {
     try {
       // Variante 1: Richtiges Bild (Bytes) in der Zwischenablage
       // z.B. wenn man einen Screenshot mit dem Snipping Tool macht.
@@ -138,7 +172,7 @@ class ImageLoaderService {
   // Interne Helfer
   // ---------------------------------------------------------------------------
 
-  static Future<LoadedImageInfo?> _buildFromBytes({
+  Future<LoadedImageInfo?> _buildFromBytes({
     Uint8List? bytes,
     String? pathFallback,
     String? fileName,
@@ -173,17 +207,17 @@ class ImageLoaderService {
     }
   }
 
-  static String _extensionOf(String path) {
+  String _extensionOf(String path) {
     final dot = path.lastIndexOf('.');
     if (dot < 0 || dot == path.length - 1) return '';
     return path.substring(dot + 1);
   }
 
-  /// Erzeugt programmgesteuert einen hochauflösenden Beispiel-Bauplan (1400 × 900 px).
+  /// Erzeugt programmgesteuert einen hochauflösenden Beispiel-Bauplan (1400 Ã— 900 px).
   ///
   /// Enthält Außenwände, Innenräume (Wohnen, Schlafen, Bad, Küche), Maßketten
   /// und eine 5,00-Meter-Referenzlinie zum sofortigen Testen der Kalibrierung.
-  static Future<LoadedImageInfo> generateSampleFloorPlan() async {
+  Future<LoadedImageInfo> generateSampleFloorPlan() async {
     const width = 1400;
     const height = 900;
 
@@ -194,14 +228,14 @@ class ImageLoaderService {
     );
 
     // 1. Hintergrund (helles Architektur-Planpapier mit dezentem Raster)
-    final bgPaint = Paint()..color = const Color(0xFFF8FAFC);
+    final bgPaint = Paint()..color = MockBlueprintColors.background;
     canvas.drawRect(
       Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
       bgPaint,
     );
 
     final gridPaint = Paint()
-      ..color = const Color(0xFFE2E8F0)
+      ..color = MockBlueprintColors.gridLines
       ..strokeWidth = 1.0;
 
     for (double x = 0; x < width; x += 40) {
@@ -217,7 +251,7 @@ class ImageLoaderService {
     textPainter.text = const TextSpan(
       text: 'BEISPIEL-GRUNDRISS: EINFAMILIENHAUS EG',
       style: TextStyle(
-        color: Color(0xFF0F172A),
+        color: MockBlueprintColors.textDark,
         fontSize: 22,
         fontWeight: FontWeight.bold,
       ),
@@ -227,7 +261,7 @@ class ImageLoaderService {
 
     textPainter.text = const TextSpan(
       text: 'Maßstab 1:100 • Entwurfsplanung • ScaleBuddy Testzeichnung',
-      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+      style: TextStyle(color: MockBlueprintColors.textLight, fontSize: 13),
     );
     textPainter.layout();
     textPainter.paint(canvas, const Offset(60, 78));
@@ -239,12 +273,12 @@ class ImageLoaderService {
     const houseH = 600.0;
 
     final outerWallPaint = Paint()
-      ..color = const Color(0xFF1E293B)
+      ..color = MockBlueprintColors.wallDark
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14.0;
 
     final wallFillPaint = Paint()
-      ..color = const Color(0xFFF1F5F9)
+      ..color = MockBlueprintColors.wallLight
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(
@@ -258,7 +292,7 @@ class ImageLoaderService {
 
     // 4. Innenwände (Mitteldicke Linien)
     final innerWallPaint = Paint()
-      ..color = const Color(0xFF334155)
+      ..color = MockBlueprintColors.wallOutline
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8.0;
 
@@ -284,18 +318,18 @@ class ImageLoaderService {
     // 5. Raumbezeichnungen
     _drawRoomLabel(
       canvas,
-      'WOHNEN / ESSEN\n32.4 m²',
+      'WOHNEN / ESSEN\n32.4 mÂ²',
       houseX + 270,
       houseY + 300,
     );
-    _drawRoomLabel(canvas, 'SCHLAFEN\n18.5 m²', houseX + 770, houseY + 150);
-    _drawRoomLabel(canvas, 'KÜCHE\n14.2 m²', houseX + 660, houseY + 450);
-    _drawRoomLabel(canvas, 'BAD / WC\n8.6 m²', houseX + 890, houseY + 450);
+    _drawRoomLabel(canvas, 'SCHLAFEN\n18.5 mÂ²', houseX + 770, houseY + 150);
+    _drawRoomLabel(canvas, 'KÜCHE\n14.2 mÂ²', houseX + 660, houseY + 450);
+    _drawRoomLabel(canvas, 'BAD / WC\n8.6 mÂ²', houseX + 890, houseY + 450);
 
     // 6. Referenz-Maßkette unten (Ideal für Kalibrierung)
     final dimLinePaint = Paint()
       ..color =
-          const Color(0xFFDC2626) // Rote Maßlinie
+          MockBlueprintColors.measureLine // Rote Maßlinie
       ..strokeWidth = 2.5;
 
     const dimY = houseY + houseH + 50;
@@ -318,9 +352,9 @@ class ImageLoaderService {
 
     // Maßketten-Beschriftung
     textPainter.text = const TextSpan(
-      text: '◄  REFERENZMASS: 10,00 m  ►',
+      text: 'â—„  REFERENZMASS: 10,00 m  â–º',
       style: TextStyle(
-        color: Color(0xFFDC2626),
+        color: MockBlueprintColors.measureLine,
         fontSize: 14,
         fontWeight: FontWeight.bold,
         backgroundColor: Colors.white,
@@ -366,12 +400,12 @@ class ImageLoaderService {
     );
   }
 
-  static void _drawRoomLabel(Canvas canvas, String text, double cx, double cy) {
+  void _drawRoomLabel(Canvas canvas, String text, double cx, double cy) {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
         style: const TextStyle(
-          color: Color(0xFF475569),
+          color: MockBlueprintColors.secondaryText,
           fontSize: 14,
           fontWeight: FontWeight.w600,
           height: 1.3,
@@ -387,3 +421,4 @@ class ImageLoaderService {
     );
   }
 }
+
