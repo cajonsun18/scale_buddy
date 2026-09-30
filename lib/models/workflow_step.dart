@@ -18,11 +18,7 @@ enum WorkflowStepType {
 }
 
 /// Der Bearbeitungsstatus eines Schrittes für optische Indikatoren.
-enum StepStatus {
-  open,
-  active,
-  completed,
-}
+enum StepStatus { open, active, completed }
 
 enum ToolAction {
   snipScreen,
@@ -78,9 +74,18 @@ class WorkflowStepData {
       shortDescription: 'Screenshot aufnehmen oder Bild laden',
       icon: Icons.image_outlined,
       availableTools: [
-        ToolDefinition(action: ToolAction.snipScreen, label: 'Bildschirmbereich aufnehmen (Snip)'),
-        ToolDefinition(action: ToolAction.openFile, label: 'Bilddatei vom Computer öffnen'),
-        ToolDefinition(action: ToolAction.showInfo, label: 'Bildinformationen anzeigen'),
+        ToolDefinition(
+          action: ToolAction.snipScreen,
+          label: 'Bildschirmbereich aufnehmen (Snip)',
+        ),
+        ToolDefinition(
+          action: ToolAction.openFile,
+          label: 'Bilddatei vom Computer öffnen',
+        ),
+        ToolDefinition(
+          action: ToolAction.showInfo,
+          label: 'Bildinformationen anzeigen',
+        ),
       ],
     ),
     WorkflowStepData(
@@ -90,10 +95,22 @@ class WorkflowStepData {
       shortDescription: 'Verzerrungen und Fluchtlinien ausgleichen',
       icon: Icons.crop_rotate_outlined,
       availableTools: [
-        ToolDefinition(action: ToolAction.autoPerspective, label: 'Automatische Entzerrung (KI/OpenCV)'),
-        ToolDefinition(action: ToolAction.manualPerspective, label: 'Manuelle 4-Punkt-Entzerrung'),
-        ToolDefinition(action: ToolAction.fineRotation, label: 'Feinrotation (0,5°-Schritte mit Hilfsgitter)'),
-        ToolDefinition(action: ToolAction.skipPerspective, label: 'Ohne Korrektur fortfahren'),
+        ToolDefinition(
+          action: ToolAction.autoPerspective,
+          label: 'Automatische Entzerrung (KI/OpenCV)',
+        ),
+        ToolDefinition(
+          action: ToolAction.manualPerspective,
+          label: 'Manuelle 4-Punkt-Entzerrung',
+        ),
+        ToolDefinition(
+          action: ToolAction.fineRotation,
+          label: 'Feinrotation (0,5°-Schritte mit Hilfsgitter)',
+        ),
+        ToolDefinition(
+          action: ToolAction.skipPerspective,
+          label: 'Ohne Korrektur fortfahren',
+        ),
       ],
     ),
     WorkflowStepData(
@@ -103,10 +120,22 @@ class WorkflowStepData {
       shortDescription: 'Maßstab über Referenzmaß festlegen',
       icon: Icons.straighten_outlined,
       availableTools: [
-        ToolDefinition(action: ToolAction.setReference, label: 'Referenzstrecke im Bild anklicken (2 Punkte)'),
-        ToolDefinition(action: ToolAction.enterLength, label: 'Reale Länge eingeben (z. B. 2.50 m)'),
-        ToolDefinition(action: ToolAction.selectUnit, label: 'Einheit wählen: Meter (m) / cm / mm'),
-        ToolDefinition(action: ToolAction.autoAdjust, label: 'Bestehende Messungen automatisch anpassen'),
+        ToolDefinition(
+          action: ToolAction.setReference,
+          label: 'Referenzstrecke im Bild anklicken (2 Punkte)',
+        ),
+        ToolDefinition(
+          action: ToolAction.enterLength,
+          label: 'Reale Länge eingeben (z. B. 2.50 m)',
+        ),
+        ToolDefinition(
+          action: ToolAction.selectUnit,
+          label: 'Einheit wählen: Meter (m) / cm / mm',
+        ),
+        ToolDefinition(
+          action: ToolAction.autoAdjust,
+          label: 'Bestehende Messungen automatisch anpassen',
+        ),
       ],
     ),
     WorkflowStepData(
@@ -116,13 +145,34 @@ class WorkflowStepData {
       shortDescription: 'Strecken, Flächen & Dachmaße ermitteln',
       icon: Icons.design_services_outlined,
       availableTools: [
-        ToolDefinition(action: ToolAction.measureDistance, label: 'Strecke messen (S01, S02...)'),
-        ToolDefinition(action: ToolAction.measureRectArea, label: 'Rechteckfläche messen (F01, F02...)'),
-        ToolDefinition(action: ToolAction.measureTriangleArea, label: 'Dreiecksfläche messen'),
-        ToolDefinition(action: ToolAction.measurePolygon, label: 'Polygon (Vieleck) messen'),
-        ToolDefinition(action: ToolAction.measureRoofAngle, label: 'Dachneigungswinkel ermitteln'),
-        ToolDefinition(action: ToolAction.measureSlopedRoof, label: 'Geneigte Dachfläche (Rechteck / Dreieck)'),
-        ToolDefinition(action: ToolAction.movePointOrLabel, label: 'Messpunkt oder Beschriftung verschieben'),
+        ToolDefinition(
+          action: ToolAction.measureDistance,
+          label: 'Strecke messen (S01, S02...)',
+        ),
+        ToolDefinition(
+          action: ToolAction.measureRectArea,
+          label: 'Rechteckfläche messen (F01, F02...)',
+        ),
+        ToolDefinition(
+          action: ToolAction.measureTriangleArea,
+          label: 'Dreiecksfläche messen',
+        ),
+        ToolDefinition(
+          action: ToolAction.measurePolygon,
+          label: 'Polygon (Vieleck) messen',
+        ),
+        ToolDefinition(
+          action: ToolAction.measureRoofAngle,
+          label: 'Dachneigungswinkel ermitteln',
+        ),
+        ToolDefinition(
+          action: ToolAction.measureSlopedRoof,
+          label: 'Geneigte Dachfläche (Rechteck / Dreieck)',
+        ),
+        ToolDefinition(
+          action: ToolAction.movePointOrLabel,
+          label: 'Messpunkt oder Beschriftung verschieben',
+        ),
       ],
     ),
   ];

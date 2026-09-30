@@ -15,12 +15,16 @@ class CalibrationTool extends WorkspaceTool {
   static const double hitTestRadius = 24.0;
 
   @override
-  WorkspaceState onTapUp(WorkspaceState state, TapUpDetails details, Size size) {
+  WorkspaceState onTapUp(
+    WorkspaceState state,
+    TapUpDetails details,
+    Size size,
+  ) {
     if (size.width == 0 || size.height == 0) return state;
 
     final calib = _getOrCreateCalib(state);
     if (calib.p1 != null && calib.p2 != null) {
-      return state; 
+      return state;
     }
 
     final normPoint = Offset(
@@ -32,7 +36,10 @@ class CalibrationTool extends WorkspaceTool {
     if (calib.p1 == null) {
       updatedCalib = calib.copyWith(p1: normPoint);
     } else {
-      final p1Pixel = Offset(calib.p1!.dx * size.width, calib.p1!.dy * size.height);
+      final p1Pixel = Offset(
+        calib.p1!.dx * size.width,
+        calib.p1!.dy * size.height,
+      );
       final dist = (p1Pixel - details.localPosition).distance;
       if (dist >= minPointDistance) {
         updatedCalib = calib.copyWith(p2: normPoint);
@@ -45,22 +52,34 @@ class CalibrationTool extends WorkspaceTool {
   }
 
   @override
-  WorkspaceState onPanStart(WorkspaceState state, DragStartDetails details, Size size) {
+  WorkspaceState onPanStart(
+    WorkspaceState state,
+    DragStartDetails details,
+    Size size,
+  ) {
     final calib = _getOrCreateCalib(state);
-    
+
     double? dist1, dist2;
 
     if (calib.p1 != null) {
-      final p1Pixel = Offset(calib.p1!.dx * size.width, calib.p1!.dy * size.height);
+      final p1Pixel = Offset(
+        calib.p1!.dx * size.width,
+        calib.p1!.dy * size.height,
+      );
       dist1 = (p1Pixel - details.localPosition).distance;
     }
     if (calib.p2 != null) {
-      final p2Pixel = Offset(calib.p2!.dx * size.width, calib.p2!.dy * size.height);
+      final p2Pixel = Offset(
+        calib.p2!.dx * size.width,
+        calib.p2!.dy * size.height,
+      );
       dist2 = (p2Pixel - details.localPosition).distance;
     }
 
     DragDetail? dragDetail;
-    if (dist1 != null && dist1 <= hitTestRadius && (dist2 == null || dist1 <= dist2)) {
+    if (dist1 != null &&
+        dist1 <= hitTestRadius &&
+        (dist2 == null || dist1 <= dist2)) {
       dragDetail = const DragDetail.calibrationPoint(isP1: true);
     } else if (dist2 != null && dist2 <= hitTestRadius) {
       dragDetail = const DragDetail.calibrationPoint(isP1: false);
@@ -70,7 +89,11 @@ class CalibrationTool extends WorkspaceTool {
   }
 
   @override
-  WorkspaceState onPanUpdate(WorkspaceState state, DragUpdateDetails details, Size size) {
+  WorkspaceState onPanUpdate(
+    WorkspaceState state,
+    DragUpdateDetails details,
+    Size size,
+  ) {
     final dragDetail = state.activeDragDetail;
     if (dragDetail == null || size.width == 0 || size.height == 0) return state;
 
@@ -84,7 +107,10 @@ class CalibrationTool extends WorkspaceTool {
     if (dragDetail case DragDetailCalibrationPoint(isP1: true)) {
       if (calib.p2 != null) {
         final newPixel = Offset(newDx * size.width, newDy * size.height);
-        final p2Pixel = Offset(calib.p2!.dx * size.width, calib.p2!.dy * size.height);
+        final p2Pixel = Offset(
+          calib.p2!.dx * size.width,
+          calib.p2!.dy * size.height,
+        );
         if ((newPixel - p2Pixel).distance >= minPointDistance) {
           updatedCalib = calib.copyWith(p1: newNormPoint, isConfirmed: false);
         }
@@ -94,7 +120,10 @@ class CalibrationTool extends WorkspaceTool {
     } else if (dragDetail case DragDetailCalibrationPoint(isP1: false)) {
       if (calib.p1 != null) {
         final newPixel = Offset(newDx * size.width, newDy * size.height);
-        final p1Pixel = Offset(calib.p1!.dx * size.width, calib.p1!.dy * size.height);
+        final p1Pixel = Offset(
+          calib.p1!.dx * size.width,
+          calib.p1!.dy * size.height,
+        );
         if ((newPixel - p1Pixel).distance >= minPointDistance) {
           updatedCalib = calib.copyWith(p2: newNormPoint, isConfirmed: false);
         }
@@ -107,16 +136,24 @@ class CalibrationTool extends WorkspaceTool {
   }
 
   @override
-  WorkspaceState onPanEnd(WorkspaceState state, DragEndDetails details, Size size) {
+  WorkspaceState onPanEnd(
+    WorkspaceState state,
+    DragEndDetails details,
+    Size size,
+  ) {
     return state.copyWith(activeDragDetail: null);
   }
 
   CalibrationEntity _getOrCreateCalib(WorkspaceState state) {
     return state.entities.whereType<CalibrationEntity>().firstOrNull ??
-        const DrawingEntity.calibration(id: defaultCalibrationId) as CalibrationEntity;
+        const DrawingEntity.calibration(id: defaultCalibrationId)
+            as CalibrationEntity;
   }
 
-  WorkspaceState _replaceEntity(WorkspaceState state, CalibrationEntity newCalib) {
+  WorkspaceState _replaceEntity(
+    WorkspaceState state,
+    CalibrationEntity newCalib,
+  ) {
     final newList = List<DrawingEntity>.from(state.entities);
     final index = newList.indexWhere((e) => e.id == newCalib.id);
     if (index >= 0) {

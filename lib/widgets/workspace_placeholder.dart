@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../models/workflow_step.dart';
 
@@ -59,6 +60,3 @@ class WorkspacePlaceholder extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'drawing_entity.freezed.dart';

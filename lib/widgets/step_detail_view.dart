@@ -1,6 +1,9 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -35,7 +38,9 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final stepData = WorkflowStepData.allSteps.firstWhere((s) => s.type == widget.activeStep);
+    final stepData = WorkflowStepData.allSteps.firstWhere(
+      (s) => s.type == widget.activeStep,
+    );
 
     return Container(
       color: theme.colorScheme.surface,
@@ -48,7 +53,11 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
             children: [
               Text(
                 stepData.title,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               if (widget.currentStatus == StepStatus.active)
                 FilledButton.icon(
@@ -63,9 +72,16 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(stepData.shortDescription, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            stepData.shortDescription,
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
-          if (widget.lastSelectedTool != null) _buildToolIndicator(widget.lastSelectedTool!),
+          if (widget.lastSelectedTool != null)
+            _buildToolIndicator(widget.lastSelectedTool!),
           const SizedBox(height: 16),
           Expanded(child: _buildWorkspace(theme, stepData)),
         ],
@@ -88,7 +104,11 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
           Expanded(
             child: Text(
               'Im Menü links gewählt: "${WorkflowStepData.labelFor(action)}"',
-              style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 12, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.lightBlueAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -108,7 +128,9 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
         color: AppColors.of(context).toolbarBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isDragHovering ? theme.colorScheme.primary : AppColors.of(context).toolbarBorder,
+          color: _isDragHovering
+              ? theme.colorScheme.primary
+              : AppColors.of(context).toolbarBorder,
           width: _isDragHovering ? 2 : 1,
         ),
       ),
@@ -125,10 +147,12 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
             Positioned.fill(
               top: 56,
               child: workspaceState.status == LoadingStatus.loading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white70))
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white70),
+                    )
                   : (workspaceState.loadedImage != null
-                      ? WorkspaceImageView(activeStep: widget.activeStep)
-                      : WorkspacePlaceholder(stepData: stepData)),
+                        ? WorkspaceImageView(activeStep: widget.activeStep)
+                        : WorkspacePlaceholder(stepData: stepData)),
             ),
             if (_isDragHovering)
               Positioned.fill(
@@ -138,14 +162,26 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                     color: theme.colorScheme.primary.withValues(alpha: 0.18),
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.file_download, color: Colors.white),
                             SizedBox(width: 10),
-                            Text('Bild hier ablegen …', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            Text(
+                              'Bild hier ablegen …',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -178,13 +214,24 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                 right: 12,
                 bottom: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
-                    workspaceState.statusMessage == WorkspaceError.selectionCancelled 
-                        ? 'Auswahl abgebrochen' 
+                    workspaceState.statusMessage ==
+                            WorkspaceError.selectionCancelled
+                        ? 'Auswahl abgebrochen'
                         : 'Fehler beim Laden',
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -253,5 +300,3 @@ class _DesktopDropAdapter extends StatelessWidget {
     );
   }
 }
-
-

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 import '../models/workflow_step.dart';
 import 'workflow_step_card.dart';
@@ -39,9 +40,13 @@ class WorkflowSidebar extends StatelessWidget {
     return Container(
       width: 320,
       decoration: BoxDecoration(
-        color: AppColors.of(context).sidebarBg, // Leicht abgesetztes, helles Slate-Hintergrundgrau
+        color: AppColors.of(context)
+            .sidebarBg, // Leicht abgesetztes, helles Slate-Hintergrundgrau
         border: Border(
-          right: BorderSide(color: AppColors.of(context).sidebarBorder, width: 1),
+          right: BorderSide(
+            color: AppColors.of(context).sidebarBorder,
+            width: 1,
+          ),
         ),
       ),
       child: Column(
@@ -71,9 +76,13 @@ class WorkflowSidebar extends StatelessWidget {
                     const SizedBox(width: 8),
                     // Kleiner Zähler "Schritt X von 4"
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.primary
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -90,10 +99,7 @@ class WorkflowSidebar extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Klicke auf einen Schritt, um ihn zu öffnen.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ],
             ),
@@ -133,7 +139,9 @@ class WorkflowSidebar extends StatelessWidget {
 
   /// Baut eine praktische "Nächster Schritt"-Leiste am unteren Ende der Sidebar.
   Widget _buildBottomNavigationBar(BuildContext context) {
-    final currentIndex = WorkflowStepData.allSteps.indexWhere((s) => s.type == activeStep);
+    final currentIndex = WorkflowStepData.allSteps.indexWhere(
+      (s) => s.type == activeStep,
+    );
     final hasNext = currentIndex < WorkflowStepData.allSteps.length - 1;
 
     return Container(
@@ -150,15 +158,23 @@ class WorkflowSidebar extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: (hasNext && isNextEnabled)
                   ? () {
-                      final nextStep = WorkflowStepData.allSteps[currentIndex + 1].type;
+                      final nextStep =
+                          WorkflowStepData.allSteps[currentIndex + 1].type;
                       onStepSelected(nextStep);
                     }
                   : null,
               icon: const Icon(Icons.arrow_forward, size: 16),
-              label: Text(hasNext ? 'Weiter zu Schritt ${currentIndex + 2}' : 'Alle Schritte erreicht'),
+              label: Text(
+                hasNext
+                    ? 'Weiter zu Schritt ${currentIndex + 2}'
+                    : 'Alle Schritte erreicht',
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -180,6 +196,3 @@ class WorkflowSidebar extends StatelessWidget {
     }
   }
 }
-
-
-

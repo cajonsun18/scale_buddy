@@ -87,12 +87,12 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFF1F5F9), // Slate-100
       extensions: const [
         AppColors(
-          sidebarBg: Color(0xFFF8FAFC),      // Slate-50
-          sidebarBorder: Color(0xFFE2E8F0),  // Slate-200
-          toolbarBg: Color(0xFF1E293B),      // Slate-800
-          toolbarBorder: Color(0xFF334155),  // Slate-700
-          inputBg: Color(0xFF0F172A),        // Slate-900
-          inputBorder: Color(0xFF475569),    // Slate-600
+          sidebarBg: Color(0xFFF8FAFC), // Slate-50
+          sidebarBorder: Color(0xFFE2E8F0), // Slate-200
+          toolbarBg: Color(0xFF1E293B), // Slate-800
+          toolbarBorder: Color(0xFF334155), // Slate-700
+          inputBg: Color(0xFF0F172A), // Slate-900
+          inputBorder: Color(0xFF475569), // Slate-600
           success: Colors.green,
           iconActive: Colors.white,
           iconInactive: Colors.white30,

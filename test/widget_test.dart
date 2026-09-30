@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/main.dart';
 
 void main() {
-  testWidgets('Workflow menu cards switch and open on click', (WidgetTester tester) async {
+  testWidgets('Workflow menu cards switch and open on click', (
+    WidgetTester tester,
+  ) async {
     // Desktop-Fenstergröße für den Test simulieren
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -33,7 +35,10 @@ void main() {
     // 4. Auf ein Werkzeug in Schritt 2 klicken
     await tester.tap(find.text('Automatische Entzerrung (KI/OpenCV)').first);
     await tester.pumpAndSettle();
-    expect(find.textContaining('Automatische Entzerrung'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Automatische Entzerrung'),
+      findsAtLeastNWidgets(1),
+    );
 
     // 5. Auf Schritt 3 ("Kalibrieren") klicken
     final calFinder = find.text('Kalibrieren').first;

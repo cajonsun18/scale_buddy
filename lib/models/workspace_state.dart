@@ -16,7 +16,7 @@ sealed class WorkspaceState with _$WorkspaceState {
     LoadedImageInfo? loadedImage,
     @Default(LoadingStatus.initial) LoadingStatus status,
     @Default(WorkspaceError.none) WorkspaceError statusMessage,
-    
+
     @Default([]) List<DrawingEntity> entities,
     String? selectedEntityId,
     DragDetail? activeDragDetail,

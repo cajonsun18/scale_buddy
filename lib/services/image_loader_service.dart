@@ -7,9 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:pasteboard/pasteboard.dart';
 
 import '../models/loaded_image_info.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final imageLoaderServiceProvider = Provider<ImageLoaderService>((ref) => ImageLoaderService());
+final imageLoaderServiceProvider = Provider<ImageLoaderService>(
+  (ref) => ImageLoaderService(),
+);
 
 /// Hilfsklasse zum Laden und Erzeugen von Bauzeichnungen.
 class MockBlueprintColors {
@@ -28,12 +31,19 @@ class ImageLoaderService {
   Future<LoadedImageInfo?> loadFromPaths(List<String> paths) async {
     for (final p in paths) {
       final ext = p.toLowerCase();
-      final looksLikeImage = ['.png', '.jpg', '.jpeg', '.bmp', '.webp', '.gif'].any((e) => ext.endsWith(e));
+      final looksLikeImage = [
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.bmp',
+        '.webp',
+        '.gif',
+      ].any((e) => ext.endsWith(e));
       if (!looksLikeImage) continue;
-      
+
       final file = File(p);
       if (!await file.exists()) continue;
-      
+
       final bytes = await file.readAsBytes();
       final info = await loadFromBytes(
         bytes,
@@ -84,10 +94,7 @@ class ImageLoaderService {
   /// Lädt ein Bild aus rohen Bytes (z. B. aus Drag-and-Drop).
   ///
   /// [fileName] ist optional und wird als Anzeigename verwendet.
-  Future<LoadedImageInfo?> loadFromBytes(
-    Uint8List bytes, {
-    String? fileName,
-  }) {
+  Future<LoadedImageInfo?> loadFromBytes(Uint8List bytes, {String? fileName}) {
     return _buildFromBytes(
       bytes: bytes,
       pathFallback: null,
@@ -160,7 +167,9 @@ class ImageLoaderService {
         }
       }
 
-      debugPrint('Kein Bild in der Zwischenablage gefunden (kein Pfad, kein Binärbild).');
+      debugPrint(
+        'Kein Bild in der Zwischenablage gefunden (kein Pfad, kein Binärbild).',
+      );
       return null;
     } catch (e) {
       debugPrint('Fehler beim Lesen der Zwischenablage: $e');
@@ -328,8 +337,8 @@ class ImageLoaderService {
 
     // 6. Referenz-Maßkette unten (Ideal für Kalibrierung)
     final dimLinePaint = Paint()
-      ..color =
-          MockBlueprintColors.measureLine // Rote Maßlinie
+      ..color = MockBlueprintColors
+          .measureLine // Rote Maßlinie
       ..strokeWidth = 2.5;
 
     const dimY = houseY + houseH + 50;
@@ -421,4 +430,3 @@ class ImageLoaderService {
     );
   }
 }
-

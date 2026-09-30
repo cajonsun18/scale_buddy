@@ -1,7 +1,11 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../controllers/workspace_controller.dart';
 import '../models/entities/drawing_entity.dart';
 
@@ -20,10 +24,12 @@ class CalibrationInputWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CalibrationInputWidget> createState() => _CalibrationInputWidgetState();
+  ConsumerState<CalibrationInputWidget> createState() =>
+      _CalibrationInputWidgetState();
 }
 
-class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget> with SingleTickerProviderStateMixin {
+class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String _selectedUnit = 'm';
@@ -52,7 +58,10 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
     final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
     if (calib != null) {
       if (calib.enteredDistance != null && _textController.text.isEmpty) {
-        _textController.text = calib.enteredDistance.toString().replaceAll('.0', '');
+        _textController.text = calib.enteredDistance.toString().replaceAll(
+          '.0',
+          '',
+        );
       }
       if (calib.selectedUnit != _selectedUnit) {
         _selectedUnit = calib.selectedUnit;
@@ -84,13 +93,16 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
     final state = ref.read(workspaceControllerProvider);
     final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
     if (calib != null) {
-      controller.addOrUpdateEntity(calib.copyWith(
-        enteredDistance: val,
-        selectedUnit: _selectedUnit,
-        isConfirmed: true,
-      ));
+      controller.addOrUpdateEntity(
+        calib.copyWith(
+          enteredDistance: val,
+          selectedUnit: _selectedUnit,
+          isConfirmed: true,
+        ),
+      );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     const double uiHeight = 32.0;
@@ -100,7 +112,11 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
       borderRadius: BorderRadius.circular(4),
     );
 
-    final calib = ref.watch(workspaceControllerProvider).entities.whereType<CalibrationEntity>().firstOrNull;
+    final calib = ref
+        .watch(workspaceControllerProvider)
+        .entities
+        .whereType<CalibrationEntity>()
+        .firstOrNull;
     final isConfirmed = calib?.isConfirmed ?? false;
 
     return Material(
@@ -132,20 +148,30 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                       cursor: SystemMouseCursors.move,
                       child: Padding(
                         padding: EdgeInsets.only(right: 6.0),
-                        child: Icon(Icons.drag_indicator, color: Colors.white54, size: 18),
+                        child: Icon(
+                          Icons.drag_indicator,
+                          color: Colors.white54,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
-                
+
                 if (isConfirmed) ...[
                   // READ-ONLY MODE
                   GestureDetector(
                     onTap: () {
-                      final controller = ref.read(workspaceControllerProvider.notifier);
+                      final controller = ref.read(
+                        workspaceControllerProvider.notifier,
+                      );
                       final state = ref.read(workspaceControllerProvider);
-                      final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+                      final calib = state.entities
+                          .whereType<CalibrationEntity>()
+                          .firstOrNull;
                       if (calib != null) {
-                        controller.addOrUpdateEntity(calib.copyWith(isConfirmed: false));
+                        controller.addOrUpdateEntity(
+                          calib.copyWith(isConfirmed: false),
+                        );
                       }
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) _focusNode.requestFocus();
@@ -161,10 +187,18 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                         children: [
                           Text(
                             '${calib?.enteredDistance.toString().replaceAll('.0', '') ?? ''} $_selectedUnit',
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(Icons.edit, color: Colors.white54, size: 14),
+                          const Icon(
+                            Icons.edit,
+                            color: Colors.white54,
+                            size: 14,
+                          ),
                         ],
                       ),
                     ),
@@ -174,8 +208,14 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                   AnimatedBuilder(
                     animation: _shakeController,
                     builder: (context, child) {
-                      final dx = math.sin(_shakeController.value * math.pi * 4) * 8 * (1 - _shakeController.value);
-                      return Transform.translate(offset: Offset(dx, 0), child: child);
+                      final dx =
+                          math.sin(_shakeController.value * math.pi * 4) *
+                          8 *
+                          (1 - _shakeController.value);
+                      return Transform.translate(
+                        offset: Offset(dx, 0),
+                        child: child,
+                      );
                     },
                     child: Container(
                       width: 70,
@@ -183,18 +223,30 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                       alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: _focusNode.hasFocus ? Theme.of(context).colorScheme.primary : AppColors.of(context).inputBorder),
+                        border: Border.all(
+                          color: _focusNode.hasFocus
+                              ? Theme.of(context).colorScheme.primary
+                              : AppColors.of(context).inputBorder,
+                        ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: TextField(
                         controller: _textController,
                         focusNode: _focusNode,
                         autofocus: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                         decoration: const InputDecoration.collapsed(
                           hintText: 'Länge',
-                          hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                          hintStyle: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 13,
+                          ),
                         ),
                         onSubmitted: (_) => _handleConfirm(),
                       ),
@@ -203,8 +255,10 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                   const SizedBox(width: 6),
                   Theme(
                     data: Theme.of(context).copyWith(
-                      hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                      splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                      hoverColor: Theme.of(context).colorScheme.primary
+                          .withValues(alpha: 0.3),
+                      splashColor: Theme.of(context).colorScheme.primary
+                          .withValues(alpha: 0.4),
                     ),
                     child: Container(
                       height: uiHeight,
@@ -213,23 +267,72 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                         initialValue: _selectedUnit,
                         color: AppColors.of(context).toolbarBg,
                         position: PopupMenuPosition.under,
-                        constraints: const BoxConstraints(minWidth: 60, maxWidth: 70),
+                        constraints: const BoxConstraints(
+                          minWidth: 60,
+                          maxWidth: 70,
+                        ),
                         onSelected: (val) {
                           setState(() => _selectedUnit = val);
                         },
                         itemBuilder: (context) => const [
-                          PopupMenuItem(value: 'mm', height: 32, child: Center(child: Text('mm', style: TextStyle(color: Colors.white, fontSize: 14)))),
-                          PopupMenuItem(value: 'cm', height: 32, child: Center(child: Text('cm', style: TextStyle(color: Colors.white, fontSize: 14)))),
-                          PopupMenuItem(value: 'm', height: 32, child: Center(child: Text('m', style: TextStyle(color: Colors.white, fontSize: 14)))),
+                          PopupMenuItem(
+                            value: 'mm',
+                            height: 32,
+                            child: Center(
+                              child: Text(
+                                'mm',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'cm',
+                            height: 32,
+                            child: Center(
+                              child: Text(
+                                'cm',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'm',
+                            height: 32,
+                            child: Center(
+                              child: Text(
+                                'm',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(_selectedUnit, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              Text(
+                                _selectedUnit,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
                               const SizedBox(width: 2),
-                              const Icon(Icons.arrow_drop_down, color: Colors.white54, size: 18),
+                              const Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.white54,
+                                size: 18,
+                              ),
                             ],
                           ),
                         ),
@@ -242,8 +345,15 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                     child: Container(
                       height: uiHeight,
                       width: uiHeight,
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(4)),
-                      child: Icon(Icons.check, color: AppColors.of(context).iconActive, size: 18),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Icon(
+                        Icons.check,
+                        color: AppColors.of(context).iconActive,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ],
@@ -251,17 +361,27 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                 const SizedBox(width: 6),
                 GestureDetector(
                   onTap: () {
-                    ref.read(workspaceControllerProvider.notifier).clearCalibration();
+                    ref
+                        .read(workspaceControllerProvider.notifier)
+                        .clearCalibration();
                   },
                   child: Container(
                     height: uiHeight,
                     width: uiHeight,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.error
+                          .withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.error
+                            .withValues(alpha: 0.5),
+                      ),
                     ),
-                    child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error, size: 18),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],
@@ -269,7 +389,13 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
             if (!isConfirmed && _errorText != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(_errorText!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
+                child: Text(
+                  _errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
               ),
           ],
         ),
@@ -277,7 +403,3 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
     );
   }
 }
-
-
-
-

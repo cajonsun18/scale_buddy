@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,12 +15,19 @@ class ActiveToolNotifier extends Notifier<WorkspaceTool> {
   WorkspaceTool build() => const CalibrationTool();
 }
 
-final activeToolProvider = NotifierProvider<ActiveToolNotifier, WorkspaceTool>(ActiveToolNotifier.new);
+final activeToolProvider = NotifierProvider<ActiveToolNotifier, WorkspaceTool>(
+  ActiveToolNotifier.new,
+);
 
 // Provider für den zentralen Controller
-final workspaceControllerProvider = NotifierProvider<WorkspaceController, WorkspaceState>(WorkspaceController.new);
+final workspaceControllerProvider =
+    NotifierProvider<WorkspaceController, WorkspaceState>(
+      WorkspaceController.new,
+    );
 
-final transformationControllerProvider = Provider<TransformationController>((ref) {
+final transformationControllerProvider = Provider<TransformationController>((
+  ref,
+) {
   final controller = TransformationController();
   ref.onDispose(() => controller.dispose());
   return controller;
@@ -35,7 +43,7 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     state = const WorkspaceState();
   }
 
-    // --- Generische Entity-Methoden ---
+  // --- Generische Entity-Methoden ---
 
   void addOrUpdateEntity(DrawingEntity entity) {
     final newList = List<DrawingEntity>.from(state.entities);
@@ -52,7 +60,9 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     final newList = state.entities.where((e) => e.id != id).toList();
     state = state.copyWith(
       entities: newList,
-      selectedEntityId: state.selectedEntityId == id ? null : state.selectedEntityId,
+      selectedEntityId: state.selectedEntityId == id
+          ? null
+          : state.selectedEntityId,
     );
   }
 
@@ -81,7 +91,10 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   Future<void> _performImageLoad(
     Future<LoadedImageInfo?> Function() loaderAction,
   ) async {
-    state = state.copyWith(status: LoadingStatus.loading, statusMessage: WorkspaceError.none);
+    state = state.copyWith(
+      status: LoadingStatus.loading,
+      statusMessage: WorkspaceError.none,
+    );
 
     try {
       final info = await loaderAction();
@@ -104,11 +117,17 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     }
   }
 
-  void loadFromPicker() => _performImageLoad(() => ref.read(imageLoaderServiceProvider).pickImageFromFile());
+  void loadFromPicker() => _performImageLoad(
+    () => ref.read(imageLoaderServiceProvider).pickImageFromFile(),
+  );
 
-  void loadSample() => _performImageLoad(() => ref.read(imageLoaderServiceProvider).generateSampleFloorPlan());
+  void loadSample() => _performImageLoad(
+    () => ref.read(imageLoaderServiceProvider).generateSampleFloorPlan(),
+  );
 
-  void pasteFromClipboard() => _performImageLoad(() => ref.read(imageLoaderServiceProvider).pasteFromClipboard());
+  void pasteFromClipboard() => _performImageLoad(
+    () => ref.read(imageLoaderServiceProvider).pasteFromClipboard(),
+  );
 
   void handleDroppedBytes(List<Uint8List> chunks) {
     if (chunks.isEmpty) return;
@@ -121,17 +140,21 @@ class WorkspaceController extends Notifier<WorkspaceState> {
             }
             return builder.toBytes();
           })();
-    
-    _performImageLoad(() => ref.read(imageLoaderServiceProvider).loadFromBytes(combined));
+
+    _performImageLoad(
+      () => ref.read(imageLoaderServiceProvider).loadFromBytes(combined),
+    );
   }
 
   void handleDroppedFilePaths(List<String> paths) async {
     if (paths.isEmpty) return;
-    _performImageLoad(() => ref.read(imageLoaderServiceProvider).loadFromPaths(paths));
+    _performImageLoad(
+      () => ref.read(imageLoaderServiceProvider).loadFromPaths(paths),
+    );
   }
 
   // --- WERKZEUG-ROUTING (NEU) ---
-  
+
   void handleTapUp(TapUpDetails details, Size size) {
     final tool = ref.read(activeToolProvider);
     state = tool.onTapUp(state, details, size);
@@ -152,4 +175,3 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     state = tool.onPanEnd(state, details, size);
   }
 }
-

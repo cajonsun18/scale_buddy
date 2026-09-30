@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../controllers/workspace_controller.dart';
 import '../models/entities/drawing_entity.dart';
 import '../models/workflow_step.dart';
@@ -18,7 +21,9 @@ class WorkspaceImageView extends ConsumerStatefulWidget {
 class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
   @override
   Widget build(BuildContext context) {
-    final transformationController = ref.watch(transformationControllerProvider);
+    final transformationController = ref.watch(
+      transformationControllerProvider,
+    );
     final state = ref.watch(workspaceControllerProvider);
     final info = state.loadedImage;
     if (info == null) return const SizedBox.shrink();
@@ -46,9 +51,7 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.medium,
                     ),
-                    _ImageWithPointsOverlay(
-                      isCalibrateStep: isCalibrateStep,
-                    ),
+                    _ImageWithPointsOverlay(isCalibrateStep: isCalibrateStep),
                   ],
                 ),
               ),
@@ -63,9 +66,7 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
               child: SizedBox(
                 width: 150,
                 height: 150,
-                child: ClipOval(
-                  child: ColoredBox(color: Colors.transparent),
-                ),
+                child: ClipOval(child: ColoredBox(color: Colors.transparent)),
               ),
             ),
           ),
@@ -80,10 +81,12 @@ class _ImageWithPointsOverlay extends ConsumerStatefulWidget {
   const _ImageWithPointsOverlay({required this.isCalibrateStep});
 
   @override
-  ConsumerState<_ImageWithPointsOverlay> createState() => _ImageWithPointsOverlayState();
+  ConsumerState<_ImageWithPointsOverlay> createState() =>
+      _ImageWithPointsOverlayState();
 }
 
-class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay> {
+class _ImageWithPointsOverlayState
+    extends ConsumerState<_ImageWithPointsOverlay> {
   double? _localLabelPosition;
   bool _showMagnifier = false;
   Offset? _magnifierPosition;
@@ -93,7 +96,7 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
     final state = ref.watch(workspaceControllerProvider);
     final controller = ref.read(workspaceControllerProvider.notifier);
     final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
-    
+
     const magnifierSize = Size(80.0, 80.0);
 
     return LayoutBuilder(
@@ -117,11 +120,11 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
                       color: Colors.transparent,
                       child: CustomPaint(
                         painter: _EntitiesPainter(
-                          entities: state.entities, 
-                          isCalibrateStep: widget.isCalibrateStep, 
-                          primaryColor: Theme.of(context).colorScheme.primary, 
-                          successColor: AppColors.of(context).success, 
-                          pointColor: Colors.white
+                          entities: state.entities,
+                          isCalibrateStep: widget.isCalibrateStep,
+                          primaryColor: Theme.of(context).colorScheme.primary,
+                          successColor: AppColors.of(context).success,
+                          pointColor: Colors.white,
                         ),
                       ),
                     ),
@@ -132,20 +135,22 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
               Positioned.fill(
                 child: CustomPaint(
                   painter: _EntitiesPainter(
-                    entities: state.entities, 
-                    isCalibrateStep: widget.isCalibrateStep, 
-                    primaryColor: Theme.of(context).colorScheme.primary, 
-                    successColor: AppColors.of(context).success, 
-                    pointColor: Colors.white
+                    entities: state.entities,
+                    isCalibrateStep: widget.isCalibrateStep,
+                    primaryColor: Theme.of(context).colorScheme.primary,
+                    successColor: AppColors.of(context).success,
+                    pointColor: Colors.white,
                   ),
                 ),
               ),
 
             if (widget.isCalibrateStep && calib != null) ...[
-              if (calib.p1 != null) _buildPointHandle(calib.p1!, size, controller),
-              if (calib.p2 != null) _buildPointHandle(calib.p2!, size, controller),
+              if (calib.p1 != null)
+                _buildPointHandle(calib.p1!, size, controller),
+              if (calib.p2 != null)
+                _buildPointHandle(calib.p2!, size, controller),
             ],
-            
+
             if (_showMagnifier && _magnifierPosition != null)
               Positioned(
                 left: _magnifierPosition!.dx - (magnifierSize.width / 2),
@@ -153,7 +158,9 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
                 child: IgnorePointer(
                   child: RawMagnifier(
                     decoration: const MagnifierDecoration(
-                      shape: CircleBorder(side: BorderSide(color: Colors.white, width: 2)),
+                      shape: CircleBorder(
+                        side: BorderSide(color: Colors.white, width: 2),
+                      ),
                     ),
                     size: magnifierSize,
                     magnificationScale: 2.0,
@@ -161,12 +168,21 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
                 ),
               ),
 
-            if (widget.isCalibrateStep && calib != null && calib.p1 != null && calib.p2 != null)
+            if (widget.isCalibrateStep &&
+                calib != null &&
+                calib.p1 != null &&
+                calib.p2 != null)
               Positioned.fill(
                 child: Builder(
                   builder: (context) {
-                    final currentLabelPos = _localLabelPosition ?? calib.labelPosition;
-                    final pos = _calculateLabelOffset(calib.p1!, calib.p2!, currentLabelPos, size);
+                    final currentLabelPos =
+                        _localLabelPosition ?? calib.labelPosition;
+                    final pos = _calculateLabelOffset(
+                      calib.p1!,
+                      calib.p2!,
+                      currentLabelPos,
+                      size,
+                    );
 
                     return Stack(
                       clipBehavior: Clip.none,
@@ -189,12 +205,19 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
                               },
                               onDragEnd: () {
                                 if (_localLabelPosition != null) {
-                                  final state = ref.read(workspaceControllerProvider);
-                                  final currentCalib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+                                  final state = ref.read(
+                                    workspaceControllerProvider,
+                                  );
+                                  final currentCalib = state.entities
+                                      .whereType<CalibrationEntity>()
+                                      .firstOrNull;
                                   if (currentCalib != null) {
-                                    controller.addOrUpdateEntity(currentCalib.copyWith(
-                                      labelPosition: _localLabelPosition!.clamp(0.15, 0.85)
-                                    ));
+                                    controller.addOrUpdateEntity(
+                                      currentCalib.copyWith(
+                                        labelPosition: _localLabelPosition!
+                                            .clamp(0.15, 0.85),
+                                      ),
+                                    );
                                   }
                                   setState(() {
                                     _localLabelPosition = null;
@@ -215,10 +238,17 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
     );
   }
 
-  Widget _buildPointHandle(Offset normPoint, Size size, WorkspaceController controller) {
+  Widget _buildPointHandle(
+    Offset normPoint,
+    Size size,
+    WorkspaceController controller,
+  ) {
     const handleSize = 48.0;
-    final center = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
-    
+    final center = Offset(
+      normPoint.dx * size.width,
+      normPoint.dy * size.height,
+    );
+
     return Positioned(
       left: center.dx - (handleSize / 2),
       top: center.dy - (handleSize / 2),
@@ -281,7 +311,10 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
       double ny = lineVec.dx / length;
 
       final centerPix = Offset(size.width / 2, size.height / 2);
-      final midPix = Offset((p1Pix.dx + p2Pix.dx) / 2, (p1Pix.dy + p2Pix.dy) / 2);
+      final midPix = Offset(
+        (p1Pix.dx + p2Pix.dx) / 2,
+        (p1Pix.dy + p2Pix.dy) / 2,
+      );
       final toCenterPix = centerPix - midPix;
 
       if ((nx * toCenterPix.dx + ny * toCenterPix.dy) < 0) {
@@ -300,7 +333,11 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
     );
   }
 
-  void _handleLabelDragLocal(DragUpdateDetails details, CalibrationEntity calib, Size size) {
+  void _handleLabelDragLocal(
+    DragUpdateDetails details,
+    CalibrationEntity calib,
+    Size size,
+  ) {
     final p1 = calib.p1!;
     final p2 = calib.p2!;
     final p1Pix = Offset(p1.dx * size.width, p1.dy * size.height);
@@ -310,8 +347,10 @@ class _ImageWithPointsOverlayState extends ConsumerState<_ImageWithPointsOverlay
 
     if (length == 0) return;
 
-    final dt = (details.delta.dx * lineVec.dx + details.delta.dy * lineVec.dy) / (length * length);
-    
+    final dt =
+        (details.delta.dx * lineVec.dx + details.delta.dy * lineVec.dy) /
+        (length * length);
+
     setState(() {
       _localLabelPosition = (_localLabelPosition ?? calib.labelPosition) + dt;
     });
@@ -325,7 +364,13 @@ class _EntitiesPainter extends CustomPainter {
   final Color successColor;
   final Color pointColor;
 
-  _EntitiesPainter({required this.entities, required this.isCalibrateStep, required this.primaryColor, required this.successColor, required this.pointColor});
+  _EntitiesPainter({
+    required this.entities,
+    required this.isCalibrateStep,
+    required this.primaryColor,
+    required this.successColor,
+    required this.pointColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -385,8 +430,3 @@ class _EntitiesPainter extends CustomPainter {
     return true; // Im echten Einsatz könnten wir auf Listen-Änderungen optimieren
   }
 }
-
-
-
-
-

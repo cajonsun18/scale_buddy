@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/workspace_state.dart';
 import '../models/workflow_step.dart';
 
@@ -27,14 +28,22 @@ class WorkspaceStatusBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.check_circle_outline, size: 14, color: Colors.green.shade600),
+          Icon(
+            Icons.check_circle_outline,
+            size: 14,
+            color: Colors.green.shade600,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               lastSelectedTool != null
                   ? 'Aktives Menü: ${stepTitleFor(activeStep)}  •  Werkzeug: ${WorkflowStepData.labelFor(lastSelectedTool!)}'
                   : 'Aktives Menü: ${stepTitleFor(activeStep)}',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

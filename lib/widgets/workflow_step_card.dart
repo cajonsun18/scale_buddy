@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 
 import '../models/workflow_step.dart';
@@ -165,7 +166,9 @@ class WorkflowStepCard extends StatelessWidget {
       width: 26,
       height: 26,
       decoration: BoxDecoration(
-        color: isActive ? theme.colorScheme.primary : AppColors.of(context).sidebarBorder,
+        color: isActive
+            ? theme.colorScheme.primary
+            : AppColors.of(context).sidebarBorder,
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -217,7 +220,9 @@ class WorkflowStepCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.of(context).sidebarBorder),
+                  border: Border.all(
+                    color: AppColors.of(context).sidebarBorder,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -252,7 +257,7 @@ class WorkflowStepCard extends StatelessWidget {
     );
   }
 
-    IconData _iconForTool(ToolAction action) {
+  IconData _iconForTool(ToolAction action) {
     switch (action) {
       case ToolAction.snipScreen:
         return Icons.crop;
@@ -282,8 +287,3 @@ class WorkflowStepCard extends StatelessWidget {
     }
   }
 }
-
-
-
-
-

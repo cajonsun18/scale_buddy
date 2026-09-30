@@ -1,6 +1,7 @@
 import '../models/app_intents.dart';
 import '../widgets/scale_buddy_app_bar.dart';
 import '../widgets/workspace_status_bar.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,13 +43,17 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       }
     });
 
-    final calib = workspaceState.entities.whereType<CalibrationEntity>().firstOrNull;
+    final calib = workspaceState.entities
+        .whereType<CalibrationEntity>()
+        .firstOrNull;
     final isCalibConfirmed = calib?.isConfirmed ?? false;
 
     return Shortcuts(
       shortcuts: const <ShortcutActivator, Intent>{
-        SingleActivator(LogicalKeyboardKey.keyV, control: true): PasteImageIntent(),
-        SingleActivator(LogicalKeyboardKey.keyV, meta: true): PasteImageIntent(),
+        SingleActivator(LogicalKeyboardKey.keyV, control: true):
+            PasteImageIntent(),
+        SingleActivator(LogicalKeyboardKey.keyV, meta: true):
+            PasteImageIntent(),
         SingleActivator(LogicalKeyboardKey.delete): DeleteScaleIntent(),
       },
       child: Actions(
@@ -74,7 +79,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
             appBar: ScaleBuddyAppBar(
               onNewMeasurement: () {
                 _handleStepSelected(WorkflowStepType.file, calib);
-                _handleToolSelected(WorkflowStepType.file, ToolAction.snipScreen, workspaceController);
+                _handleToolSelected(
+                  WorkflowStepType.file,
+                  ToolAction.snipScreen,
+                  workspaceController,
+                );
               },
               onZoomIn: () {
                 final controller = ref.read(transformationControllerProvider);
@@ -100,14 +109,22 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                       WorkflowSidebar(
                         activeStep: _activeStep,
                         stepStatuses: _stepStatuses,
-                        onStepSelected: (step) => _handleStepSelected(step, calib),
-                        onToolSelected: (step, action) => _handleToolSelected(step, action, workspaceController),
-                        isNextEnabled: _activeStep != WorkflowStepType.calibrate || isCalibConfirmed,
+                        onStepSelected: (step) =>
+                            _handleStepSelected(step, calib),
+                        onToolSelected: (step, action) => _handleToolSelected(
+                          step,
+                          action,
+                          workspaceController,
+                        ),
+                        isNextEnabled:
+                            _activeStep != WorkflowStepType.calibrate ||
+                            isCalibConfirmed,
                       ),
                       Expanded(
                         child: StepDetailView(
                           activeStep: _activeStep,
-                          currentStatus: _stepStatuses[_activeStep] ?? StepStatus.open,
+                          currentStatus:
+                              _stepStatuses[_activeStep] ?? StepStatus.open,
                           lastSelectedTool: _lastSelectedTool,
                           onStatusChanged: _handleStatusChanged,
                         ),
@@ -129,15 +146,21 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     );
   }
 
-  void _handleStepSelected(WorkflowStepType step, CalibrationEntity? calib) async {
+  void _handleStepSelected(
+    WorkflowStepType step,
+    CalibrationEntity? calib,
+  ) async {
     final controller = ref.read(workspaceControllerProvider.notifier);
-    if (_activeStep == WorkflowStepType.calibrate && step != WorkflowStepType.calibrate) {
+    if (_activeStep == WorkflowStepType.calibrate &&
+        step != WorkflowStepType.calibrate) {
       if (!controller.canLeaveCalibrationStep()) {
         final confirm = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Ungespeicherte Änderungen'),
-            content: const Text('Du hast Punkte für den Maßstab gesetzt, diese aber noch nicht bestätigt. Möchtest du die Änderungen wirklich verwerfen und den Schritt verlassen?'),
+            content: const Text(
+              'Du hast Punkte für den Maßstab gesetzt, diese aber noch nicht bestätigt. Möchtest du die Änderungen wirklich verwerfen und den Schritt verlassen?',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -145,7 +168,9 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.redAccent)),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.redAccent),
+                ),
                 child: const Text('Verwerfen'),
               ),
             ],
@@ -172,7 +197,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     });
   }
 
-  void _handleToolSelected(WorkflowStepType step, ToolAction action, WorkspaceController controller) {
+  void _handleToolSelected(
+    WorkflowStepType step,
+    ToolAction action,
+    WorkspaceController controller,
+  ) {
     setState(() {
       _lastSelectedTool = action;
     });
@@ -185,11 +214,3 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     return WorkflowStepData.allSteps.firstWhere((s) => s.type == step).title;
   }
 }
-
-
-
-
-
-
-
-

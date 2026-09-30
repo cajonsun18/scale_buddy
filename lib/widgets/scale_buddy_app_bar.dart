@@ -42,7 +42,11 @@ class ScaleBuddyAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               Text(
                 'ScaleBuddy',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
               ),
               Text(
                 'Screen-Bauzeichnungs-Messtool',
