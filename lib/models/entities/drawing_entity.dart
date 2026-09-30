@@ -17,7 +17,31 @@ sealed class DrawingEntity with _$DrawingEntity {
     @Default(0.5) double labelPosition,
   }) = CalibrationEntity;
 
-  // Später kommen hier ganz einfach hinzu:
-  // const factory DrawingEntity.line({ ... }) = LineEntity;
-  // const factory DrawingEntity.polygon({ ... }) = PolygonEntity;
+  const factory DrawingEntity.line({
+    required String id,
+    required Offset p1,
+    required Offset p2,
+    required Color color,
+  }) = LineEntity;
+
+  const factory DrawingEntity.polygon({
+    required String id,
+    required List<Offset> points,
+    required Color color,
+    @Default(false) bool isClosed,
+  }) = PolygonEntity;
+
+  const factory DrawingEntity.rectangle({
+    required String id,
+    required Offset p1,
+    required Offset p2,
+    required Color color,
+  }) = RectangleEntity;
+
+  const factory DrawingEntity.angle({
+    required String id,
+    required Offset p1,
+    required Offset p2,
+    required Color color,
+  }) = AngleEntity;
 }

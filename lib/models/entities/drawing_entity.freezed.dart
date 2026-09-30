@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DrawingEntity {
 
- String get id; Offset? get p1; Offset? get p2; double? get enteredDistance; String get selectedUnit; bool get isConfirmed; double get labelPosition;
+ String get id;
 /// Create a copy of DrawingEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $DrawingEntityCopyWith<DrawingEntity> get copyWith => _$DrawingEntityCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as DrawingEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DrawingEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.p1, _this.p1) || other.p1 == _this.p1)&&(identical(other.p2, _this.p2) || other.p2 == _this.p2)&&(identical(other.enteredDistance, _this.enteredDistance) || other.enteredDistance == _this.enteredDistance)&&(identical(other.selectedUnit, _this.selectedUnit) || other.selectedUnit == _this.selectedUnit)&&(identical(other.isConfirmed, _this.isConfirmed) || other.isConfirmed == _this.isConfirmed)&&(identical(other.labelPosition, _this.labelPosition) || other.labelPosition == _this.labelPosition));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DrawingEntity&&(identical(other.id, _this.id) || other.id == _this.id));
 }
 
 
 @override
 int get hashCode {
   final _this = this as DrawingEntity;
-  return Object.hash(runtimeType,_this.id,_this.p1,_this.p2,_this.enteredDistance,_this.selectedUnit,_this.isConfirmed,_this.labelPosition);
+  return Object.hash(runtimeType,_this.id);
 }
 
 @override
 String toString() {
   final _this = this as DrawingEntity;
-  return 'DrawingEntity(id: ${_this.id}, p1: ${_this.p1}, p2: ${_this.p2}, enteredDistance: ${_this.enteredDistance}, selectedUnit: ${_this.selectedUnit}, isConfirmed: ${_this.isConfirmed}, labelPosition: ${_this.labelPosition})';
+  return 'DrawingEntity(id: ${_this.id})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $DrawingEntityCopyWith<$Res>  {
   factory $DrawingEntityCopyWith(DrawingEntity value, $Res Function(DrawingEntity) _then) = _$DrawingEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, Offset? p1, Offset? p2, double? enteredDistance, String selectedUnit, bool isConfirmed, double labelPosition
+ String id
 });
 
 
@@ -68,16 +68,10 @@ class _$DrawingEntityCopyWithImpl<$Res>
 
 /// Create a copy of DrawingEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? p1 = freezed,Object? p2 = freezed,Object? enteredDistance = freezed,Object? selectedUnit = null,Object? isConfirmed = null,Object? labelPosition = null,}) {
-  return _then(DrawingEntity.calibration(
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,}) {
+  return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,p1: freezed == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
-as Offset?,p2: freezed == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
-as Offset?,enteredDistance: freezed == enteredDistance ? _self.enteredDistance : enteredDistance // ignore: cast_nullable_to_non_nullable
-as double?,selectedUnit: null == selectedUnit ? _self.selectedUnit : selectedUnit // ignore: cast_nullable_to_non_nullable
-as String,isConfirmed: null == isConfirmed ? _self.isConfirmed : isConfirmed // ignore: cast_nullable_to_non_nullable
-as bool,labelPosition: null == labelPosition ? _self.labelPosition : labelPosition // ignore: cast_nullable_to_non_nullable
-as double,
+as String,
   ));
 }
 
@@ -98,11 +92,15 @@ extension DrawingEntityPatterns on DrawingEntity {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CalibrationEntity value)?  calibration,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CalibrationEntity value)?  calibration,TResult Function( LineEntity value)?  line,TResult Function( PolygonEntity value)?  polygon,TResult Function( RectangleEntity value)?  rectangle,TResult Function( AngleEntity value)?  angle,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
-return calibration(_that);case _:
+return calibration(_that);case LineEntity() when line != null:
+return line(_that);case PolygonEntity() when polygon != null:
+return polygon(_that);case RectangleEntity() when rectangle != null:
+return rectangle(_that);case AngleEntity() when angle != null:
+return angle(_that);case _:
   return orElse();
 
 }
@@ -120,11 +118,15 @@ return calibration(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CalibrationEntity value)  calibration,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CalibrationEntity value)  calibration,required TResult Function( LineEntity value)  line,required TResult Function( PolygonEntity value)  polygon,required TResult Function( RectangleEntity value)  rectangle,required TResult Function( AngleEntity value)  angle,}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity():
-return calibration(_that);}
+return calibration(_that);case LineEntity():
+return line(_that);case PolygonEntity():
+return polygon(_that);case RectangleEntity():
+return rectangle(_that);case AngleEntity():
+return angle(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -138,11 +140,15 @@ return calibration(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CalibrationEntity value)?  calibration,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CalibrationEntity value)?  calibration,TResult? Function( LineEntity value)?  line,TResult? Function( PolygonEntity value)?  polygon,TResult? Function( RectangleEntity value)?  rectangle,TResult? Function( AngleEntity value)?  angle,}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
-return calibration(_that);case _:
+return calibration(_that);case LineEntity() when line != null:
+return line(_that);case PolygonEntity() when polygon != null:
+return polygon(_that);case RectangleEntity() when rectangle != null:
+return rectangle(_that);case AngleEntity() when angle != null:
+return angle(_that);case _:
   return null;
 
 }
@@ -159,10 +165,14 @@ return calibration(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  line,TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  rectangle,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  angle,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
-return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case _:
+return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
+return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity() when polygon != null:
+return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity() when rectangle != null:
+return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity() when angle != null:
+return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
   return orElse();
 
 }
@@ -180,10 +190,14 @@ return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.select
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  line,required TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)  polygon,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  rectangle,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  angle,}) {final _that = this;
 switch (_that) {
 case CalibrationEntity():
-return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);}
+return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity():
+return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity():
+return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity():
+return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity():
+return angle(_that.id,_that.p1,_that.p2,_that.color);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -197,10 +211,14 @@ return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.select
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  line,TResult? Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  rectangle,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  angle,}) {final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
-return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case _:
+return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
+return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity() when polygon != null:
+return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity() when rectangle != null:
+return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity() when angle != null:
+return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
   return null;
 
 }
@@ -216,12 +234,12 @@ class CalibrationEntity implements DrawingEntity {
   
 
 @override final  String id;
-@override final  Offset? p1;
-@override final  Offset? p2;
-@override final  double? enteredDistance;
-@override@JsonKey() final  String selectedUnit;
-@override@JsonKey() final  bool isConfirmed;
-@override@JsonKey() final  double labelPosition;
+ final  Offset? p1;
+ final  Offset? p2;
+ final  double? enteredDistance;
+@JsonKey() final  String selectedUnit;
+@JsonKey() final  bool isConfirmed;
+@JsonKey() final  double labelPosition;
 
 /// Create a copy of DrawingEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -282,6 +300,308 @@ as double?,selectedUnit: null == selectedUnit ? _self.selectedUnit : selectedUni
 as String,isConfirmed: null == isConfirmed ? _self.isConfirmed : isConfirmed // ignore: cast_nullable_to_non_nullable
 as bool,labelPosition: null == labelPosition ? _self.labelPosition : labelPosition // ignore: cast_nullable_to_non_nullable
 as double,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class LineEntity implements DrawingEntity {
+  const LineEntity({required this.id, required this.p1, required this.p2, required this.color});
+  
+
+@override final  String id;
+ final  Offset p1;
+ final  Offset p2;
+ final  Color color;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$LineEntityCopyWith<LineEntity> get copyWith => _$LineEntityCopyWithImpl<LineEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is LineEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.p1, p1) || other.p1 == p1)&&(identical(other.p2, p2) || other.p2 == p2)&&(identical(other.color, color) || other.color == color));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,p1,p2,color);
+}
+
+@override
+String toString() {
+    return 'DrawingEntity.line(id: $id, p1: $p1, p2: $p2, color: $color)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $LineEntityCopyWith<$Res> implements $DrawingEntityCopyWith<$Res> {
+  factory $LineEntityCopyWith(LineEntity value, $Res Function(LineEntity) _then) = _$LineEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, Offset p1, Offset p2, Color color
+});
+
+
+
+
+}
+/// @nodoc
+class _$LineEntityCopyWithImpl<$Res>
+    implements $LineEntityCopyWith<$Res> {
+  _$LineEntityCopyWithImpl(this._self, this._then);
+
+  final LineEntity _self;
+  final $Res Function(LineEntity) _then;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
+  return _then(LineEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as Color,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class PolygonEntity implements DrawingEntity {
+  const PolygonEntity({required this.id, required  List<Offset> points, required this.color, this.isClosed = false}): _points = points;
+  
+
+@override final  String id;
+ final  List<Offset> _points;
+ List<Offset> get points {
+  if (_points is EqualUnmodifiableListView) return _points;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_points);
+}
+
+ final  Color color;
+@JsonKey() final  bool isClosed;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PolygonEntityCopyWith<PolygonEntity> get copyWith => _$PolygonEntityCopyWithImpl<PolygonEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is PolygonEntity&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.points, _points)&&(identical(other.color, color) || other.color == color)&&(identical(other.isClosed, isClosed) || other.isClosed == isClosed));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_points),color,isClosed);
+}
+
+@override
+String toString() {
+    return 'DrawingEntity.polygon(id: $id, points: $points, color: $color, isClosed: $isClosed)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PolygonEntityCopyWith<$Res> implements $DrawingEntityCopyWith<$Res> {
+  factory $PolygonEntityCopyWith(PolygonEntity value, $Res Function(PolygonEntity) _then) = _$PolygonEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, List<Offset> points, Color color, bool isClosed
+});
+
+
+
+
+}
+/// @nodoc
+class _$PolygonEntityCopyWithImpl<$Res>
+    implements $PolygonEntityCopyWith<$Res> {
+  _$PolygonEntityCopyWithImpl(this._self, this._then);
+
+  final PolygonEntity _self;
+  final $Res Function(PolygonEntity) _then;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? points = null,Object? color = null,Object? isClosed = null,}) {
+  return _then(PolygonEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,points: null == points ? _self._points : points // ignore: cast_nullable_to_non_nullable
+as List<Offset>,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as Color,isClosed: null == isClosed ? _self.isClosed : isClosed // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class RectangleEntity implements DrawingEntity {
+  const RectangleEntity({required this.id, required this.p1, required this.p2, required this.color});
+  
+
+@override final  String id;
+ final  Offset p1;
+ final  Offset p2;
+ final  Color color;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RectangleEntityCopyWith<RectangleEntity> get copyWith => _$RectangleEntityCopyWithImpl<RectangleEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is RectangleEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.p1, p1) || other.p1 == p1)&&(identical(other.p2, p2) || other.p2 == p2)&&(identical(other.color, color) || other.color == color));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,p1,p2,color);
+}
+
+@override
+String toString() {
+    return 'DrawingEntity.rectangle(id: $id, p1: $p1, p2: $p2, color: $color)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RectangleEntityCopyWith<$Res> implements $DrawingEntityCopyWith<$Res> {
+  factory $RectangleEntityCopyWith(RectangleEntity value, $Res Function(RectangleEntity) _then) = _$RectangleEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, Offset p1, Offset p2, Color color
+});
+
+
+
+
+}
+/// @nodoc
+class _$RectangleEntityCopyWithImpl<$Res>
+    implements $RectangleEntityCopyWith<$Res> {
+  _$RectangleEntityCopyWithImpl(this._self, this._then);
+
+  final RectangleEntity _self;
+  final $Res Function(RectangleEntity) _then;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
+  return _then(RectangleEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as Color,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class AngleEntity implements DrawingEntity {
+  const AngleEntity({required this.id, required this.p1, required this.p2, required this.color});
+  
+
+@override final  String id;
+ final  Offset p1;
+ final  Offset p2;
+ final  Color color;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AngleEntityCopyWith<AngleEntity> get copyWith => _$AngleEntityCopyWithImpl<AngleEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AngleEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.p1, p1) || other.p1 == p1)&&(identical(other.p2, p2) || other.p2 == p2)&&(identical(other.color, color) || other.color == color));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,p1,p2,color);
+}
+
+@override
+String toString() {
+    return 'DrawingEntity.angle(id: $id, p1: $p1, p2: $p2, color: $color)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AngleEntityCopyWith<$Res> implements $DrawingEntityCopyWith<$Res> {
+  factory $AngleEntityCopyWith(AngleEntity value, $Res Function(AngleEntity) _then) = _$AngleEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, Offset p1, Offset p2, Color color
+});
+
+
+
+
+}
+/// @nodoc
+class _$AngleEntityCopyWithImpl<$Res>
+    implements $AngleEntityCopyWith<$Res> {
+  _$AngleEntityCopyWithImpl(this._self, this._then);
+
+  final AngleEntity _self;
+  final $Res Function(AngleEntity) _then;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
+  return _then(AngleEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as Color,
   ));
 }
 

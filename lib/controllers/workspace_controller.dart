@@ -50,7 +50,18 @@ class WorkspaceController extends Notifier<WorkspaceState> {
 
   void removeEntity(String id) {
     final newList = state.entities.where((e) => e.id != id).toList();
-    state = state.copyWith(entities: newList);
+    state = state.copyWith(
+      entities: newList,
+      selectedEntityId: state.selectedEntityId == id ? null : state.selectedEntityId,
+    );
+  }
+
+  void selectEntity(String id) {
+    state = state.copyWith(selectedEntityId: id);
+  }
+
+  void clearSelection() {
+    state = state.copyWith(selectedEntityId: null);
   }
 
   void clearCalibration() {
