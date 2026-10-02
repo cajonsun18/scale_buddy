@@ -11,6 +11,12 @@ import '../models/entities/drawing_entity.dart';
 import '../controllers/workspace_controller.dart';
 import '../widgets/step_detail_view.dart';
 import '../widgets/workflow_sidebar.dart';
+import '../tools/distance_tool.dart';
+import '../tools/calibration_tool.dart';
+import '../tools/polygon_tool.dart';
+import '../tools/rectangle_tool.dart';
+import '../tools/angle_tool.dart';
+import '../tools/select_tool.dart';
 
 class MainLayoutScreen extends ConsumerStatefulWidget {
   const MainLayoutScreen({super.key});
@@ -30,9 +36,44 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   ToolAction? _lastSelectedTool;
 
   @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    super.dispose();
+  }
+
+  bool _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      ref.read(workspaceControllerProvider.notifier).cancelCurrentTool();
+      return false; // Not fully consuming so dialogs can still close if needed
+    }
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final workspaceState = ref.watch(workspaceControllerProvider);
     final workspaceController = ref.watch(workspaceControllerProvider.notifier);
+    final activeTool = ref.watch(activeToolProvider);
+    ToolAction? currentToolAction;
+    if (activeTool is DistanceTool) {
+      currentToolAction = ToolAction.measureDistance;
+    } else if (activeTool is PolygonTool)
+      currentToolAction = ToolAction.measurePolygon;
+    else if (activeTool is RectangleTool)
+      currentToolAction = ToolAction.measureRectArea;
+    else if (activeTool is AngleTool)
+      currentToolAction = ToolAction.measureRoofAngle;
+    else if (activeTool is SelectTool)
+      currentToolAction = ToolAction.selectEdit;
+    else if (activeTool is CalibrationTool)
+      currentToolAction = ToolAction.setReference;
 
     ref.listen(workspaceControllerProvider, (previous, next) {
       if (next.loadedImage != null &&
@@ -55,6 +96,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         SingleActivator(LogicalKeyboardKey.keyV, meta: true):
             PasteImageIntent(),
         SingleActivator(LogicalKeyboardKey.delete): DeleteScaleIntent(),
+        SingleActivator(LogicalKeyboardKey.backspace): DeleteScaleIntent(),
+        SingleActivator(LogicalKeyboardKey.escape): EscapeIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -66,14 +109,18 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
           ),
           DeleteScaleIntent: CallbackAction<DeleteScaleIntent>(
             onInvoke: (_) {
-              if (_activeStep == WorkflowStepType.calibrate) {
+              if (workspaceState.selectedEntityId != null) {
+                workspaceController.removeEntity(
+                  workspaceState.selectedEntityId!,
+                );
+              } else if (_activeStep == WorkflowStepType.calibrate) {
                 workspaceController.clearCalibration();
               }
               return null;
             },
           ),
         },
-        child: FocusScope(
+        child: Focus(
           autofocus: true,
           child: Scaffold(
             appBar: ScaleBuddyAppBar(
@@ -109,6 +156,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                       WorkflowSidebar(
                         activeStep: _activeStep,
                         stepStatuses: _stepStatuses,
+                        activeToolAction: currentToolAction,
                         onStepSelected: (step) =>
                             _handleStepSelected(step, calib),
                         onToolSelected: (step, action) => _handleToolSelected(
@@ -189,6 +237,10 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         _stepStatuses[step] = StepStatus.active;
       }
     });
+
+    if (step == WorkflowStepType.calibrate) {
+      _handleToolSelected(step, ToolAction.setReference, controller);
+    }
   }
 
   void _handleStatusChanged(StepStatus newStatus) {
@@ -205,8 +257,30 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     setState(() {
       _lastSelectedTool = action;
     });
-    if (action == ToolAction.openFile) {
-      controller.loadFromPicker();
+    switch (action) {
+      case ToolAction.openFile:
+        controller.loadFromPicker();
+        break;
+      case ToolAction.measureDistance:
+        ref.read(activeToolProvider.notifier).setTool(const DistanceTool());
+        break;
+      case ToolAction.measureRectArea:
+        ref.read(activeToolProvider.notifier).setTool(const RectangleTool());
+        break;
+      case ToolAction.measurePolygon:
+        ref.read(activeToolProvider.notifier).setTool(const PolygonTool());
+        break;
+      case ToolAction.measureRoofAngle:
+        ref.read(activeToolProvider.notifier).setTool(const AngleTool());
+        break;
+      case ToolAction.setReference:
+        ref.read(activeToolProvider.notifier).setTool(const CalibrationTool());
+        break;
+      case ToolAction.selectEdit:
+        ref.read(activeToolProvider.notifier).setTool(const SelectTool());
+        break;
+      default:
+        break;
     }
   }
 

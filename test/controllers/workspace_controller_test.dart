@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -14,6 +14,87 @@ import 'package:scale_buddy/tools/calibration_tool.dart';
 class MockImageLoaderService extends Mock implements ImageLoaderService {}
 
 void main() {
+  group('cancelCurrentTool', () {
+    test('removes incomplete shapes', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final line1 = DrawingEntity.line(
+        id: 'L1',
+        p1: const Offset(0, 0),
+        p2: const Offset(1, 1),
+        color: Colors.blue,
+      );
+      final line2 = DrawingEntity.line(
+        id: 'L2',
+        p1: const Offset(0, 0),
+        p2: null,
+        color: Colors.blue,
+      ); // Incomplete
+
+      final controller = container.read(workspaceControllerProvider.notifier);
+
+      // We manually inject state for testing
+      // ignore: invalid_use_of_visible_for_testing_member
+      controller.state = WorkspaceState(entities: [line1, line2]);
+
+      controller.cancelCurrentTool();
+
+      final entities = container.read(workspaceControllerProvider).entities;
+      expect(entities.length, 1);
+      expect(entities.first.id, 'L1');
+    });
+
+    test('reverts unconfirmed calibration with entered distance', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final calib = DrawingEntity.calibration(
+        id: 'C1',
+        p1: const Offset(0, 0),
+        p2: const Offset(1, 1),
+        isConfirmed: false,
+        enteredDistance: 5.0,
+      );
+
+      final controller = container.read(workspaceControllerProvider.notifier);
+      // ignore: invalid_use_of_visible_for_testing_member
+      controller.state = WorkspaceState(entities: [calib]);
+
+      controller.cancelCurrentTool();
+
+      final entities = container.read(workspaceControllerProvider).entities;
+      expect(entities.length, 1);
+      final updatedCalib = entities.first as CalibrationEntity;
+      expect(
+        updatedCalib.isConfirmed,
+        isTrue,
+      ); // Should be reverted to confirmed
+    });
+
+    test('removes unconfirmed calibration without entered distance', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final calib = DrawingEntity.calibration(
+        id: 'C1',
+        p1: const Offset(0, 0),
+        p2: const Offset(1, 1),
+        isConfirmed: false,
+        enteredDistance: null, // New calibration, no distance entered yet
+      );
+
+      final controller = container.read(workspaceControllerProvider.notifier);
+      // ignore: invalid_use_of_visible_for_testing_member
+      controller.state = WorkspaceState(entities: [calib]);
+
+      controller.cancelCurrentTool();
+
+      final entities = container.read(workspaceControllerProvider).entities;
+      expect(entities.isEmpty, isTrue); // Should be removed
+    });
+  });
+
   group('WorkspaceController', () {
     late ProviderContainer container;
     late MockImageLoaderService mockImageLoaderService;

@@ -7,3 +7,7 @@ class PasteImageIntent extends Intent {
 class DeleteScaleIntent extends Intent {
   const DeleteScaleIntent();
 }
+
+class EscapeIntent extends Intent {
+  const EscapeIntent();
+}

@@ -56,12 +56,13 @@ extension DragDetailPatterns on DragDetail {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DragDetailCalibrationPoint value)?  calibrationPoint,TResult Function( DragDetailLabel value)?  label,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( DragDetailCalibrationPoint value)?  calibrationPoint,TResult Function( DragDetailLabel value)?  label,TResult Function( DragDetailEntityPoint value)?  entityPoint,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint() when calibrationPoint != null:
 return calibrationPoint(_that);case DragDetailLabel() when label != null:
-return label(_that);case _:
+return label(_that);case DragDetailEntityPoint() when entityPoint != null:
+return entityPoint(_that);case _:
   return orElse();
 
 }
@@ -79,12 +80,13 @@ return label(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DragDetailCalibrationPoint value)  calibrationPoint,required TResult Function( DragDetailLabel value)  label,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( DragDetailCalibrationPoint value)  calibrationPoint,required TResult Function( DragDetailLabel value)  label,required TResult Function( DragDetailEntityPoint value)  entityPoint,}){
 final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint():
 return calibrationPoint(_that);case DragDetailLabel():
-return label(_that);}
+return label(_that);case DragDetailEntityPoint():
+return entityPoint(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -98,12 +100,13 @@ return label(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DragDetailCalibrationPoint value)?  calibrationPoint,TResult? Function( DragDetailLabel value)?  label,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( DragDetailCalibrationPoint value)?  calibrationPoint,TResult? Function( DragDetailLabel value)?  label,TResult? Function( DragDetailEntityPoint value)?  entityPoint,}){
 final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint() when calibrationPoint != null:
 return calibrationPoint(_that);case DragDetailLabel() when label != null:
-return label(_that);case _:
+return label(_that);case DragDetailEntityPoint() when entityPoint != null:
+return entityPoint(_that);case _:
   return null;
 
 }
@@ -120,11 +123,12 @@ return label(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isP1)?  calibrationPoint,TResult Function()?  label,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isP1)?  calibrationPoint,TResult Function()?  label,TResult Function( String entityId,  int pointIndex)?  entityPoint,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint() when calibrationPoint != null:
 return calibrationPoint(_that.isP1);case DragDetailLabel() when label != null:
-return label();case _:
+return label();case DragDetailEntityPoint() when entityPoint != null:
+return entityPoint(_that.entityId,_that.pointIndex);case _:
   return orElse();
 
 }
@@ -142,11 +146,12 @@ return label();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isP1)  calibrationPoint,required TResult Function()  label,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isP1)  calibrationPoint,required TResult Function()  label,required TResult Function( String entityId,  int pointIndex)  entityPoint,}) {final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint():
 return calibrationPoint(_that.isP1);case DragDetailLabel():
-return label();}
+return label();case DragDetailEntityPoint():
+return entityPoint(_that.entityId,_that.pointIndex);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -160,11 +165,12 @@ return label();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isP1)?  calibrationPoint,TResult? Function()?  label,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isP1)?  calibrationPoint,TResult? Function()?  label,TResult? Function( String entityId,  int pointIndex)?  entityPoint,}) {final _that = this;
 switch (_that) {
 case DragDetailCalibrationPoint() when calibrationPoint != null:
 return calibrationPoint(_that.isP1);case DragDetailLabel() when label != null:
-return label();case _:
+return label();case DragDetailEntityPoint() when entityPoint != null:
+return entityPoint(_that.entityId,_that.pointIndex);case _:
   return null;
 
 }
@@ -271,5 +277,75 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class DragDetailEntityPoint implements DragDetail {
+  const DragDetailEntityPoint({required this.entityId, required this.pointIndex});
+  
+
+ final  String entityId;
+ final  int pointIndex;
+
+/// Create a copy of DragDetail
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$DragDetailEntityPointCopyWith<DragDetailEntityPoint> get copyWith => _$DragDetailEntityPointCopyWithImpl<DragDetailEntityPoint>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is DragDetailEntityPoint&&(identical(other.entityId, entityId) || other.entityId == entityId)&&(identical(other.pointIndex, pointIndex) || other.pointIndex == pointIndex));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,entityId,pointIndex);
+}
+
+@override
+String toString() {
+    return 'DragDetail.entityPoint(entityId: $entityId, pointIndex: $pointIndex)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $DragDetailEntityPointCopyWith<$Res> implements $DragDetailCopyWith<$Res> {
+  factory $DragDetailEntityPointCopyWith(DragDetailEntityPoint value, $Res Function(DragDetailEntityPoint) _then) = _$DragDetailEntityPointCopyWithImpl;
+@useResult
+$Res call({
+ String entityId, int pointIndex
+});
+
+
+
+
+}
+/// @nodoc
+class _$DragDetailEntityPointCopyWithImpl<$Res>
+    implements $DragDetailEntityPointCopyWith<$Res> {
+  _$DragDetailEntityPointCopyWithImpl(this._self, this._then);
+
+  final DragDetailEntityPoint _self;
+  final $Res Function(DragDetailEntityPoint) _then;
+
+/// Create a copy of DragDetail
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? entityId = null,Object? pointIndex = null,}) {
+  return _then(DragDetailEntityPoint(
+entityId: null == entityId ? _self.entityId : entityId // ignore: cast_nullable_to_non_nullable
+as String,pointIndex: null == pointIndex ? _self.pointIndex : pointIndex // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
 
 // dart format on

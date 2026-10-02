@@ -34,18 +34,21 @@ enum ToolAction {
   autoAdjust,
   measureDistance,
   measureRectArea,
-  measureTriangleArea,
   measurePolygon,
   measureRoofAngle,
-  measureSlopedRoof,
-  movePointOrLabel,
+  selectEdit,
 }
 
 class ToolDefinition {
   final ToolAction action;
   final String label;
+  final IconData icon;
 
-  const ToolDefinition({required this.action, required this.label});
+  const ToolDefinition({
+    required this.action,
+    required this.label,
+    required this.icon,
+  });
 }
 
 class WorkflowStepData {
@@ -77,14 +80,17 @@ class WorkflowStepData {
         ToolDefinition(
           action: ToolAction.snipScreen,
           label: 'Bildschirmbereich aufnehmen (Snip)',
+          icon: Icons.crop,
         ),
         ToolDefinition(
           action: ToolAction.openFile,
           label: 'Bilddatei vom Computer öffnen',
+          icon: Icons.folder_open,
         ),
         ToolDefinition(
           action: ToolAction.showInfo,
           label: 'Bildinformationen anzeigen',
+          icon: Icons.info_outline,
         ),
       ],
     ),
@@ -98,18 +104,22 @@ class WorkflowStepData {
         ToolDefinition(
           action: ToolAction.autoPerspective,
           label: 'Automatische Entzerrung (KI/OpenCV)',
+          icon: Icons.auto_fix_high,
         ),
         ToolDefinition(
           action: ToolAction.manualPerspective,
           label: 'Manuelle 4-Punkt-Entzerrung',
+          icon: Icons.filter_center_focus,
         ),
         ToolDefinition(
           action: ToolAction.fineRotation,
-          label: 'Feinrotation (0,5°-Schritte mit Hilfsgitter)',
+          label: 'Feinrotation (0,5Â°-Schritte mit Hilfsgitter)',
+          icon: Icons.rotate_right,
         ),
         ToolDefinition(
           action: ToolAction.skipPerspective,
           label: 'Ohne Korrektur fortfahren',
+          icon: Icons.arrow_forward,
         ),
       ],
     ),
@@ -123,18 +133,22 @@ class WorkflowStepData {
         ToolDefinition(
           action: ToolAction.setReference,
           label: 'Referenzstrecke im Bild anklicken (2 Punkte)',
+          icon: Icons.straighten,
         ),
         ToolDefinition(
           action: ToolAction.enterLength,
           label: 'Reale Länge eingeben (z. B. 2.50 m)',
+          icon: Icons.edit,
         ),
         ToolDefinition(
           action: ToolAction.selectUnit,
           label: 'Einheit wählen: Meter (m) / cm / mm',
+          icon: Icons.tune,
         ),
         ToolDefinition(
           action: ToolAction.autoAdjust,
           label: 'Bestehende Messungen automatisch anpassen',
+          icon: Icons.sync,
         ),
       ],
     ),
@@ -147,31 +161,28 @@ class WorkflowStepData {
       availableTools: [
         ToolDefinition(
           action: ToolAction.measureDistance,
-          label: 'Strecke messen (S01, S02...)',
-        ),
-        ToolDefinition(
-          action: ToolAction.measureRectArea,
-          label: 'Rechteckfläche messen (F01, F02...)',
-        ),
-        ToolDefinition(
-          action: ToolAction.measureTriangleArea,
-          label: 'Dreiecksfläche messen',
+          label: 'Länge',
+          icon: Icons.timeline,
         ),
         ToolDefinition(
           action: ToolAction.measurePolygon,
-          label: 'Polygon (Vieleck) messen',
+          label: 'Fläche (Frei)',
+          icon: Icons.polyline,
+        ),
+        ToolDefinition(
+          action: ToolAction.measureRectArea,
+          label: 'Fläche (Rechteck)',
+          icon: Icons.crop_square,
         ),
         ToolDefinition(
           action: ToolAction.measureRoofAngle,
-          label: 'Dachneigungswinkel ermitteln',
+          label: 'Dachwinkel',
+          icon: Icons.roofing,
         ),
         ToolDefinition(
-          action: ToolAction.measureSlopedRoof,
-          label: 'Geneigte Dachfläche (Rechteck / Dreieck)',
-        ),
-        ToolDefinition(
-          action: ToolAction.movePointOrLabel,
-          label: 'Messpunkt oder Beschriftung verschieben',
+          action: ToolAction.selectEdit,
+          label: 'Auswählen/Bearbeiten',
+          icon: Icons.pan_tool_alt,
         ),
       ],
     ),

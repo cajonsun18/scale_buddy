@@ -222,8 +222,8 @@ return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entitie
 /// @nodoc
 
 
-class _WorkspaceState implements WorkspaceState {
-  const _WorkspaceState({this.loadedImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [], this.selectedEntityId, this.activeDragDetail}): _entities = entities;
+class _WorkspaceState extends WorkspaceState {
+  const _WorkspaceState({this.loadedImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [], this.selectedEntityId, this.activeDragDetail}): _entities = entities,super._();
   
 
 @override final  LoadedImageInfo? loadedImage;

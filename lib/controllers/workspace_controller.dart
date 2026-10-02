@@ -13,6 +13,10 @@ import '../tools/calibration_tool.dart';
 class ActiveToolNotifier extends Notifier<WorkspaceTool> {
   @override
   WorkspaceTool build() => const CalibrationTool();
+
+  void setTool(WorkspaceTool tool) {
+    state = tool;
+  }
 }
 
 final activeToolProvider = NotifierProvider<ActiveToolNotifier, WorkspaceTool>(
@@ -155,7 +159,35 @@ class WorkspaceController extends Notifier<WorkspaceState> {
 
   // --- WERKZEUG-ROUTING (NEU) ---
 
+  void cancelCurrentTool() {
+    final newEntities = state.entities
+        .where((e) {
+          return e.map(
+            calibration: (c) => c.isConfirmed || c.enteredDistance != null,
+            line: (l) => l.p1 != null && l.p2 != null,
+            rectangle: (r) => r.p1 != null && r.p2 != null,
+            polygon: (p) => p.isClosed,
+            angle: (a) => a.p1 != null && a.p2 != null,
+          );
+        })
+        .map((e) {
+          return e.map(
+            calibration: (c) => (!c.isConfirmed && c.enteredDistance != null)
+                ? c.copyWith(isConfirmed: true)
+                : c,
+            line: (l) => l,
+            rectangle: (r) => r,
+            polygon: (p) => p,
+            angle: (a) => a,
+          );
+        })
+        .toList();
+
+    state = state.copyWith(entities: newEntities, selectedEntityId: null);
+  }
+
   void handleTapUp(TapUpDetails details, Size size) {
+    if (size.width == 0 || size.height == 0) return;
     final tool = ref.read(activeToolProvider);
     state = tool.onTapUp(state, details, size);
   }

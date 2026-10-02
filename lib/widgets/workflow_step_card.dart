@@ -25,6 +25,7 @@ class WorkflowStepCard extends StatelessWidget {
 
   /// Optionaler Callback, wenn innerhalb des geöffneten Menüs ein Werkzeug angeklickt wird.
   final ValueChanged<ToolAction>? onToolSelected;
+  final ToolAction? activeToolAction;
 
   const WorkflowStepCard({
     super.key,
@@ -33,6 +34,7 @@ class WorkflowStepCard extends StatelessWidget {
     required this.status,
     required this.onTap,
     this.onToolSelected,
+    this.activeToolAction,
   });
 
   @override
@@ -218,18 +220,24 @@ class WorkflowStepCard extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: toolDef.action == activeToolAction
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: AppColors.of(context).sidebarBorder,
+                    color: toolDef.action == activeToolAction
+                        ? Theme.of(context).colorScheme.primary
+                        : AppColors.of(context).sidebarBorder,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      _iconForTool(toolDef.action),
+                      toolDef.icon,
                       size: 14,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: toolDef.action == activeToolAction
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey.shade600,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -255,35 +263,5 @@ class WorkflowStepCard extends StatelessWidget {
         }),
       ],
     );
-  }
-
-  IconData _iconForTool(ToolAction action) {
-    switch (action) {
-      case ToolAction.snipScreen:
-        return Icons.crop;
-      case ToolAction.openFile:
-        return Icons.folder_open;
-      case ToolAction.autoPerspective:
-        return Icons.auto_fix_high;
-      case ToolAction.manualPerspective:
-        return Icons.filter_center_focus;
-      case ToolAction.fineRotation:
-        return Icons.rotate_right;
-      case ToolAction.measureDistance:
-        return Icons.timeline;
-      case ToolAction.measureRectArea:
-        return Icons.crop_square;
-      case ToolAction.measureTriangleArea:
-        return Icons.change_history;
-      case ToolAction.measurePolygon:
-        return Icons.polyline;
-      case ToolAction.measureRoofAngle:
-      case ToolAction.measureSlopedRoof:
-        return Icons.roofing;
-      case ToolAction.selectUnit:
-        return Icons.tune;
-      default:
-        return Icons.arrow_right;
-    }
   }
 }

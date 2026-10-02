@@ -21,4 +21,34 @@ sealed class WorkspaceState with _$WorkspaceState {
     String? selectedEntityId,
     DragDetail? activeDragDetail,
   }) = _WorkspaceState;
+
+  const WorkspaceState._();
+
+  WorkspaceState removeEntity(String id) {
+    final newList = List<DrawingEntity>.from(entities)
+      ..removeWhere((e) => e.id == id);
+    return copyWith(entities: newList);
+  }
+
+  WorkspaceState addOrUpdateEntity(DrawingEntity entity) {
+    final newList = List<DrawingEntity>.from(entities);
+    final index = newList.indexWhere((e) => e.id == entity.id);
+    if (index >= 0) {
+      newList[index] = entity;
+    } else {
+      newList.add(entity);
+    }
+    return copyWith(entities: newList);
+  }
+
+  WorkspaceState updateEntity(
+    String id,
+    DrawingEntity Function(DrawingEntity) update,
+  ) {
+    final index = entities.indexWhere((e) => e.id == id);
+    if (index == -1) return this;
+    final newList = List<DrawingEntity>.from(entities);
+    newList[index] = update(newList[index]);
+    return copyWith(entities: newList);
+  }
 }

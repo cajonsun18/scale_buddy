@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:scale_buddy/controllers/workspace_controller.dart';
 import 'package:scale_buddy/models/loaded_image_info.dart';
 import 'package:scale_buddy/services/image_loader_service.dart';
 import 'package:scale_buddy/widgets/workspace_toolbar.dart';

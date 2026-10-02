@@ -1,8 +1,8 @@
-import 'dart:ui';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'test_helpers.dart';
+
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/models/workspace_state.dart';
 import 'package:scale_buddy/models/drag_detail.dart';
@@ -15,11 +15,7 @@ void main() {
 
     test('onTapUp sets p1 when empty', () {
       const state = WorkspaceState();
-      final details = TapUpDetails(
-        localPosition: const Offset(100, 100),
-        globalPosition: const Offset(100, 100),
-        kind: PointerDeviceKind.touch,
-      );
+      final details = createTapUpDetails(const Offset(100, 100));
 
       final newState = tool.onTapUp(state, details, size);
 
@@ -41,11 +37,7 @@ void main() {
         ],
       );
 
-      final details = TapUpDetails(
-        localPosition: const Offset(300, 100),
-        globalPosition: const Offset(300, 100),
-        kind: PointerDeviceKind.touch,
-      );
+      final details = createTapUpDetails(const Offset(300, 100));
 
       final newState = tool.onTapUp(state, details, size);
 
@@ -65,11 +57,7 @@ void main() {
       );
 
       // Distance is 5px (< minPointDistance)
-      final details = TapUpDetails(
-        localPosition: const Offset(105, 100),
-        globalPosition: const Offset(105, 100),
-        kind: PointerDeviceKind.touch,
-      );
+      final details = createTapUpDetails(const Offset(105, 100));
 
       final newState = tool.onTapUp(state, details, size);
 

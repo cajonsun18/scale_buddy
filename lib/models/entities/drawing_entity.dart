@@ -20,8 +20,8 @@ sealed class DrawingEntity with _$DrawingEntity {
 
   const factory DrawingEntity.line({
     required String id,
-    required Offset p1,
-    required Offset p2,
+    Offset? p1,
+    Offset? p2,
     required Color color,
   }) = LineEntity;
 
@@ -34,15 +34,15 @@ sealed class DrawingEntity with _$DrawingEntity {
 
   const factory DrawingEntity.rectangle({
     required String id,
-    required Offset p1,
-    required Offset p2,
+    Offset? p1,
+    Offset? p2,
     required Color color,
   }) = RectangleEntity;
 
   const factory DrawingEntity.angle({
     required String id,
-    required Offset p1,
-    required Offset p2,
+    Offset? p1,
+    Offset? p2,
     required Color color,
   }) = AngleEntity;
 }

@@ -1,0 +1,1822 @@
+﻿diff --git a/lib/controllers/workspace_controller.dart b/lib/controllers/workspace_controller.dart
+index f1023b0..9a485cd 100644
+--- a/lib/controllers/workspace_controller.dart
++++ b/lib/controllers/workspace_controller.dart
+@@ -13,6 +13,10 @@ import '../tools/calibration_tool.dart';
+ class ActiveToolNotifier extends Notifier<WorkspaceTool> {
+   @override
+   WorkspaceTool build() => const CalibrationTool();
++
++  void setTool(WorkspaceTool tool) {
++    state = tool;
++  }
+ }
+ 
+ final activeToolProvider = NotifierProvider<ActiveToolNotifier, WorkspaceTool>(
+diff --git a/lib/models/entities/drawing_entity.dart b/lib/models/entities/drawing_entity.dart
+index 30142d5..cdba856 100644
+--- a/lib/models/entities/drawing_entity.dart
++++ b/lib/models/entities/drawing_entity.dart
+@@ -20,8 +20,8 @@ sealed class DrawingEntity with _$DrawingEntity {
+ 
+   const factory DrawingEntity.line({
+     required String id,
+-    required Offset p1,
+-    required Offset p2,
++    Offset? p1,
++    Offset? p2,
+     required Color color,
+   }) = LineEntity;
+ 
+@@ -34,15 +34,15 @@ sealed class DrawingEntity with _$DrawingEntity {
+ 
+   const factory DrawingEntity.rectangle({
+     required String id,
+-    required Offset p1,
+-    required Offset p2,
++    Offset? p1,
++    Offset? p2,
+     required Color color,
+   }) = RectangleEntity;
+ 
+   const factory DrawingEntity.angle({
+     required String id,
+-    required Offset p1,
+-    required Offset p2,
++    Offset? p1,
++    Offset? p2,
+     required Color color,
+   }) = AngleEntity;
+ }
+diff --git a/lib/models/entities/drawing_entity.freezed.dart b/lib/models/entities/drawing_entity.freezed.dart
+index 1de09fa..a61271f 100644
+--- a/lib/models/entities/drawing_entity.freezed.dart
++++ b/lib/models/entities/drawing_entity.freezed.dart
+@@ -165,7 +165,7 @@ return angle(_that);case _:
+ /// }
+ /// ```
+ 
+-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  line,TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  rectangle,TResult Function( String id,  Offset p1,  Offset p2,  Color color)?  angle,required TResult orElse(),}) {final _that = this;
++@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,required TResult orElse(),}) {final _that = this;
+ switch (_that) {
+ case CalibrationEntity() when calibration != null:
+ return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
+@@ -190,7 +190,7 @@ return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
+ /// }
+ /// ```
+ 
+-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  line,required TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)  polygon,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  rectangle,required TResult Function( String id,  Offset p1,  Offset p2,  Color color)  angle,}) {final _that = this;
++@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  line,required TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)  polygon,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  rectangle,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  angle,}) {final _that = this;
+ switch (_that) {
+ case CalibrationEntity():
+ return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity():
+@@ -211,7 +211,7 @@ return angle(_that.id,_that.p1,_that.p2,_that.color);}
+ /// }
+ /// ```
+ 
+-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  line,TResult? Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  rectangle,TResult? Function( String id,  Offset p1,  Offset p2,  Color color)?  angle,}) {final _that = this;
++@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult? Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,}) {final _that = this;
+ switch (_that) {
+ case CalibrationEntity() when calibration != null:
+ return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
+@@ -310,12 +310,12 @@ as double,
+ 
+ 
+ class LineEntity implements DrawingEntity {
+-  const LineEntity({required this.id, required this.p1, required this.p2, required this.color});
++  const LineEntity({required this.id, this.p1, this.p2, required this.color});
+   
+ 
+ @override final  String id;
+- final  Offset p1;
+- final  Offset p2;
++ final  Offset? p1;
++ final  Offset? p2;
+  final  Color color;
+ 
+ /// Create a copy of DrawingEntity
+@@ -350,7 +350,7 @@ abstract mixin class $LineEntityCopyWith<$Res> implements $DrawingEntityCopyWith
+   factory $LineEntityCopyWith(LineEntity value, $Res Function(LineEntity) _then) = _$LineEntityCopyWithImpl;
+ @override @useResult
+ $Res call({
+- String id, Offset p1, Offset p2, Color color
++ String id, Offset? p1, Offset? p2, Color color
+ });
+ 
+ 
+@@ -367,12 +367,12 @@ class _$LineEntityCopyWithImpl<$Res>
+ 
+ /// Create a copy of DrawingEntity
+ /// with the given fields replaced by the non-null parameter values.
+-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
++@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = freezed,Object? p2 = freezed,Object? color = null,}) {
+   return _then(LineEntity(
+ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+-as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+-as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+-as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
++as String,p1: freezed == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
++as Offset?,p2: freezed == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
++as Offset?,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+ as Color,
+   ));
+ }
+@@ -464,12 +464,12 @@ as bool,
+ 
+ 
+ class RectangleEntity implements DrawingEntity {
+-  const RectangleEntity({required this.id, required this.p1, required this.p2, required this.color});
++  const RectangleEntity({required this.id, this.p1, this.p2, required this.color});
+   
+ 
+ @override final  String id;
+- final  Offset p1;
+- final  Offset p2;
++ final  Offset? p1;
++ final  Offset? p2;
+  final  Color color;
+ 
+ /// Create a copy of DrawingEntity
+@@ -504,7 +504,7 @@ abstract mixin class $RectangleEntityCopyWith<$Res> implements $DrawingEntityCop
+   factory $RectangleEntityCopyWith(RectangleEntity value, $Res Function(RectangleEntity) _then) = _$RectangleEntityCopyWithImpl;
+ @override @useResult
+ $Res call({
+- String id, Offset p1, Offset p2, Color color
++ String id, Offset? p1, Offset? p2, Color color
+ });
+ 
+ 
+@@ -521,12 +521,12 @@ class _$RectangleEntityCopyWithImpl<$Res>
+ 
+ /// Create a copy of DrawingEntity
+ /// with the given fields replaced by the non-null parameter values.
+-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
++@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = freezed,Object? p2 = freezed,Object? color = null,}) {
+   return _then(RectangleEntity(
+ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+-as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+-as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+-as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
++as String,p1: freezed == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
++as Offset?,p2: freezed == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
++as Offset?,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+ as Color,
+   ));
+ }
+@@ -538,12 +538,12 @@ as Color,
+ 
+ 
+ class AngleEntity implements DrawingEntity {
+-  const AngleEntity({required this.id, required this.p1, required this.p2, required this.color});
++  const AngleEntity({required this.id, this.p1, this.p2, required this.color});
+   
+ 
+ @override final  String id;
+- final  Offset p1;
+- final  Offset p2;
++ final  Offset? p1;
++ final  Offset? p2;
+  final  Color color;
+ 
+ /// Create a copy of DrawingEntity
+@@ -578,7 +578,7 @@ abstract mixin class $AngleEntityCopyWith<$Res> implements $DrawingEntityCopyWit
+   factory $AngleEntityCopyWith(AngleEntity value, $Res Function(AngleEntity) _then) = _$AngleEntityCopyWithImpl;
+ @override @useResult
+ $Res call({
+- String id, Offset p1, Offset p2, Color color
++ String id, Offset? p1, Offset? p2, Color color
+ });
+ 
+ 
+@@ -595,12 +595,12 @@ class _$AngleEntityCopyWithImpl<$Res>
+ 
+ /// Create a copy of DrawingEntity
+ /// with the given fields replaced by the non-null parameter values.
+-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = null,Object? p2 = null,Object? color = null,}) {
++@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? p1 = freezed,Object? p2 = freezed,Object? color = null,}) {
+   return _then(AngleEntity(
+ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+-as String,p1: null == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
+-as Offset,p2: null == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
+-as Offset,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
++as String,p1: freezed == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
++as Offset?,p2: freezed == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
++as Offset?,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+ as Color,
+   ));
+ }
+diff --git a/lib/models/workspace_state.dart b/lib/models/workspace_state.dart
+index 68ef087..ff96e84 100644
+--- a/lib/models/workspace_state.dart
++++ b/lib/models/workspace_state.dart
+@@ -21,4 +21,28 @@ sealed class WorkspaceState with _$WorkspaceState {
+     String? selectedEntityId,
+     DragDetail? activeDragDetail,
+   }) = _WorkspaceState;
++
++  const WorkspaceState._();
++
++  WorkspaceState addOrUpdateEntity(DrawingEntity entity) {
++    final newList = List<DrawingEntity>.from(entities);
++    final index = newList.indexWhere((e) => e.id == entity.id);
++    if (index >= 0) {
++      newList[index] = entity;
++    } else {
++      newList.add(entity);
++    }
++    return copyWith(entities: newList);
++  }
++
++  WorkspaceState updateEntity(
++    String id,
++    DrawingEntity Function(DrawingEntity) update,
++  ) {
++    final index = entities.indexWhere((e) => e.id == id);
++    if (index == -1) return this;
++    final newList = List<DrawingEntity>.from(entities);
++    newList[index] = update(newList[index]);
++    return copyWith(entities: newList);
++  }
+ }
+diff --git a/lib/models/workspace_state.freezed.dart b/lib/models/workspace_state.freezed.dart
+index 4c22387..01eded9 100644
+--- a/lib/models/workspace_state.freezed.dart
++++ b/lib/models/workspace_state.freezed.dart
+@@ -222,8 +222,8 @@ return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entitie
+ /// @nodoc
+ 
+ 
+-class _WorkspaceState implements WorkspaceState {
+-  const _WorkspaceState({this.loadedImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [], this.selectedEntityId, this.activeDragDetail}): _entities = entities;
++class _WorkspaceState extends WorkspaceState {
++  const _WorkspaceState({this.loadedImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [], this.selectedEntityId, this.activeDragDetail}): _entities = entities,super._();
+   
+ 
+ @override final  LoadedImageInfo? loadedImage;
+diff --git a/lib/screens/main_layout_screen.dart b/lib/screens/main_layout_screen.dart
+index f1f73ea..4125c1a 100644
+--- a/lib/screens/main_layout_screen.dart
++++ b/lib/screens/main_layout_screen.dart
+@@ -11,6 +11,11 @@ import '../models/entities/drawing_entity.dart';
+ import '../controllers/workspace_controller.dart';
+ import '../widgets/step_detail_view.dart';
+ import '../widgets/workflow_sidebar.dart';
++import '../tools/distance_tool.dart';
++import '../tools/calibration_tool.dart';
++import '../tools/polygon_tool.dart';
++import '../tools/rectangle_tool.dart';
++import '../tools/angle_tool.dart';
+ 
+ class MainLayoutScreen extends ConsumerStatefulWidget {
+   const MainLayoutScreen({super.key});
+@@ -66,7 +71,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
+           ),
+           DeleteScaleIntent: CallbackAction<DeleteScaleIntent>(
+             onInvoke: (_) {
+-              if (_activeStep == WorkflowStepType.calibrate) {
++              if (workspaceState.selectedEntityId != null) {
++                workspaceController.removeEntity(
++                  workspaceState.selectedEntityId!,
++                );
++              } else if (_activeStep == WorkflowStepType.calibrate) {
+                 workspaceController.clearCalibration();
+               }
+               return null;
+@@ -205,8 +214,27 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
+     setState(() {
+       _lastSelectedTool = action;
+     });
+-    if (action == ToolAction.openFile) {
+-      controller.loadFromPicker();
++    switch (action) {
++      case ToolAction.openFile:
++        controller.loadFromPicker();
++        break;
++      case ToolAction.measureDistance:
++        ref.read(activeToolProvider.notifier).setTool(const DistanceTool());
++        break;
++      case ToolAction.measureRectArea:
++        ref.read(activeToolProvider.notifier).setTool(const RectangleTool());
++        break;
++      case ToolAction.measurePolygon:
++        ref.read(activeToolProvider.notifier).setTool(const PolygonTool());
++        break;
++      case ToolAction.measureRoofAngle:
++        ref.read(activeToolProvider.notifier).setTool(const AngleTool());
++        break;
++      case ToolAction.setReference:
++        ref.read(activeToolProvider.notifier).setTool(const CalibrationTool());
++        break;
++      default:
++        break;
+     }
+   }
+ 
+diff --git a/lib/tools/angle_tool.dart b/lib/tools/angle_tool.dart
+new file mode 100644
+index 0000000..fcc5d16
+--- /dev/null
++++ b/lib/tools/angle_tool.dart
+@@ -0,0 +1,49 @@
++import 'package:flutter/material.dart';
++
++import '../models/entities/drawing_entity.dart';
++import '../models/workspace_state.dart';
++import 'workspace_tool.dart';
++
++class AngleTool extends WorkspaceTool {
++  const AngleTool();
++
++  @override
++  WorkspaceState onTapUp(
++    WorkspaceState state,
++    TapUpDetails details,
++    Size size,
++  ) {
++    if (size.width == 0 || size.height == 0) return state;
++
++    final normPoint = normalizePosition(details.localPosition, size);
++
++    // Find the currently open angle line (where p2 is null)
++    final openAngle = state.entities
++        .whereType<AngleEntity>()
++        .where((a) => a.p2 == null)
++        .lastOrNull;
++
++    if (openAngle == null) {
++      // Start a new angle line
++      final newId = 'A${DateTime.now().millisecondsSinceEpoch}';
++      final newAngle = DrawingEntity.angle(
++        id: newId,
++        p1: normPoint,
++        p2: null,
++        color: Colors.purple, // Distinct color for angles
++      ) as AngleEntity;
++
++      return state
++          .addOrUpdateEntity(newAngle)
++          .copyWith(selectedEntityId: newId);
++    } else {
++      // Add second point to existing angle line
++      return state.updateEntity(openAngle.id, (entity) {
++        if (entity is AngleEntity) {
++          return entity.copyWith(p2: normPoint);
++        }
++        return entity;
++      });
++    }
++  }
++}
+diff --git a/lib/tools/distance_tool.dart b/lib/tools/distance_tool.dart
+new file mode 100644
+index 0000000..f56a3ae
+--- /dev/null
++++ b/lib/tools/distance_tool.dart
+@@ -0,0 +1,47 @@
++import 'package:flutter/material.dart';
++
++import '../models/entities/drawing_entity.dart';
++import '../models/workspace_state.dart';
++import 'workspace_tool.dart';
++
++class DistanceTool extends WorkspaceTool {
++  const DistanceTool();
++
++  @override
++  WorkspaceState onTapUp(
++    WorkspaceState state,
++    TapUpDetails details,
++    Size size,
++  ) {
++    if (size.width == 0 || size.height == 0) return state;
++
++    final normPoint = normalizePosition(details.localPosition, size);
++
++    // Find the currently open line (where p2 is null)
++    final openLine = state.entities
++        .whereType<LineEntity>()
++        .where((l) => l.p2 == null)
++        .lastOrNull;
++
++    if (openLine == null) {
++      // Start a new line
++      final newId = 'L${DateTime.now().millisecondsSinceEpoch}';
++      final newLine = DrawingEntity.line(
++        id: newId,
++        p1: normPoint,
++        p2: null,
++        color: Colors.blue,
++      ) as LineEntity;
++
++      return state.addOrUpdateEntity(newLine).copyWith(selectedEntityId: newId);
++    } else {
++      // Add second point to existing line
++      return state.updateEntity(openLine.id, (entity) {
++        if (entity is LineEntity) {
++          return entity.copyWith(p2: normPoint);
++        }
++        return entity;
++      });
++    }
++  }
++}
+diff --git a/lib/tools/polygon_tool.dart b/lib/tools/polygon_tool.dart
+new file mode 100644
+index 0000000..950fb7e
+--- /dev/null
++++ b/lib/tools/polygon_tool.dart
+@@ -0,0 +1,71 @@
++import 'package:flutter/material.dart';
++
++import '../models/entities/drawing_entity.dart';
++import '../models/workspace_state.dart';
++import 'workspace_tool.dart';
++
++class PolygonTool extends WorkspaceTool {
++  const PolygonTool();
++
++  @override
++  WorkspaceState onTapUp(
++    WorkspaceState state,
++    TapUpDetails details,
++    Size size,
++  ) {
++    if (size.width == 0 || size.height == 0) return state;
++
++    final normPoint = normalizePosition(details.localPosition, size);
++
++    // Find the currently open polygon
++    final openPolygon = state.entities
++        .whereType<PolygonEntity>()
++        .where((p) => !p.isClosed)
++        .lastOrNull;
++
++    if (openPolygon == null) {
++      // Start a new polygon
++      final newId = 'P${DateTime.now().millisecondsSinceEpoch}';
++      final newPolygon = DrawingEntity.polygon(
++        id: newId,
++        points: [normPoint],
++        color: Colors.green, // Könnte später aus dem Theme oder Status kommen
++      ) as PolygonEntity;
++
++      return state
++          .addOrUpdateEntity(newPolygon)
++          .copyWith(selectedEntityId: newId);
++    } else {
++      // Add point to existing polygon
++      final firstPoint = openPolygon.points.first;
++      final startPix = Offset(
++        firstPoint.dx * size.width,
++        firstPoint.dy * size.height,
++      );
++
++      final distance = (details.localPosition - startPix).distance;
++
++      // Hit-Radius to close the polygon (e.g., 20 pixels)
++      if (distance < 20.0) {
++        if (openPolygon.points.length >= 3) {
++          return state.updateEntity(openPolygon.id, (entity) {
++            if (entity is PolygonEntity) {
++              return entity.copyWith(isClosed: true);
++            }
++            return entity;
++          });
++        } else {
++          // Ignore clicks too close to the start if we don't have enough points yet
++          return state;
++        }
++      } else {
++        return state.updateEntity(openPolygon.id, (entity) {
++          if (entity is PolygonEntity) {
++            return entity.copyWith(points: [...entity.points, normPoint]);
++          }
++          return entity;
++        });
++      }
++    }
++  }
++}
+diff --git a/lib/tools/rectangle_tool.dart b/lib/tools/rectangle_tool.dart
+new file mode 100644
+index 0000000..f17334a
+--- /dev/null
++++ b/lib/tools/rectangle_tool.dart
+@@ -0,0 +1,56 @@
++import 'package:flutter/material.dart';
++
++import '../models/entities/drawing_entity.dart';
++import '../models/workspace_state.dart';
++import 'workspace_tool.dart';
++
++class RectangleTool extends WorkspaceTool {
++  const RectangleTool();
++
++  @override
++  WorkspaceState onTapUp(
++    WorkspaceState state,
++    TapUpDetails details,
++    Size size,
++  ) {
++    if (size.width == 0 || size.height == 0) return state;
++
++    final normPoint = normalizePosition(details.localPosition, size);
++
++    // Find the currently open rectangle (where p2 is null)
++    final openRect = state.entities
++        .whereType<RectangleEntity>()
++        .where((r) => r.p2 == null)
++        .lastOrNull;
++
++    if (openRect == null) {
++      // Start a new rectangle
++      final newId = 'R${DateTime.now().millisecondsSinceEpoch}';
++      final newRect = DrawingEntity.rectangle(
++        id: newId,
++        p1: normPoint,
++        p2: null,
++        color: Colors.orange,
++      ) as RectangleEntity;
++
++      return state.addOrUpdateEntity(newRect).copyWith(selectedEntityId: newId);
++    } else {
++      // Add second point to existing rectangle, ensuring p1 is top-left and p2 is bottom-right
++      return state.updateEntity(openRect.id, (entity) {
++        if (entity is RectangleEntity && entity.p1 != null) {
++          final p1 = entity.p1!;
++          final minX = p1.dx < normPoint.dx ? p1.dx : normPoint.dx;
++          final minY = p1.dy < normPoint.dy ? p1.dy : normPoint.dy;
++          final maxX = p1.dx > normPoint.dx ? p1.dx : normPoint.dx;
++          final maxY = p1.dy > normPoint.dy ? p1.dy : normPoint.dy;
++
++          return entity.copyWith(
++            p1: Offset(minX, minY),
++            p2: Offset(maxX, maxY),
++          );
++        }
++        return entity;
++      });
++    }
++  }
++}
+diff --git a/lib/tools/workspace_tool.dart b/lib/tools/workspace_tool.dart
+index f83bec8..e76fd02 100644
+--- a/lib/tools/workspace_tool.dart
++++ b/lib/tools/workspace_tool.dart
+@@ -29,10 +29,18 @@ abstract class WorkspaceTool {
+     Size size,
+   ) => state;
+ 
+-  /// Aufgerufen, wenn das Ziehen beendet wird
+   WorkspaceState onPanEnd(
+     WorkspaceState state,
+     DragEndDetails details,
+     Size size,
+   ) => state;
++
++  /// Helper to convert local pointer coordinates into normalized (0.0 to 1.0) coordinates.
++  Offset normalizePosition(Offset localPosition, Size size) {
++    if (size.width == 0 || size.height == 0) return Offset.zero;
++    return Offset(
++      localPosition.dx / size.width,
++      localPosition.dy / size.height,
++    );
++  }
+ }
+diff --git a/lib/utils/geometry_utils.dart b/lib/utils/geometry_utils.dart
+new file mode 100644
+index 0000000..030e5b3
+--- /dev/null
++++ b/lib/utils/geometry_utils.dart
+@@ -0,0 +1,118 @@
++import 'dart:math';
++
++import 'package:flutter/material.dart';
++
++class GeometryUtils {
++  /// Berechnet den Flächenschwerpunkt (Centroid) eines Polygons
++  static Offset calculatePolygonCentroid(List<Offset> points) {
++    if (points.isEmpty) return Offset.zero;
++    if (points.length == 1) return points.first;
++    if (points.length == 2) {
++      return Offset(
++        (points[0].dx + points[1].dx) / 2,
++        (points[0].dy + points[1].dy) / 2,
++      );
++    }
++
++    double signedArea = 0.0;
++    double cx = 0.0;
++    double cy = 0.0;
++
++    for (int i = 0; i < points.length; i++) {
++      final p0 = points[i];
++      final p1 = points[(i + 1) % points.length];
++      final a = p0.dx * p1.dy - p1.dx * p0.dy;
++      signedArea += a;
++      cx += (p0.dx + p1.dx) * a;
++      cy += (p0.dy + p1.dy) * a;
++    }
++
++    signedArea *= 0.5;
++
++    // Falls alle Punkte auf einer Linie liegen (Fläche = 0)
++    if (signedArea == 0) {
++      double minX = points.first.dx, maxX = points.first.dx;
++      double minY = points.first.dy, maxY = points.first.dy;
++      for (final p in points) {
++        if (p.dx < minX) minX = p.dx;
++        if (p.dx > maxX) maxX = p.dx;
++        if (p.dy < minY) minY = p.dy;
++        if (p.dy > maxY) maxY = p.dy;
++      }
++      return Offset((minX + maxX) / 2, (minY + maxY) / 2);
++    }
++
++    cx /= (6.0 * signedArea);
++    cy /= (6.0 * signedArea);
++
++    return Offset(cx, cy);
++  }
++
++  /// Berechnet die Fläche eines Polygons in Pixel^2
++  static double calculatePolygonAreaPixel(List<Offset> points, Size imageSize) {
++    if (points.length < 3) return 0.0;
++
++    double area = 0.0;
++    for (int i = 0; i < points.length; i++) {
++      int j = (i + 1) % points.length;
++      area +=
++          (points[i].dx * imageSize.width) * (points[j].dy * imageSize.height);
++      area -=
++          (points[j].dx * imageSize.width) * (points[i].dy * imageSize.height);
++    }
++    return (area / 2.0).abs();
++  }
++
++  /// Berechnet den Winkel einer Linie zur Horizontalen (in Grad)
++  static double calculateAngleToHorizontal(Offset p1, Offset p2) {
++    final dx = p2.dx - p1.dx;
++    final dy = p2.dy - p1.dy; // Bildschirmkoordinaten (y nach unten)
++
++    // atan2(dy, dx) gibt Winkel im Bogenmaß.
++    // Wir ignorieren die Richtung (Linie p1->p2 oder p2->p1) für die Neigung.
++    double angleRad = atan2(dy, dx);
++    double angleDeg = angleRad * 180 / pi;
++
++    // Wir wollen den spitzen Winkel zur Bildhorizontalen
++    if (angleDeg < 0) angleDeg += 180;
++    if (angleDeg > 90) angleDeg = 180 - angleDeg;
++
++    return angleDeg;
++  }
++
++  static double? getPixelsPerMeter(
++    Size imageSize, {
++    Offset? calibP1,
++    Offset? calibP2,
++    double? calibDistance,
++    String unit = 'm',
++  }) {
++    if (calibP1 == null ||
++        calibP2 == null ||
++        calibDistance == null ||
++        calibDistance <= 0) {
++      return null;
++    }
++
++    final p1Pix = Offset(
++      calibP1.dx * imageSize.width,
++      calibP1.dy * imageSize.height,
++    );
++    final p2Pix = Offset(
++      calibP2.dx * imageSize.width,
++      calibP2.dy * imageSize.height,
++    );
++
++    final pixelDistance = (p2Pix - p1Pix).distance;
++    if (pixelDistance == 0) return null;
++
++    double distanceInMeters = calibDistance;
++    if (unit == 'cm') {
++      distanceInMeters = calibDistance / 100.0;
++    } else if (unit == 'mm') {
++      distanceInMeters = calibDistance / 1000.0;
++    }
++
++    return pixelDistance / distanceInMeters;
++  }
++}
+diff --git a/lib/widgets/measurement_label_widget.dart b/lib/widgets/measurement_label_widget.dart
+new file mode 100644
+index 0000000..b13c112
+--- /dev/null
++++ b/lib/widgets/measurement_label_widget.dart
+@@ -0,0 +1,69 @@
++import 'package:flutter/material.dart';
++
++class MeasurementLabelWidget extends StatelessWidget {
++  final String text;
++  final bool isSelected;
++  final VoidCallback onTap;
++  final VoidCallback? onDelete;
++
++  const MeasurementLabelWidget({
++    super.key,
++    required this.text,
++    required this.isSelected,
++    required this.onTap,
++    this.onDelete,
++  });
++
++  @override
++  Widget build(BuildContext context) {
++    return GestureDetector(
++      onTap: onTap,
++      child: Container(
++        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
++        decoration: BoxDecoration(
++          color: isSelected
++              ? Colors.amber.shade100
++              : Colors.white.withOpacity(0.9),
++          border: Border.all(
++            color: isSelected ? Colors.amber.shade800 : Colors.grey.shade400,
++            width: isSelected ? 2 : 1,
++          ),
++          borderRadius: BorderRadius.circular(8),
++          boxShadow: [
++            BoxShadow(
++              color: Colors.black.withOpacity(0.1),
++              blurRadius: 4,
++              offset: const Offset(0, 2),
++            ),
++          ],
++        ),
++        child: Row(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            Text(
++              text,
++              style: TextStyle(
++                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
++                color: Colors.black87,
++              ),
++            ),
++            if (isSelected && onDelete != null) ...[
++              const SizedBox(width: 8),
++              GestureDetector(
++                onTap: onDelete,
++                child: Container(
++                  decoration: const BoxDecoration(
++                    color: Colors.red,
++                    shape: BoxShape.circle,
++                  ),
++                  padding: const EdgeInsets.all(4),
++                  child: const Icon(Icons.close, size: 14, color: Colors.white),
++                ),
++              ),
++            ],
++          ],
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/widgets/measurement_labels_overlay.dart b/lib/widgets/measurement_labels_overlay.dart
+new file mode 100644
+index 0000000..bdbc2eb
+--- /dev/null
++++ b/lib/widgets/measurement_labels_overlay.dart
+@@ -0,0 +1,230 @@
++import 'dart:math';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++
++import '../models/entities/drawing_entity.dart';
++import '../controllers/workspace_controller.dart';
++import '../utils/geometry_utils.dart';
++import 'measurement_label_widget.dart';
++
++class MeasurementLabelsOverlay extends ConsumerWidget {
++  final Size size;
++
++  const MeasurementLabelsOverlay({super.key, required this.size});
++
++  @override
++  Widget build(BuildContext context, WidgetRef ref) {
++    final state = ref.watch(workspaceControllerProvider);
++    final controller = ref.read(workspaceControllerProvider.notifier);
++
++    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
++    final pixelsPerMeter = GeometryUtils.getPixelsPerMeter(
++      size,
++      calibP1: calib?.p1,
++      calibP2: calib?.p2,
++      calibDistance: calib?.enteredDistance,
++      unit: calib?.selectedUnit ?? 'm',
++    );
++
++    final widgets = <Widget>[];
++
++    for (final entity in state.entities) {
++      if (entity is CalibrationEntity) continue; // Already handled
++
++      final isSelected = entity.id == state.selectedEntityId;
++
++      entity.map(
++        calibration: (_) {},
++        line: (line) {
++          if (pixelsPerMeter == null) return;
++          if (line.p1 != null && line.p2 != null) {
++            final p1Pix = Offset(
++              line.p1!.dx * size.width,
++              line.p1!.dy * size.height,
++            );
++            final p2Pix = Offset(
++              line.p2!.dx * size.width,
++              line.p2!.dy * size.height,
++            );
++            final distPix = (p2Pix - p1Pix).distance;
++            final distMeters = distPix / pixelsPerMeter;
++
++            final centerPix = Offset(
++              (p1Pix.dx + p2Pix.dx) / 2,
++              (p1Pix.dy + p2Pix.dy) / 2,
++            );
++
++            widgets.add(
++              Positioned(
++                left: centerPix.dx,
++                top: centerPix.dy,
++                child: FractionalTranslation(
++                  translation: const Offset(-0.5, -0.5),
++                  child: MeasurementLabelWidget(
++                    text: '${distMeters.toStringAsFixed(2)} m',
++                    isSelected: isSelected,
++                    onTap: () => controller.selectEntity(entity.id),
++                    onDelete: () => controller.removeEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++          }
++        },
++        rectangle: (rect) {
++          if (pixelsPerMeter == null) return;
++          if (rect.p1 != null && rect.p2 != null) {
++            final p1Pix = Offset(
++              rect.p1!.dx * size.width,
++              rect.p1!.dy * size.height,
++            );
++            final p2Pix = Offset(
++              rect.p2!.dx * size.width,
++              rect.p2!.dy * size.height,
++            );
++
++            final widthPix = (p2Pix.dx - p1Pix.dx).abs();
++            final heightPix = (p2Pix.dy - p1Pix.dy).abs();
++
++            final widthMeters = widthPix / pixelsPerMeter;
++            final heightMeters = heightPix / pixelsPerMeter;
++            final area = widthMeters * heightMeters;
++
++            final centerPix = Offset(
++              (p1Pix.dx + p2Pix.dx) / 2,
++              (p1Pix.dy + p2Pix.dy) / 2,
++            );
++
++            widgets.add(
++              Positioned(
++                left: centerPix.dx,
++                top: centerPix.dy,
++                child: FractionalTranslation(
++                  translation: const Offset(-0.5, -0.5),
++                  child: MeasurementLabelWidget(
++                    text: '${area.toStringAsFixed(2)} m²',
++                    isSelected: isSelected,
++                    onTap: () => controller.selectEntity(entity.id),
++                    onDelete: () => controller.removeEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++
++            // Top edge
++            widgets.add(
++              Positioned(
++                left: centerPix.dx,
++                top: p1Pix.dy,
++                child: FractionalTranslation(
++                  translation: const Offset(-0.5, -1.2),
++                  child: MeasurementLabelWidget(
++                    text: '${widthMeters.toStringAsFixed(2)} m',
++                    isSelected: false,
++                    onTap: () => controller.selectEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++            // Left edge
++            widgets.add(
++              Positioned(
++                left: p1Pix.dx,
++                top: centerPix.dy,
++                child: FractionalTranslation(
++                  translation: const Offset(-1.2, -0.5),
++                  child: MeasurementLabelWidget(
++                    text: '${heightMeters.toStringAsFixed(2)} m',
++                    isSelected: false,
++                    onTap: () => controller.selectEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++          }
++        },
++        polygon: (polygon) {
++          if (pixelsPerMeter == null) return;
++          if (polygon.points.length >= 3 && polygon.isClosed) {
++            final centroidNorm = GeometryUtils.calculatePolygonCentroid(
++              polygon.points,
++            );
++            final centroidPix = Offset(
++              centroidNorm.dx * size.width,
++              centroidNorm.dy * size.height,
++            );
++
++            final areaPix = GeometryUtils.calculatePolygonAreaPixel(
++              polygon.points,
++              size,
++            );
++            final areaMeters = areaPix / (pixelsPerMeter * pixelsPerMeter);
++
++            widgets.add(
++              Positioned(
++                left: centroidPix.dx,
++                top: centroidPix.dy,
++                child: FractionalTranslation(
++                  translation: const Offset(-0.5, -0.5),
++                  child: MeasurementLabelWidget(
++                    text: '${areaMeters.toStringAsFixed(2)} m²',
++                    isSelected: isSelected,
++                    onTap: () => controller.selectEntity(entity.id),
++                    onDelete: () => controller.removeEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++          }
++        },
++        angle: (angle) {
++          if (angle.p1 != null && angle.p2 != null) {
++            final p1Pix = Offset(
++              angle.p1!.dx * size.width,
++              angle.p1!.dy * size.height,
++            );
++            final p2Pix = Offset(
++              angle.p2!.dx * size.width,
++              angle.p2!.dy * size.height,
++            );
++
++            final angleDeg = GeometryUtils.calculateAngleToHorizontal(
++              p1Pix,
++              p2Pix,
++            );
++
++            final distance = (p2Pix - p1Pix).distance;
++            final dx = p2Pix.dx - p1Pix.dx;
++            final dy = p2Pix.dy - p1Pix.dy;
++
++            final angleRad = atan2(dy, dx);
++            final midAngleRad = angleRad / 2;
++            final labelRadius = distance * 0.4;
++
++            final labelX = p1Pix.dx + cos(midAngleRad) * labelRadius;
++            final labelY = p1Pix.dy + sin(midAngleRad) * labelRadius;
++
++            widgets.add(
++              Positioned(
++                left: labelX,
++                top: labelY,
++                child: FractionalTranslation(
++                  translation: const Offset(-0.5, -0.5),
++                  child: MeasurementLabelWidget(
++                    text: '${angleDeg.toStringAsFixed(1)}°',
++                    isSelected: isSelected,
++                    onTap: () => controller.selectEntity(entity.id),
++                    onDelete: () => controller.removeEntity(entity.id),
++                  ),
++                ),
++              ),
++            );
++          }
++        },
++      );
++    }
++
++    return Stack(clipBehavior: Clip.none, children: widgets);
++  }
++}
+diff --git a/lib/widgets/workspace_image_view.dart b/lib/widgets/workspace_image_view.dart
+index 7f3abe4..3aa3345 100644
+--- a/lib/widgets/workspace_image_view.dart
++++ b/lib/widgets/workspace_image_view.dart
+@@ -1,3 +1,5 @@
++import 'dart:math';
++
+ import 'package:flutter/material.dart';
+ 
+ import '../theme/app_theme.dart';
+@@ -8,6 +10,8 @@ import '../controllers/workspace_controller.dart';
+ import '../models/entities/drawing_entity.dart';
+ import '../models/workflow_step.dart';
+ import 'calibration_input_widget.dart';
++import 'measurement_labels_overlay.dart';
++import '../tools/calibration_tool.dart';
+ 
+ class WorkspaceImageView extends ConsumerStatefulWidget {
+   final WorkflowStepType activeStep;
+@@ -106,43 +110,31 @@ class _ImageWithPointsOverlayState
+         return Stack(
+           fit: StackFit.expand,
+           children: [
+-            if (widget.isCalibrateStep)
+-              Positioned.fill(
+-                child: Listener(
+-                  onPointerHover: (event) {},
+-                  child: GestureDetector(
+-                    onTapUp: (details) {
+-                      final renderBox = context.findRenderObject() as RenderBox;
+-                      controller.handleTapUp(details, renderBox.size);
+-                    },
+-                    // KEIN onPan... hier! So kann das InteractiveViewer-Zoom/Pan stattfinden.
+-                    child: Container(
+-                      color: Colors.transparent,
+-                      child: CustomPaint(
+-                        painter: _EntitiesPainter(
+-                          entities: state.entities,
+-                          isCalibrateStep: widget.isCalibrateStep,
+-                          primaryColor: Theme.of(context).colorScheme.primary,
+-                          successColor: AppColors.of(context).success,
+-                          pointColor: Colors.white,
+-                        ),
++            Positioned.fill(
++              child: Listener(
++                onPointerHover: (event) {},
++                child: GestureDetector(
++                  onTapUp: (details) {
++                    final renderBox = context.findRenderObject() as RenderBox;
++                    controller.handleTapUp(details, renderBox.size);
++                  },
++                  // KEIN onPan... hier! So kann das InteractiveViewer-Zoom/Pan stattfinden.
++                  child: Container(
++                    color: Colors.transparent,
++                    child: CustomPaint(
++                      painter: _EntitiesPainter(
++                        entities: state.entities,
++                        isCalibrateStep: widget.isCalibrateStep,
++                        primaryColor: Theme.of(context).colorScheme.primary,
++                        successColor: AppColors.of(context).success,
++                        pointColor: Colors.white,
++                        selectedEntityId: state.selectedEntityId,
+                       ),
+                     ),
+                   ),
+                 ),
+-              )
+-            else
+-              Positioned.fill(
+-                child: CustomPaint(
+-                  painter: _EntitiesPainter(
+-                    entities: state.entities,
+-                    isCalibrateStep: widget.isCalibrateStep,
+-                    primaryColor: Theme.of(context).colorScheme.primary,
+-                    successColor: AppColors.of(context).success,
+-                    pointColor: Colors.white,
+-                  ),
+-                ),
+               ),
++            ),
+ 
+             if (widget.isCalibrateStep && calib != null) ...[
+               if (calib.p1 != null)
+@@ -232,6 +224,8 @@ class _ImageWithPointsOverlayState
+                   },
+                 ),
+               ),
++            if (!widget.isCalibrateStep)
++              Positioned.fill(child: MeasurementLabelsOverlay(size: size)),
+           ],
+         );
+       },
+@@ -363,6 +357,7 @@ class _EntitiesPainter extends CustomPainter {
+   final Color primaryColor;
+   final Color successColor;
+   final Color pointColor;
++  final String? selectedEntityId;
+ 
+   _EntitiesPainter({
+     required this.entities,
+@@ -370,15 +365,244 @@ class _EntitiesPainter extends CustomPainter {
+     required this.primaryColor,
+     required this.successColor,
+     required this.pointColor,
++    this.selectedEntityId,
+   });
+ 
+   @override
+   void paint(Canvas canvas, Size size) {
+     for (final entity in entities) {
+-      if (entity is CalibrationEntity) {
+-        _paintCalibration(canvas, size, entity);
++      entity.map(
++        calibration: (e) => _paintCalibration(canvas, size, e),
++        line: (e) => _paintLine(canvas, size, e),
++        polygon: (e) => _paintPolygon(canvas, size, e),
++        rectangle: (e) => _paintRectangle(canvas, size, e),
++        angle: (e) => _paintAngle(canvas, size, e),
++      );
++    }
++  }
++
++  void _paintAngle(Canvas canvas, Size size, AngleEntity angle) {
++    final p1 = angle.p1;
++    final p2 = angle.p2;
++
++    if (p1 == null && p2 == null) return;
++
++    final paintLine = Paint()
++      ..color = angle.color
++      ..strokeWidth = _getStrokeWidth(angle.id)
++      ..strokeCap = StrokeCap.round
++      ..style = PaintingStyle.stroke;
++
++    final paintHelper = Paint()
++      ..color = angle.color.withValues(alpha: 0.5)
++      ..strokeWidth = 2.0
++      ..style = PaintingStyle.stroke;
++
++    final paintPoint = Paint()
++      ..color = Colors.white
++      ..style = PaintingStyle.fill;
++    final paintPointBorder = Paint()
++      ..color = angle.color
++      ..strokeWidth = 2.0
++      ..style = PaintingStyle.stroke;
++
++    Offset? p1Pixel, p2Pixel;
++
++    if (p1 != null) {
++      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
++    }
++    if (p2 != null) {
++      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
++    }
++
++    if (p1Pixel != null && p2Pixel != null) {
++      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
++
++      final distance = (p2Pixel - p1Pixel).distance;
++      if (distance > 0) {
++        // Draw horizontal helper line
++        final helperEnd = Offset(p1Pixel.dx + distance, p1Pixel.dy);
++
++        // Simples Dashed-Line Muster
++        const dashWidth = 5.0;
++        const dashSpace = 5.0;
++        double startX = p1Pixel.dx;
++        while (startX < helperEnd.dx) {
++          canvas.drawLine(
++            Offset(startX, p1Pixel.dy),
++            Offset(
++              startX + dashWidth < helperEnd.dx
++                  ? startX + dashWidth
++                  : helperEnd.dx,
++              p1Pixel.dy,
++            ),
++            paintHelper,
++          );
++          startX += dashWidth + dashSpace;
++        }
++
++        // Draw arc
++        final rect = Rect.fromCircle(center: p1Pixel, radius: distance * 0.3);
++        final dx = p2Pixel.dx - p1Pixel.dx;
++        final dy = p2Pixel.dy - p1Pixel.dy;
++        final angleRad = atan2(dy, dx);
++
++        canvas.drawArc(rect, 0, angleRad, false, paintLine);
+       }
+     }
++
++    if (p1Pixel != null) {
++      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
++    }
++    if (p2Pixel != null) {
++      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
++    }
++  }
++
++  void _paintRectangle(Canvas canvas, Size size, RectangleEntity rect) {
++    final p1 = rect.p1;
++    final p2 = rect.p2;
++
++    if (p1 == null && p2 == null) return;
++
++    final paintLine = Paint()
++      ..color = rect.color
++      ..strokeWidth = _getStrokeWidth(rect.id)
++      ..strokeCap = StrokeCap.round
++      ..strokeJoin = StrokeJoin.round
++      ..style = PaintingStyle.stroke;
++
++    final paintFill = Paint()
++      ..color = rect.color.withValues(alpha: 0.2)
++      ..style = PaintingStyle.fill;
++
++    final paintPoint = Paint()
++      ..color = Colors.white
++      ..style = PaintingStyle.fill;
++    final paintPointBorder = Paint()
++      ..color = rect.color
++      ..strokeWidth = 2.0
++      ..style = PaintingStyle.stroke;
++
++    Offset? p1Pixel, p2Pixel;
++
++    if (p1 != null) {
++      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
++    }
++    if (p2 != null) {
++      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
++    }
++
++    if (p1Pixel != null && p2Pixel != null) {
++      final rectShape = Rect.fromPoints(p1Pixel, p2Pixel);
++      canvas.drawRect(rectShape, paintFill);
++      canvas.drawRect(rectShape, paintLine);
++    }
++
++    if (p1Pixel != null) {
++      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
++    }
++    if (p2Pixel != null) {
++      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
++    }
++  }
++
++  void _paintPolygon(Canvas canvas, Size size, PolygonEntity polygon) {
++    if (polygon.points.isEmpty) return;
++
++    final paintLine = Paint()
++      ..color = polygon.color
++      ..strokeWidth = _getStrokeWidth(polygon.id)
++      ..strokeCap = StrokeCap.round
++      ..strokeJoin = StrokeJoin.round
++      ..style = PaintingStyle.stroke;
++
++    final paintFill = Paint()
++      ..color = polygon.color.withValues(alpha: 0.2)
++      ..style = PaintingStyle.fill;
++
++    final path = Path();
++    final firstPoint = Offset(
++      polygon.points.first.dx * size.width,
++      polygon.points.first.dy * size.height,
++    );
++    path.moveTo(firstPoint.dx, firstPoint.dy);
++
++    for (int i = 1; i < polygon.points.length; i++) {
++      final p = Offset(
++        polygon.points[i].dx * size.width,
++        polygon.points[i].dy * size.height,
++      );
++      path.lineTo(p.dx, p.dy);
++    }
++
++    if (polygon.isClosed) {
++      path.close();
++      canvas.drawPath(path, paintFill);
++    }
++
++    canvas.drawPath(path, paintLine);
++
++    // Points
++    final paintPoint = Paint()
++      ..color = Colors.white
++      ..style = PaintingStyle.fill;
++    final paintPointBorder = Paint()
++      ..color = polygon.color
++      ..strokeWidth = 2.0
++      ..style = PaintingStyle.stroke;
++
++    for (final normPoint in polygon.points) {
++      final p = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
++      canvas.drawCircle(p, 5.0, paintPoint);
++      canvas.drawCircle(p, 5.0, paintPointBorder);
++    }
++  }
++
++  void _paintLine(Canvas canvas, Size size, LineEntity line) {
++    final p1 = line.p1;
++    final p2 = line.p2;
++
++    if (p1 == null && p2 == null) return;
++
++    final paintLine = Paint()
++      ..color = line.color
++      ..strokeWidth = _getStrokeWidth(line.id)
++      ..strokeCap = StrokeCap.round;
++
++    final paintPoint = Paint()
++      ..color = Colors.white
++      ..style = PaintingStyle.fill;
++    final paintPointBorder = Paint()
++      ..color = line.color
++      ..strokeWidth = 2.0
++      ..style = PaintingStyle.stroke;
++
++    Offset? p1Pixel, p2Pixel;
++
++    if (p1 != null) {
++      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
++    }
++    if (p2 != null) {
++      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
++    }
++
++    if (p1Pixel != null && p2Pixel != null) {
++      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
++    }
++
++    if (p1Pixel != null) {
++      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
++    }
++    if (p2Pixel != null) {
++      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
++      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
++    }
+   }
+ 
+   void _paintCalibration(Canvas canvas, Size size, CalibrationEntity calib) {
+@@ -429,4 +653,8 @@ class _EntitiesPainter extends CustomPainter {
+   bool shouldRepaint(covariant _EntitiesPainter oldDelegate) {
+     return true; // Im echten Einsatz könnten wir auf Listen-Änderungen optimieren
+   }
++
++  double _getStrokeWidth(String id) {
++    return id == selectedEntityId ? 5.0 : 3.0;
++  }
+ }
+diff --git a/test/models/workspace_state_test.dart b/test/models/workspace_state_test.dart
+new file mode 100644
+index 0000000..3134839
+--- /dev/null
++++ b/test/models/workspace_state_test.dart
+@@ -0,0 +1,85 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:scale_buddy/models/entities/drawing_entity.dart';
++import 'package:scale_buddy/models/workspace_state.dart';
++
++void main() {
++  group('WorkspaceState helpers', () {
++    test('addOrUpdateEntity adds a new entity if it does not exist', () {
++      const state = WorkspaceState();
++
++      const newEntity = DrawingEntity.line(
++        id: '1',
++        p1: Offset(0, 0),
++        p2: Offset(1, 1),
++        color: Colors.red,
++      );
++
++      final newState = state.addOrUpdateEntity(newEntity);
++
++      expect(newState.entities.length, 1);
++      expect(newState.entities.first, newEntity);
++    });
++
++    test('addOrUpdateEntity updates an existing entity with the same id', () {
++      const initialEntity = DrawingEntity.line(
++        id: '1',
++        p1: Offset(0, 0),
++        p2: Offset(1, 1),
++        color: Colors.red,
++      );
++
++      final state = const WorkspaceState(entities: [initialEntity]);
++
++      final updatedEntity = (initialEntity as LineEntity).copyWith(
++        color: Colors.blue,
++      );
++
++      final newState = state.addOrUpdateEntity(updatedEntity);
++
++      expect(newState.entities.length, 1);
++      expect((newState.entities.first as LineEntity).color, Colors.blue);
++    });
++
++    test('updateEntity modifies an existing entity based on the callback', () {
++      const initialEntity = DrawingEntity.line(
++        id: '1',
++        p1: Offset(0, 0),
++        p2: Offset(1, 1),
++        color: Colors.red,
++      );
++
++      final state = const WorkspaceState(entities: [initialEntity]);
++
++      final newState = state.updateEntity('1', (entity) {
++        if (entity is LineEntity) {
++          return entity.copyWith(color: Colors.green);
++        }
++        return entity;
++      });
++
++      expect(newState.entities.length, 1);
++      expect((newState.entities.first as LineEntity).color, Colors.green);
++    });
++
++    test('updateEntity does nothing if the entity id does not exist', () {
++      const initialEntity = DrawingEntity.line(
++        id: '1',
++        p1: Offset(0, 0),
++        p2: Offset(1, 1),
++        color: Colors.red,
++      );
++
++      final state = const WorkspaceState(entities: [initialEntity]);
++
++      final newState = state.updateEntity('non_existent', (entity) {
++        return (entity as LineEntity).copyWith(color: Colors.green);
++      });
++
++      // The state should be exactly the same, with no changes
++      expect(newState.entities.length, 1);
++      expect((newState.entities.first as LineEntity).color, Colors.red);
++      expect(newState, same(state));
++    });
++  });
++}
+diff --git a/test/tools/angle_tool_test.dart b/test/tools/angle_tool_test.dart
+new file mode 100644
+index 0000000..6bbc54d
+--- /dev/null
++++ b/test/tools/angle_tool_test.dart
+@@ -0,0 +1,61 @@
++import 'dart:ui';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:scale_buddy/models/entities/drawing_entity.dart';
++import 'package:scale_buddy/models/workspace_state.dart';
++import 'package:scale_buddy/tools/angle_tool.dart';
++
++void main() {
++  group('AngleTool', () {
++    const tool = AngleTool();
++    const size = Size(1000, 1000);
++
++    test('onTapUp creates a new AngleEntity if none is open', () {
++      const state = WorkspaceState();
++      final details = TapUpDetails(
++        localPosition: const Offset(100, 200),
++        globalPosition: const Offset(100, 200),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final entity = newState.entities.first;
++      expect(entity, isA<AngleEntity>());
++
++      final angle = entity as AngleEntity;
++      expect(angle.p1, const Offset(0.1, 0.2));
++      expect(angle.p2, isNull);
++
++      expect(newState.selectedEntityId, angle.id);
++    });
++
++    test('onTapUp sets p2 of the active open angle', () {
++      final initialAngle = DrawingEntity.angle(
++        id: '1',
++        p1: const Offset(0.1, 0.2),
++        p2: null,
++        color: Colors.purple,
++      ) as AngleEntity;
++      final state = WorkspaceState(
++        entities: [initialAngle],
++        selectedEntityId: '1',
++      );
++
++      final details = TapUpDetails(
++        localPosition: const Offset(300, 400),
++        globalPosition: const Offset(300, 400),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final angle = newState.entities.first as AngleEntity;
++      expect(angle.p1, const Offset(0.1, 0.2)); // p1 remains unchanged
++      expect(angle.p2, const Offset(0.3, 0.4)); // p2 is updated
++    });
++  });
++}
+diff --git a/test/tools/distance_tool_test.dart b/test/tools/distance_tool_test.dart
+new file mode 100644
+index 0000000..15b51d5
+--- /dev/null
++++ b/test/tools/distance_tool_test.dart
+@@ -0,0 +1,85 @@
++import 'dart:ui';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:scale_buddy/models/entities/drawing_entity.dart';
++import 'package:scale_buddy/models/workspace_state.dart';
++import 'package:scale_buddy/tools/distance_tool.dart';
++
++void main() {
++  group('DistanceTool', () {
++    const tool = DistanceTool();
++    const size = Size(1000, 1000);
++
++    test('onTapUp creates a new LineEntity if none is open', () {
++      const state = WorkspaceState();
++      final details = TapUpDetails(
++        localPosition: const Offset(100, 200),
++        globalPosition: const Offset(100, 200),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final entity = newState.entities.first;
++      expect(entity, isA<LineEntity>());
++
++      final line = entity as LineEntity;
++      expect(line.p1, const Offset(0.1, 0.2));
++      expect(line.p2, isNull);
++
++      expect(newState.selectedEntityId, line.id);
++    });
++
++    test('onTapUp sets p2 of the active open line', () {
++      final initialLine = DrawingEntity.line(
++        id: '1',
++        p1: const Offset(0.1, 0.2),
++        p2: null,
++        color: Colors.blue,
++      ) as LineEntity;
++      final state = WorkspaceState(
++        entities: [initialLine],
++        selectedEntityId: '1',
++      );
++
++      final details = TapUpDetails(
++        localPosition: const Offset(300, 400),
++        globalPosition: const Offset(300, 400),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final line = newState.entities.first as LineEntity;
++      expect(line.p1, const Offset(0.1, 0.2)); // p1 remains unchanged
++      expect(line.p2, const Offset(0.3, 0.4)); // p2 is updated
++    });
++
++    test('onTapUp creates a second line if the first is complete', () {
++      final initialLine = DrawingEntity.line(
++        id: '1',
++        p1: const Offset(0.1, 0.2),
++        p2: const Offset(0.3, 0.4),
++        color: Colors.blue,
++      ) as LineEntity;
++      final state = WorkspaceState(entities: [initialLine]);
++
++      final details = TapUpDetails(
++        localPosition: const Offset(500, 500),
++        globalPosition: const Offset(500, 500),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 2);
++      final line2 = newState.entities.last as LineEntity;
++      expect(line2.id, isNot('1'));
++      expect(line2.p1, const Offset(0.5, 0.5));
++      expect(line2.p2, isNull);
++    });
++  });
++}
+diff --git a/test/tools/polygon_tool_test.dart b/test/tools/polygon_tool_test.dart
+new file mode 100644
+index 0000000..923eb23
+--- /dev/null
++++ b/test/tools/polygon_tool_test.dart
+@@ -0,0 +1,124 @@
++import 'dart:ui';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:scale_buddy/models/entities/drawing_entity.dart';
++import 'package:scale_buddy/models/workspace_state.dart';
++import 'package:scale_buddy/tools/polygon_tool.dart';
++
++void main() {
++  group('PolygonTool', () {
++    const tool = PolygonTool();
++    const size = Size(1000, 1000);
++
++    test('onTapUp creates a new PolygonEntity if none is open', () {
++      const state = WorkspaceState();
++      final details = TapUpDetails(
++        localPosition: const Offset(100, 200),
++        globalPosition: const Offset(100, 200),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final entity = newState.entities.first;
++      expect(entity, isA<PolygonEntity>());
++
++      final polygon = entity as PolygonEntity;
++      expect(polygon.points.length, 1);
++      expect(polygon.points.first, const Offset(0.1, 0.2));
++      expect(polygon.isClosed, false);
++      expect(newState.selectedEntityId, polygon.id);
++    });
++
++    test('onTapUp adds a point to an existing open PolygonEntity', () {
++      final initialPolygon = DrawingEntity.polygon(
++        id: '1',
++        points: [const Offset(0.1, 0.2)],
++        color: Colors.green,
++      ) as PolygonEntity;
++      final state = WorkspaceState(
++        entities: [initialPolygon],
++        selectedEntityId: '1',
++      );
++
++      final details = TapUpDetails(
++        localPosition: const Offset(300, 400),
++        globalPosition: const Offset(300, 400),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final polygon = newState.entities.first as PolygonEntity;
++      expect(polygon.points.length, 2);
++      expect(polygon.points[0], const Offset(0.1, 0.2));
++      expect(polygon.points[1], const Offset(0.3, 0.4));
++      expect(polygon.isClosed, false);
++    });
++
++    test('onTapUp closes the polygon if clicked near start point and has >= 3 points', () {
++      final initialPolygon = DrawingEntity.polygon(
++        id: '1',
++        points: [
++          const Offset(0.1, 0.2), // Start point
++          const Offset(0.3, 0.2), // Point 2
++          const Offset(0.3, 0.4), // Point 3
++        ],
++        color: Colors.green,
++      ) as PolygonEntity;
++      final state = WorkspaceState(
++        entities: [initialPolygon],
++        selectedEntityId: '1',
++      );
++
++      // Click near the start point (0.1 * 1000 = 100, 0.2 * 1000 = 200)
++      final details = TapUpDetails(
++        localPosition: const Offset(
++          105,
++          205,
++        ), // Distance is sqrt(25 + 25) = ~7.07 < 20
++        globalPosition: const Offset(105, 205),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final polygon = newState.entities.first as PolygonEntity;
++      expect(polygon.points.length, 3); // Does not add the point, just closes
++      expect(polygon.isClosed, true);
++    });
++
++    test('onTapUp does not close the polygon if clicked near start point but has < 3 points', () {
++      final initialPolygon = DrawingEntity.polygon(
++        id: '1',
++        points: [
++          const Offset(0.1, 0.2), // Start point
++          const Offset(0.3, 0.2), // Point 2
++        ],
++        color: Colors.green,
++      ) as PolygonEntity;
++      final state = WorkspaceState(
++        entities: [initialPolygon],
++        selectedEntityId: '1',
++      );
++
++      // Click near the start point (0.1 * 1000 = 100, 0.2 * 1000 = 200)
++      final details = TapUpDetails(
++        localPosition: const Offset(105, 205), // Distance < 20
++        globalPosition: const Offset(105, 205),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final polygon = newState.entities.first as PolygonEntity;
++      expect(polygon.points.length, 2); // Ignores the click because it cannot be closed yet and is too close to start
++      expect(polygon.isClosed, false);
++    });
++  });
++}
+diff --git a/test/tools/rectangle_tool_test.dart b/test/tools/rectangle_tool_test.dart
+new file mode 100644
+index 0000000..d23c476
+--- /dev/null
++++ b/test/tools/rectangle_tool_test.dart
+@@ -0,0 +1,61 @@
++import 'dart:ui';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:scale_buddy/models/entities/drawing_entity.dart';
++import 'package:scale_buddy/models/workspace_state.dart';
++import 'package:scale_buddy/tools/rectangle_tool.dart';
++
++void main() {
++  group('RectangleTool', () {
++    const tool = RectangleTool();
++    const size = Size(1000, 1000);
++
++    test('onTapUp creates a new RectangleEntity if none is open', () {
++      const state = WorkspaceState();
++      final details = TapUpDetails(
++        localPosition: const Offset(100, 200),
++        globalPosition: const Offset(100, 200),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final entity = newState.entities.first;
++      expect(entity, isA<RectangleEntity>());
++
++      final rect = entity as RectangleEntity;
++      expect(rect.p1, const Offset(0.1, 0.2));
++      expect(rect.p2, isNull);
++
++      expect(newState.selectedEntityId, rect.id);
++    });
++
++    test('onTapUp sets p2 of the active open rectangle', () {
++      final initialRect = DrawingEntity.rectangle(
++        id: '1',
++        p1: const Offset(0.1, 0.2),
++        p2: null,
++        color: Colors.orange,
++      ) as RectangleEntity;
++      final state = WorkspaceState(
++        entities: [initialRect],
++        selectedEntityId: '1',
++      );
++
++      final details = TapUpDetails(
++        localPosition: const Offset(300, 400),
++        globalPosition: const Offset(300, 400),
++        kind: PointerDeviceKind.touch,
++      );
++
++      final newState = tool.onTapUp(state, details, size);
++
++      expect(newState.entities.length, 1);
++      final rect = newState.entities.first as RectangleEntity;
++      expect(rect.p1, const Offset(0.1, 0.2)); // p1 remains unchanged
++      expect(rect.p2, const Offset(0.3, 0.4)); // p2 is updated
++    });
++  });
++}

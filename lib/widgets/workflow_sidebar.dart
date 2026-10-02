@@ -22,6 +22,7 @@ class WorkflowSidebar extends StatelessWidget {
 
   /// Optionaler Callback, wenn innerhalb eines Menüs ein konkretes Werkzeug angeklickt wird.
   final void Function(WorkflowStepType step, ToolAction action)? onToolSelected;
+  final ToolAction? activeToolAction;
   final bool isNextEnabled;
 
   const WorkflowSidebar({
@@ -31,6 +32,7 @@ class WorkflowSidebar extends StatelessWidget {
     required this.stepStatuses,
     required this.onStepSelected,
     this.onToolSelected,
+    this.activeToolAction,
   });
 
   @override
@@ -125,6 +127,7 @@ class WorkflowSidebar extends StatelessWidget {
                   onToolSelected: (action) {
                     onToolSelected?.call(step.type, action);
                   },
+                  activeToolAction: activeToolAction,
                 );
               },
             ),

@@ -29,10 +29,21 @@ abstract class WorkspaceTool {
     Size size,
   ) => state;
 
-  /// Aufgerufen, wenn das Ziehen beendet wird
+  /// Aufgerufen, wenn der Nutzer die Aktion abbrechen möchte (z. B. ESC-Taste)
+  WorkspaceState onCancel(WorkspaceState state) => state;
+
   WorkspaceState onPanEnd(
     WorkspaceState state,
     DragEndDetails details,
     Size size,
   ) => state;
+
+  /// Helper to convert local pointer coordinates into normalized (0.0 to 1.0) coordinates.
+  Offset normalizePosition(Offset localPosition, Size size) {
+    if (size.width == 0 || size.height == 0) return Offset.zero;
+    return Offset(
+      localPosition.dx / size.width,
+      localPosition.dy / size.height,
+    );
+  }
 }
