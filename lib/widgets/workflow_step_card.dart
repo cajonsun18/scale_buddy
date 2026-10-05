@@ -26,6 +26,8 @@ class WorkflowStepCard extends StatelessWidget {
   /// Optionaler Callback, wenn innerhalb des geöffneten Menüs ein Werkzeug angeklickt wird.
   final ValueChanged<ToolAction>? onToolSelected;
   final ToolAction? activeToolAction;
+  final Widget? extraContent;
+  final bool isEnabled;
 
   const WorkflowStepCard({
     super.key,
@@ -35,6 +37,8 @@ class WorkflowStepCard extends StatelessWidget {
     required this.onTap,
     this.onToolSelected,
     this.activeToolAction,
+    this.extraContent,
+    this.isEnabled = true,
   });
 
   @override
@@ -44,14 +48,18 @@ class WorkflowStepCard extends StatelessWidget {
     final activeColor = theme.colorScheme.primary; // Z.B. #1E88E5 Blau
 
     // Rahmenfarbe: Aktiv = Akzentfarbe, sonst dezentes Grau
-    final borderColor = isActive
+    final borderColor = !isEnabled
+        ? Colors.grey.shade300
+        : isActive
         ? activeColor
         : (status == StepStatus.completed
               ? AppColors.of(context).success.withValues(alpha: 0.5)
               : AppColors.of(context).sidebarBorder);
 
     // Hintergrundfarbe: Leicht getönt wenn aktiv
-    final cardBgColor = isActive
+    final cardBgColor = !isEnabled
+        ? Colors.grey.shade50
+        : isActive
         ? activeColor.withValues(alpha: 0.04)
         : Colors.white;
 
@@ -75,72 +83,75 @@ class WorkflowStepCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           // Klickbereich: Ganze Karte ist klickbar
-          onTap: onTap,
+          onTap: isEnabled ? onTap : null,
           borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. KOPFZEILE DER KARTE (Nummer, Titel, Status-Icon, Pfeil)
-                Row(
-                  children: [
-                    // Runder Nummern-/Status-Badge links
-                    _buildStatusBadge(context),
-                    const SizedBox(width: 10),
+          child: Opacity(
+            opacity: isEnabled ? 1.0 : 0.5,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. KOPFZEILE DER KARTE (Nummer, Titel, Status-Icon, Pfeil)
+                  Row(
+                    children: [
+                      // Runder Nummern-/Status-Badge links
+                      _buildStatusBadge(context),
+                      const SizedBox(width: 10),
 
-                    // Titel und Kurzbeschreibung
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            stepData.title,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isActive
-                                  ? FontWeight.bold
-                                  : FontWeight.w600,
-                              color: isActive
-                                  ? activeColor
-                                  : AppColors.of(context).toolbarBg,
+                      // Titel und Kurzbeschreibung
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stepData.title,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isActive
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: isActive
+                                    ? activeColor
+                                    : AppColors.of(context).toolbarBg,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            stepData.shortDescription,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade600,
+                            const SizedBox(height: 2),
+                            Text(
+                              stepData.shortDescription,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // Ausklapp-Indikator (Pfeil nach oben bei offen, nach unten bei geschlossen)
-                    Icon(
-                      isActive
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: isActive ? activeColor : Colors.grey.shade400,
-                      size: 20,
-                    ),
-                  ],
-                ),
+                      // Ausklapp-Indikator (Pfeil nach oben bei offen, nach unten bei geschlossen)
+                      Icon(
+                        isActive
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: isActive ? activeColor : Colors.grey.shade400,
+                        size: 20,
+                      ),
+                    ],
+                  ),
 
-                // 2. AUSKLAPPBARER INHALT (Wird nur angezeigt, wenn dieses Menü geöffnet ist)
-                AnimatedCrossFade(
-                  firstChild: const SizedBox.shrink(),
-                  secondChild: _buildExpandedContent(context),
-                  crossFadeState: isActive
-                      ? CrossFadeState.showSecond
-                      : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 200),
-                ),
-              ],
+                  // 2. AUSKLAPPBARER INHALT (Wird nur angezeigt, wenn dieses Menü geöffnet ist)
+                  AnimatedCrossFade(
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: _buildExpandedContent(context),
+                    crossFadeState: isActive
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -261,6 +272,10 @@ class WorkflowStepCard extends StatelessWidget {
             ),
           );
         }),
+        if (extraContent != null) ...[
+          const SizedBox(height: 12),
+          extraContent!,
+        ],
       ],
     );
   }

@@ -69,6 +69,7 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
 
       entity.map(
         calibration: (_) {},
+        perspective: (_) {},
         line: (line) {
           if (pixelsPerMeter == null) return;
           if (line.p1 != null && line.p2 != null) {

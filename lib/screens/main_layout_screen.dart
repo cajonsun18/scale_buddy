@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workflow_step.dart';
 import '../models/entities/drawing_entity.dart';
+import '../models/workspace_state.dart';
 import '../controllers/workspace_controller.dart';
 import '../widgets/step_detail_view.dart';
 import '../widgets/workflow_sidebar.dart';
@@ -17,6 +18,8 @@ import '../tools/polygon_tool.dart';
 import '../tools/rectangle_tool.dart';
 import '../tools/angle_tool.dart';
 import '../tools/select_tool.dart';
+import '../tools/perspective_tool.dart';
+import '../tools/workspace_tool.dart';
 
 class MainLayoutScreen extends ConsumerStatefulWidget {
   const MainLayoutScreen({super.key});
@@ -56,6 +59,25 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     return false;
   }
 
+  bool _isStepEnabled(
+    WorkflowStepType step,
+    WorkspaceState state,
+    bool isCalibConfirmed,
+  ) {
+    switch (step) {
+      case WorkflowStepType.file:
+        return true;
+      case WorkflowStepType.perspective:
+        return state.loadedImage != null;
+      case WorkflowStepType.calibrate:
+        return _stepStatuses[WorkflowStepType.perspective] ==
+            StepStatus.completed;
+      case WorkflowStepType.measure:
+        return isCalibConfirmed &&
+            _stepStatuses[WorkflowStepType.calibrate] == StepStatus.completed;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final workspaceState = ref.watch(workspaceControllerProvider);
@@ -64,22 +86,65 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     ToolAction? currentToolAction;
     if (activeTool is DistanceTool) {
       currentToolAction = ToolAction.measureDistance;
-    } else if (activeTool is PolygonTool)
+    } else if (activeTool is PolygonTool) {
       currentToolAction = ToolAction.measurePolygon;
-    else if (activeTool is RectangleTool)
+    } else if (activeTool is RectangleTool) {
       currentToolAction = ToolAction.measureRectArea;
-    else if (activeTool is AngleTool)
+    } else if (activeTool is AngleTool) {
       currentToolAction = ToolAction.measureRoofAngle;
-    else if (activeTool is SelectTool)
+    } else if (activeTool is SelectTool) {
       currentToolAction = ToolAction.selectEdit;
-    else if (activeTool is CalibrationTool)
+    } else if (activeTool is CalibrationTool) {
       currentToolAction = ToolAction.setReference;
+    }
 
     ref.listen(workspaceControllerProvider, (previous, next) {
-      if (next.loadedImage != null &&
+      final prevImage = previous?.loadedImage;
+      final nextImage = next.loadedImage;
+
+      if (nextImage != null && prevImage == null) {
+        setState(() {
+          _stepStatuses[WorkflowStepType.file] = StepStatus.completed;
+          _activeStep = WorkflowStepType.perspective;
+          if (_stepStatuses[WorkflowStepType.perspective] !=
+              StepStatus.completed) {
+            _stepStatuses[WorkflowStepType.perspective] = StepStatus.active;
+          }
+        });
+      } else if (nextImage != null &&
           _stepStatuses[WorkflowStepType.file] != StepStatus.completed) {
         setState(() {
+          _stepStatuses[WorkflowStepType.file] = StepStatus.completed;
+        });
+      } else if (nextImage == null && prevImage != null) {
+        setState(() {
+          _activeStep = WorkflowStepType.file;
           _stepStatuses[WorkflowStepType.file] = StepStatus.active;
+          _stepStatuses[WorkflowStepType.perspective] = StepStatus.open;
+          _stepStatuses[WorkflowStepType.calibrate] = StepStatus.open;
+          _stepStatuses[WorkflowStepType.measure] = StepStatus.open;
+        });
+      }
+
+      final nextCalib = next.entities
+          .whereType<CalibrationEntity>()
+          .firstOrNull;
+      final prevCalib = previous?.entities
+          .whereType<CalibrationEntity>()
+          .firstOrNull;
+
+      if (nextCalib?.isConfirmed == true && prevCalib?.isConfirmed != true) {
+        setState(() {
+          _stepStatuses[WorkflowStepType.calibrate] = StepStatus.completed;
+          _activeStep = WorkflowStepType.measure;
+          if (_stepStatuses[WorkflowStepType.measure] != StepStatus.completed) {
+            _stepStatuses[WorkflowStepType.measure] = StepStatus.active;
+          }
+        });
+      } else if (nextCalib?.isConfirmed == false &&
+          prevCalib?.isConfirmed == true) {
+        setState(() {
+          _stepStatuses[WorkflowStepType.calibrate] = StepStatus.active;
         });
       }
     });
@@ -156,7 +221,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                       WorkflowSidebar(
                         activeStep: _activeStep,
                         stepStatuses: _stepStatuses,
-                        activeToolAction: currentToolAction,
+                        activeToolAction:
+                            currentToolAction ?? _lastSelectedTool,
                         onStepSelected: (step) =>
                             _handleStepSelected(step, calib),
                         onToolSelected: (step, action) => _handleToolSelected(
@@ -164,9 +230,132 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                           action,
                           workspaceController,
                         ),
-                        isNextEnabled:
-                            _activeStep != WorkflowStepType.calibrate ||
-                            isCalibConfirmed,
+                        isStepEnabled: (step) => _isStepEnabled(
+                          step,
+                          workspaceState,
+                          isCalibConfirmed,
+                        ),
+                        extraContentBuilder: (context, step) {
+                          if (step == WorkflowStepType.perspective) {
+                            final pEntity = workspaceState.entities
+                                .whereType<PerspectiveEntity>()
+                                .firstOrNull;
+                            Widget? actionButton;
+                            if (pEntity != null && pEntity.points.length == 4) {
+                              actionButton = SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    workspaceController
+                                        .applyPerspectiveCorrection();
+                                    setState(() {
+                                      _stepStatuses[WorkflowStepType
+                                              .perspective] =
+                                          StepStatus.completed;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.transform, size: 16),
+                                  label: const Text('Entzerren'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.orange.shade600,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              );
+                            } else if (workspaceState.originalImage != null &&
+                                workspaceState.preWarpEntities != null) {
+                              actionButton = SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    workspaceController.resetPerspective();
+                                    setState(() {
+                                      _stepStatuses[WorkflowStepType
+                                              .perspective] =
+                                          StepStatus.active;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.undo, size: 16),
+                                  label: const Text('Punkte anpassen'),
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Seitenverhältnis anpassen',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'X-Skalierung',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    Text(
+                                      workspaceState.perspectiveScaleX
+                                          .toStringAsFixed(2),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Slider(
+                                  value: workspaceState.perspectiveScaleX,
+                                  min: 0.1,
+                                  max: 3.0,
+                                  onChanged: (v) => workspaceController
+                                      .setPerspectiveScaleX(v),
+                                  onChangeEnd: (v) => workspaceController
+                                      .reapplyPerspectiveIfWarped(),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Y-Skalierung',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    Text(
+                                      workspaceState.perspectiveScaleY
+                                          .toStringAsFixed(2),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Slider(
+                                  value: workspaceState.perspectiveScaleY,
+                                  min: 0.1,
+                                  max: 3.0,
+                                  onChanged: (v) => workspaceController
+                                      .setPerspectiveScaleY(v),
+                                  onChangeEnd: (v) => workspaceController
+                                      .reapplyPerspectiveIfWarped(),
+                                ),
+                                if (actionButton != null)
+                                  const SizedBox(height: 16),
+                                ?actionButton,
+                              ],
+                            );
+                          }
+                          return null;
+                        },
                       ),
                       Expanded(
                         child: StepDetailView(
@@ -239,7 +428,24 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     });
 
     if (step == WorkflowStepType.calibrate) {
-      _handleToolSelected(step, ToolAction.setReference, controller);
+      _handleToolSelected(step, ToolAction.setReference, controller, false);
+    } else if (step == WorkflowStepType.perspective) {
+      ref.read(activeToolProvider.notifier).setTool(const PerspectiveTool());
+      setState(() {
+        _lastSelectedTool = null;
+      });
+    } else if (step == WorkflowStepType.file) {
+      ref.read(activeToolProvider.notifier).setTool(const EmptyTool());
+      setState(() {
+        _lastSelectedTool = null;
+      });
+    } else if (step == WorkflowStepType.measure) {
+      final currentTool = ref.read(activeToolProvider);
+      if (currentTool is EmptyTool ||
+          currentTool is CalibrationTool ||
+          currentTool is PerspectiveTool) {
+        _handleToolSelected(step, ToolAction.selectEdit, controller, false);
+      }
     }
   }
 
@@ -252,8 +458,9 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   void _handleToolSelected(
     WorkflowStepType step,
     ToolAction action,
-    WorkspaceController controller,
-  ) {
+    WorkspaceController controller, [
+    bool fromUserClick = true,
+  ]) {
     setState(() {
       _lastSelectedTool = action;
     });
@@ -278,6 +485,53 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         break;
       case ToolAction.selectEdit:
         ref.read(activeToolProvider.notifier).setTool(const SelectTool());
+        break;
+      case ToolAction.autoPerspective:
+        ref.read(activeToolProvider.notifier).setTool(const PerspectiveTool());
+        if (fromUserClick) {
+          controller.autoDetectPerspective().then((_) {
+            if (mounted) {
+              final state = ref.read(workspaceControllerProvider);
+              final hasPerspective = state.entities.any(
+                (e) => e is PerspectiveEntity && e.points.length == 4,
+              );
+              if (!hasPerspective) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Keine geeignete Form gefunden.'),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Perspektive automatisch erkannt.'),
+                  ),
+                );
+              }
+            }
+          });
+
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted && _lastSelectedTool == ToolAction.autoPerspective) {
+              setState(() {
+                _lastSelectedTool = null;
+              });
+            }
+          });
+        }
+        break;
+      case ToolAction.skipPerspective:
+        setState(() {
+          _stepStatuses[WorkflowStepType.perspective] = StepStatus.completed;
+          _activeStep = WorkflowStepType.calibrate;
+          if (_stepStatuses[WorkflowStepType.calibrate] !=
+              StepStatus.completed) {
+            _stepStatuses[WorkflowStepType.calibrate] = StepStatus.active;
+          }
+        });
+        break;
+      case ToolAction.manualPerspective:
+        ref.read(activeToolProvider.notifier).setTool(const PerspectiveTool());
         break;
       default:
         break;

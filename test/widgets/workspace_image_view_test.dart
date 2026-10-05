@@ -67,7 +67,7 @@ void main() {
   test('EntitiesPainter draws all entities when not in calibrate step', () {
     final painter = EntitiesPainter(
       entities: testEntities,
-      isCalibrateStep: false,
+      activeStep: WorkflowStepType.measure,
       primaryColor: Colors.blue,
       successColor: Colors.green,
       pointColor: Colors.white,
@@ -86,7 +86,7 @@ void main() {
   test('EntitiesPainter hides non-calibration entities in calibrate step', () {
     final painter = EntitiesPainter(
       entities: testEntities,
-      isCalibrateStep: true,
+      activeStep: WorkflowStepType.calibrate,
       primaryColor: Colors.blue,
       successColor: Colors.green,
       pointColor: Colors.white,

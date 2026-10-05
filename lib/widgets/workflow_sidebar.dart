@@ -23,10 +23,13 @@ class WorkflowSidebar extends StatelessWidget {
   /// Optionaler Callback, wenn innerhalb eines Menüs ein konkretes Werkzeug angeklickt wird.
   final void Function(WorkflowStepType step, ToolAction action)? onToolSelected;
   final ToolAction? activeToolAction;
-  final bool isNextEnabled;
+  final bool Function(WorkflowStepType) isStepEnabled;
+  final Widget? Function(BuildContext context, WorkflowStepType step)?
+  extraContentBuilder;
 
   const WorkflowSidebar({
-    this.isNextEnabled = true,
+    required this.isStepEnabled,
+    this.extraContentBuilder,
     super.key,
     required this.activeStep,
     required this.stepStatuses,
@@ -122,12 +125,14 @@ class WorkflowSidebar extends StatelessWidget {
                   stepData: step,
                   isActive: isActive,
                   status: status,
+                  isEnabled: isStepEnabled(step.type),
                   // Beim Klick auf eine Karte wird diese im State aktiviert/geöffnet
                   onTap: () => onStepSelected(step.type),
                   onToolSelected: (action) {
                     onToolSelected?.call(step.type, action);
                   },
                   activeToolAction: activeToolAction,
+                  extraContent: extraContentBuilder?.call(context, step.type),
                 );
               },
             ),
@@ -146,6 +151,11 @@ class WorkflowSidebar extends StatelessWidget {
       (s) => s.type == activeStep,
     );
     final hasNext = currentIndex < WorkflowStepData.allSteps.length - 1;
+    final nextStepType = hasNext
+        ? WorkflowStepData.allSteps[currentIndex + 1].type
+        : null;
+    final isNextStepEnabled =
+        nextStepType != null && isStepEnabled(nextStepType);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -159,7 +169,7 @@ class WorkflowSidebar extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: (hasNext && isNextEnabled)
+              onPressed: (hasNext && isNextStepEnabled)
                   ? () {
                       final nextStep =
                           WorkflowStepData.allSteps[currentIndex + 1].type;

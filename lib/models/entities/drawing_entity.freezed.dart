@@ -92,7 +92,7 @@ extension DrawingEntityPatterns on DrawingEntity {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CalibrationEntity value)?  calibration,TResult Function( LineEntity value)?  line,TResult Function( PolygonEntity value)?  polygon,TResult Function( RectangleEntity value)?  rectangle,TResult Function( AngleEntity value)?  angle,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CalibrationEntity value)?  calibration,TResult Function( LineEntity value)?  line,TResult Function( PolygonEntity value)?  polygon,TResult Function( RectangleEntity value)?  rectangle,TResult Function( AngleEntity value)?  angle,TResult Function( PerspectiveEntity value)?  perspective,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
@@ -100,7 +100,8 @@ return calibration(_that);case LineEntity() when line != null:
 return line(_that);case PolygonEntity() when polygon != null:
 return polygon(_that);case RectangleEntity() when rectangle != null:
 return rectangle(_that);case AngleEntity() when angle != null:
-return angle(_that);case _:
+return angle(_that);case PerspectiveEntity() when perspective != null:
+return perspective(_that);case _:
   return orElse();
 
 }
@@ -118,7 +119,7 @@ return angle(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CalibrationEntity value)  calibration,required TResult Function( LineEntity value)  line,required TResult Function( PolygonEntity value)  polygon,required TResult Function( RectangleEntity value)  rectangle,required TResult Function( AngleEntity value)  angle,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CalibrationEntity value)  calibration,required TResult Function( LineEntity value)  line,required TResult Function( PolygonEntity value)  polygon,required TResult Function( RectangleEntity value)  rectangle,required TResult Function( AngleEntity value)  angle,required TResult Function( PerspectiveEntity value)  perspective,}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity():
@@ -126,7 +127,8 @@ return calibration(_that);case LineEntity():
 return line(_that);case PolygonEntity():
 return polygon(_that);case RectangleEntity():
 return rectangle(_that);case AngleEntity():
-return angle(_that);}
+return angle(_that);case PerspectiveEntity():
+return perspective(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -140,7 +142,7 @@ return angle(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CalibrationEntity value)?  calibration,TResult? Function( LineEntity value)?  line,TResult? Function( PolygonEntity value)?  polygon,TResult? Function( RectangleEntity value)?  rectangle,TResult? Function( AngleEntity value)?  angle,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CalibrationEntity value)?  calibration,TResult? Function( LineEntity value)?  line,TResult? Function( PolygonEntity value)?  polygon,TResult? Function( RectangleEntity value)?  rectangle,TResult? Function( AngleEntity value)?  angle,TResult? Function( PerspectiveEntity value)?  perspective,}){
 final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
@@ -148,7 +150,8 @@ return calibration(_that);case LineEntity() when line != null:
 return line(_that);case PolygonEntity() when polygon != null:
 return polygon(_that);case RectangleEntity() when rectangle != null:
 return rectangle(_that);case AngleEntity() when angle != null:
-return angle(_that);case _:
+return angle(_that);case PerspectiveEntity() when perspective != null:
+return perspective(_that);case _:
   return null;
 
 }
@@ -165,14 +168,15 @@ return angle(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,TResult Function( String id,  List<Offset> points,  Color color)?  perspective,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
 return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
 return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity() when polygon != null:
 return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity() when rectangle != null:
 return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity() when angle != null:
-return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
+return angle(_that.id,_that.p1,_that.p2,_that.color);case PerspectiveEntity() when perspective != null:
+return perspective(_that.id,_that.points,_that.color);case _:
   return orElse();
 
 }
@@ -190,14 +194,15 @@ return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  line,required TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)  polygon,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  rectangle,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  angle,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)  calibration,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  line,required TResult Function( String id,  List<Offset> points,  Color color,  bool isClosed)  polygon,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  rectangle,required TResult Function( String id,  Offset? p1,  Offset? p2,  Color color)  angle,required TResult Function( String id,  List<Offset> points,  Color color)  perspective,}) {final _that = this;
 switch (_that) {
 case CalibrationEntity():
 return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity():
 return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity():
 return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity():
 return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity():
-return angle(_that.id,_that.p1,_that.p2,_that.color);}
+return angle(_that.id,_that.p1,_that.p2,_that.color);case PerspectiveEntity():
+return perspective(_that.id,_that.points,_that.color);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -211,14 +216,15 @@ return angle(_that.id,_that.p1,_that.p2,_that.color);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult? Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  Offset? p1,  Offset? p2,  double? enteredDistance,  String selectedUnit,  bool isConfirmed,  double labelPosition)?  calibration,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  line,TResult? Function( String id,  List<Offset> points,  Color color,  bool isClosed)?  polygon,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  rectangle,TResult? Function( String id,  Offset? p1,  Offset? p2,  Color color)?  angle,TResult? Function( String id,  List<Offset> points,  Color color)?  perspective,}) {final _that = this;
 switch (_that) {
 case CalibrationEntity() when calibration != null:
 return calibration(_that.id,_that.p1,_that.p2,_that.enteredDistance,_that.selectedUnit,_that.isConfirmed,_that.labelPosition);case LineEntity() when line != null:
 return line(_that.id,_that.p1,_that.p2,_that.color);case PolygonEntity() when polygon != null:
 return polygon(_that.id,_that.points,_that.color,_that.isClosed);case RectangleEntity() when rectangle != null:
 return rectangle(_that.id,_that.p1,_that.p2,_that.color);case AngleEntity() when angle != null:
-return angle(_that.id,_that.p1,_that.p2,_that.color);case _:
+return angle(_that.id,_that.p1,_that.p2,_that.color);case PerspectiveEntity() when perspective != null:
+return perspective(_that.id,_that.points,_that.color);case _:
   return null;
 
 }
@@ -601,6 +607,84 @@ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,p1: freezed == p1 ? _self.p1 : p1 // ignore: cast_nullable_to_non_nullable
 as Offset?,p2: freezed == p2 ? _self.p2 : p2 // ignore: cast_nullable_to_non_nullable
 as Offset?,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as Color,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class PerspectiveEntity implements DrawingEntity {
+  const PerspectiveEntity({required this.id, required  List<Offset> points, required this.color}): _points = points;
+  
+
+@override final  String id;
+ final  List<Offset> _points;
+ List<Offset> get points {
+  if (_points is EqualUnmodifiableListView) return _points;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_points);
+}
+
+ final  Color color;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PerspectiveEntityCopyWith<PerspectiveEntity> get copyWith => _$PerspectiveEntityCopyWithImpl<PerspectiveEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is PerspectiveEntity&&(identical(other.id, id) || other.id == id)&&const DeepCollectionEquality().equals(other.points, _points)&&(identical(other.color, color) || other.color == color));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,const DeepCollectionEquality().hash(_points),color);
+}
+
+@override
+String toString() {
+    return 'DrawingEntity.perspective(id: $id, points: $points, color: $color)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PerspectiveEntityCopyWith<$Res> implements $DrawingEntityCopyWith<$Res> {
+  factory $PerspectiveEntityCopyWith(PerspectiveEntity value, $Res Function(PerspectiveEntity) _then) = _$PerspectiveEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, List<Offset> points, Color color
+});
+
+
+
+
+}
+/// @nodoc
+class _$PerspectiveEntityCopyWithImpl<$Res>
+    implements $PerspectiveEntityCopyWith<$Res> {
+  _$PerspectiveEntityCopyWithImpl(this._self, this._then);
+
+  final PerspectiveEntity _self;
+  final $Res Function(PerspectiveEntity) _then;
+
+/// Create a copy of DrawingEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? points = null,Object? color = null,}) {
+  return _then(PerspectiveEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,points: null == points ? _self._points : points // ignore: cast_nullable_to_non_nullable
+as List<Offset>,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as Color,
   ));
 }

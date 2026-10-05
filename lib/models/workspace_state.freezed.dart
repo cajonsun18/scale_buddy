@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WorkspaceState {
 
- LoadedImageInfo? get loadedImage; LoadingStatus get status; WorkspaceError get statusMessage; List<DrawingEntity> get entities; String? get selectedEntityId; DragDetail? get activeDragDetail;
+ LoadedImageInfo? get loadedImage; LoadedImageInfo? get originalImage; LoadingStatus get status; WorkspaceError get statusMessage; List<DrawingEntity> get entities; List<DrawingEntity>? get preWarpEntities; String? get selectedEntityId; DragDetail? get activeDragDetail; double get perspectiveScaleX; double get perspectiveScaleY;
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $WorkspaceStateCopyWith<WorkspaceState> get copyWith => _$WorkspaceStateCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as WorkspaceState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.loadedImage, _this.loadedImage) || other.loadedImage == _this.loadedImage)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusMessage, _this.statusMessage) || other.statusMessage == _this.statusMessage)&&const DeepCollectionEquality().equals(other.entities, _this.entities)&&(identical(other.selectedEntityId, _this.selectedEntityId) || other.selectedEntityId == _this.selectedEntityId)&&(identical(other.activeDragDetail, _this.activeDragDetail) || other.activeDragDetail == _this.activeDragDetail));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceState&&(identical(other.loadedImage, _this.loadedImage) || other.loadedImage == _this.loadedImage)&&(identical(other.originalImage, _this.originalImage) || other.originalImage == _this.originalImage)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusMessage, _this.statusMessage) || other.statusMessage == _this.statusMessage)&&const DeepCollectionEquality().equals(other.entities, _this.entities)&&const DeepCollectionEquality().equals(other.preWarpEntities, _this.preWarpEntities)&&(identical(other.selectedEntityId, _this.selectedEntityId) || other.selectedEntityId == _this.selectedEntityId)&&(identical(other.activeDragDetail, _this.activeDragDetail) || other.activeDragDetail == _this.activeDragDetail)&&(identical(other.perspectiveScaleX, _this.perspectiveScaleX) || other.perspectiveScaleX == _this.perspectiveScaleX)&&(identical(other.perspectiveScaleY, _this.perspectiveScaleY) || other.perspectiveScaleY == _this.perspectiveScaleY));
 }
 
 
 @override
 int get hashCode {
   final _this = this as WorkspaceState;
-  return Object.hash(runtimeType,_this.loadedImage,_this.status,_this.statusMessage,const DeepCollectionEquality().hash(_this.entities),_this.selectedEntityId,_this.activeDragDetail);
+  return Object.hash(runtimeType,_this.loadedImage,_this.originalImage,_this.status,_this.statusMessage,const DeepCollectionEquality().hash(_this.entities),const DeepCollectionEquality().hash(_this.preWarpEntities),_this.selectedEntityId,_this.activeDragDetail,_this.perspectiveScaleX,_this.perspectiveScaleY);
 }
 
 @override
 String toString() {
   final _this = this as WorkspaceState;
-  return 'WorkspaceState(loadedImage: ${_this.loadedImage}, status: ${_this.status}, statusMessage: ${_this.statusMessage}, entities: ${_this.entities}, selectedEntityId: ${_this.selectedEntityId}, activeDragDetail: ${_this.activeDragDetail})';
+  return 'WorkspaceState(loadedImage: ${_this.loadedImage}, originalImage: ${_this.originalImage}, status: ${_this.status}, statusMessage: ${_this.statusMessage}, entities: ${_this.entities}, preWarpEntities: ${_this.preWarpEntities}, selectedEntityId: ${_this.selectedEntityId}, activeDragDetail: ${_this.activeDragDetail}, perspectiveScaleX: ${_this.perspectiveScaleX}, perspectiveScaleY: ${_this.perspectiveScaleY})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $WorkspaceStateCopyWith<$Res>  {
   factory $WorkspaceStateCopyWith(WorkspaceState value, $Res Function(WorkspaceState) _then) = _$WorkspaceStateCopyWithImpl;
 @useResult
 $Res call({
- LoadedImageInfo? loadedImage, LoadingStatus status, WorkspaceError statusMessage, List<DrawingEntity> entities, String? selectedEntityId, DragDetail? activeDragDetail
+ LoadedImageInfo? loadedImage, LoadedImageInfo? originalImage, LoadingStatus status, WorkspaceError statusMessage, List<DrawingEntity> entities, List<DrawingEntity>? preWarpEntities, String? selectedEntityId, DragDetail? activeDragDetail, double perspectiveScaleX, double perspectiveScaleY
 });
 
 
@@ -68,15 +68,19 @@ class _$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? loadedImage = freezed,Object? status = null,Object? statusMessage = null,Object? entities = null,Object? selectedEntityId = freezed,Object? activeDragDetail = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loadedImage = freezed,Object? originalImage = freezed,Object? status = null,Object? statusMessage = null,Object? entities = null,Object? preWarpEntities = freezed,Object? selectedEntityId = freezed,Object? activeDragDetail = freezed,Object? perspectiveScaleX = null,Object? perspectiveScaleY = null,}) {
   return _then(WorkspaceState(
 loadedImage: freezed == loadedImage ? _self.loadedImage : loadedImage // ignore: cast_nullable_to_non_nullable
+as LoadedImageInfo?,originalImage: freezed == originalImage ? _self.originalImage : originalImage // ignore: cast_nullable_to_non_nullable
 as LoadedImageInfo?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadingStatus,statusMessage: null == statusMessage ? _self.statusMessage : statusMessage // ignore: cast_nullable_to_non_nullable
 as WorkspaceError,entities: null == entities ? _self.entities : entities // ignore: cast_nullable_to_non_nullable
-as List<DrawingEntity>,selectedEntityId: freezed == selectedEntityId ? _self.selectedEntityId : selectedEntityId // ignore: cast_nullable_to_non_nullable
+as List<DrawingEntity>,preWarpEntities: freezed == preWarpEntities ? _self.preWarpEntities : preWarpEntities // ignore: cast_nullable_to_non_nullable
+as List<DrawingEntity>?,selectedEntityId: freezed == selectedEntityId ? _self.selectedEntityId : selectedEntityId // ignore: cast_nullable_to_non_nullable
 as String?,activeDragDetail: freezed == activeDragDetail ? _self.activeDragDetail : activeDragDetail // ignore: cast_nullable_to_non_nullable
-as DragDetail?,
+as DragDetail?,perspectiveScaleX: null == perspectiveScaleX ? _self.perspectiveScaleX : perspectiveScaleX // ignore: cast_nullable_to_non_nullable
+as double,perspectiveScaleY: null == perspectiveScaleY ? _self.perspectiveScaleY : perspectiveScaleY // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 /// Create a copy of WorkspaceState
@@ -170,10 +174,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadedImageInfo? loadedImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  String? selectedEntityId,  DragDetail? activeDragDetail)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadedImageInfo? loadedImage,  LoadedImageInfo? originalImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  List<DrawingEntity>? preWarpEntities,  String? selectedEntityId,  DragDetail? activeDragDetail,  double perspectiveScaleX,  double perspectiveScaleY)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entities,_that.selectedEntityId,_that.activeDragDetail);case _:
+return $default(_that.loadedImage,_that.originalImage,_that.status,_that.statusMessage,_that.entities,_that.preWarpEntities,_that.selectedEntityId,_that.activeDragDetail,_that.perspectiveScaleX,_that.perspectiveScaleY);case _:
   return orElse();
 
 }
@@ -191,10 +195,10 @@ return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entitie
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadedImageInfo? loadedImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  String? selectedEntityId,  DragDetail? activeDragDetail)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadedImageInfo? loadedImage,  LoadedImageInfo? originalImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  List<DrawingEntity>? preWarpEntities,  String? selectedEntityId,  DragDetail? activeDragDetail,  double perspectiveScaleX,  double perspectiveScaleY)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState():
-return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entities,_that.selectedEntityId,_that.activeDragDetail);}
+return $default(_that.loadedImage,_that.originalImage,_that.status,_that.statusMessage,_that.entities,_that.preWarpEntities,_that.selectedEntityId,_that.activeDragDetail,_that.perspectiveScaleX,_that.perspectiveScaleY);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -208,10 +212,10 @@ return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entitie
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadedImageInfo? loadedImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  String? selectedEntityId,  DragDetail? activeDragDetail)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadedImageInfo? loadedImage,  LoadedImageInfo? originalImage,  LoadingStatus status,  WorkspaceError statusMessage,  List<DrawingEntity> entities,  List<DrawingEntity>? preWarpEntities,  String? selectedEntityId,  DragDetail? activeDragDetail,  double perspectiveScaleX,  double perspectiveScaleY)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceState() when $default != null:
-return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entities,_that.selectedEntityId,_that.activeDragDetail);case _:
+return $default(_that.loadedImage,_that.originalImage,_that.status,_that.statusMessage,_that.entities,_that.preWarpEntities,_that.selectedEntityId,_that.activeDragDetail,_that.perspectiveScaleX,_that.perspectiveScaleY);case _:
   return null;
 
 }
@@ -223,10 +227,11 @@ return $default(_that.loadedImage,_that.status,_that.statusMessage,_that.entitie
 
 
 class _WorkspaceState extends WorkspaceState {
-  const _WorkspaceState({this.loadedImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [], this.selectedEntityId, this.activeDragDetail}): _entities = entities,super._();
+  const _WorkspaceState({this.loadedImage, this.originalImage, this.status = LoadingStatus.initial, this.statusMessage = WorkspaceError.none,  List<DrawingEntity> entities = const [],  List<DrawingEntity>? preWarpEntities, this.selectedEntityId, this.activeDragDetail, this.perspectiveScaleX = 1.0, this.perspectiveScaleY = 1.0}): _entities = entities,_preWarpEntities = preWarpEntities,super._();
   
 
 @override final  LoadedImageInfo? loadedImage;
+@override final  LoadedImageInfo? originalImage;
 @override@JsonKey() final  LoadingStatus status;
 @override@JsonKey() final  WorkspaceError statusMessage;
  final  List<DrawingEntity> _entities;
@@ -236,8 +241,19 @@ class _WorkspaceState extends WorkspaceState {
   return EqualUnmodifiableListView(_entities);
 }
 
+ final  List<DrawingEntity>? _preWarpEntities;
+@override List<DrawingEntity>? get preWarpEntities {
+  final value = _preWarpEntities;
+  if (value == null) return null;
+  if (_preWarpEntities is EqualUnmodifiableListView) return _preWarpEntities;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 @override final  String? selectedEntityId;
 @override final  DragDetail? activeDragDetail;
+@override@JsonKey() final  double perspectiveScaleX;
+@override@JsonKey() final  double perspectiveScaleY;
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
@@ -249,18 +265,18 @@ _$WorkspaceStateCopyWith<_WorkspaceState> get copyWith => __$WorkspaceStateCopyW
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.loadedImage, loadedImage) || other.loadedImage == loadedImage)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusMessage, statusMessage) || other.statusMessage == statusMessage)&&const DeepCollectionEquality().equals(other.entities, _entities)&&(identical(other.selectedEntityId, selectedEntityId) || other.selectedEntityId == selectedEntityId)&&(identical(other.activeDragDetail, activeDragDetail) || other.activeDragDetail == activeDragDetail));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceState&&(identical(other.loadedImage, loadedImage) || other.loadedImage == loadedImage)&&(identical(other.originalImage, originalImage) || other.originalImage == originalImage)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusMessage, statusMessage) || other.statusMessage == statusMessage)&&const DeepCollectionEquality().equals(other.entities, _entities)&&const DeepCollectionEquality().equals(other.preWarpEntities, _preWarpEntities)&&(identical(other.selectedEntityId, selectedEntityId) || other.selectedEntityId == selectedEntityId)&&(identical(other.activeDragDetail, activeDragDetail) || other.activeDragDetail == activeDragDetail)&&(identical(other.perspectiveScaleX, perspectiveScaleX) || other.perspectiveScaleX == perspectiveScaleX)&&(identical(other.perspectiveScaleY, perspectiveScaleY) || other.perspectiveScaleY == perspectiveScaleY));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,loadedImage,status,statusMessage,const DeepCollectionEquality().hash(_entities),selectedEntityId,activeDragDetail);
+    return Object.hash(runtimeType,loadedImage,originalImage,status,statusMessage,const DeepCollectionEquality().hash(_entities),const DeepCollectionEquality().hash(_preWarpEntities),selectedEntityId,activeDragDetail,perspectiveScaleX,perspectiveScaleY);
 }
 
 @override
 String toString() {
-    return 'WorkspaceState(loadedImage: $loadedImage, status: $status, statusMessage: $statusMessage, entities: $entities, selectedEntityId: $selectedEntityId, activeDragDetail: $activeDragDetail)';
+    return 'WorkspaceState(loadedImage: $loadedImage, originalImage: $originalImage, status: $status, statusMessage: $statusMessage, entities: $entities, preWarpEntities: $preWarpEntities, selectedEntityId: $selectedEntityId, activeDragDetail: $activeDragDetail, perspectiveScaleX: $perspectiveScaleX, perspectiveScaleY: $perspectiveScaleY)';
 }
 
 
@@ -271,7 +287,7 @@ abstract mixin class _$WorkspaceStateCopyWith<$Res> implements $WorkspaceStateCo
   factory _$WorkspaceStateCopyWith(_WorkspaceState value, $Res Function(_WorkspaceState) _then) = __$WorkspaceStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadedImageInfo? loadedImage, LoadingStatus status, WorkspaceError statusMessage, List<DrawingEntity> entities, String? selectedEntityId, DragDetail? activeDragDetail
+ LoadedImageInfo? loadedImage, LoadedImageInfo? originalImage, LoadingStatus status, WorkspaceError statusMessage, List<DrawingEntity> entities, List<DrawingEntity>? preWarpEntities, String? selectedEntityId, DragDetail? activeDragDetail, double perspectiveScaleX, double perspectiveScaleY
 });
 
 
@@ -288,15 +304,19 @@ class __$WorkspaceStateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? loadedImage = freezed,Object? status = null,Object? statusMessage = null,Object? entities = null,Object? selectedEntityId = freezed,Object? activeDragDetail = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? loadedImage = freezed,Object? originalImage = freezed,Object? status = null,Object? statusMessage = null,Object? entities = null,Object? preWarpEntities = freezed,Object? selectedEntityId = freezed,Object? activeDragDetail = freezed,Object? perspectiveScaleX = null,Object? perspectiveScaleY = null,}) {
   return _then(_WorkspaceState(
 loadedImage: freezed == loadedImage ? _self.loadedImage : loadedImage // ignore: cast_nullable_to_non_nullable
+as LoadedImageInfo?,originalImage: freezed == originalImage ? _self.originalImage : originalImage // ignore: cast_nullable_to_non_nullable
 as LoadedImageInfo?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadingStatus,statusMessage: null == statusMessage ? _self.statusMessage : statusMessage // ignore: cast_nullable_to_non_nullable
 as WorkspaceError,entities: null == entities ? _self._entities : entities // ignore: cast_nullable_to_non_nullable
-as List<DrawingEntity>,selectedEntityId: freezed == selectedEntityId ? _self.selectedEntityId : selectedEntityId // ignore: cast_nullable_to_non_nullable
+as List<DrawingEntity>,preWarpEntities: freezed == preWarpEntities ? _self._preWarpEntities : preWarpEntities // ignore: cast_nullable_to_non_nullable
+as List<DrawingEntity>?,selectedEntityId: freezed == selectedEntityId ? _self.selectedEntityId : selectedEntityId // ignore: cast_nullable_to_non_nullable
 as String?,activeDragDetail: freezed == activeDragDetail ? _self.activeDragDetail : activeDragDetail // ignore: cast_nullable_to_non_nullable
-as DragDetail?,
+as DragDetail?,perspectiveScaleX: null == perspectiveScaleX ? _self.perspectiveScaleX : perspectiveScaleX // ignore: cast_nullable_to_non_nullable
+as double,perspectiveScaleY: null == perspectiveScaleY ? _self.perspectiveScaleY : perspectiveScaleY // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 

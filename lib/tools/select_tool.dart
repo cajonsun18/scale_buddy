@@ -58,6 +58,7 @@ class SelectTool extends WorkspaceTool {
             threshold,
           );
         },
+        perspective: (_) => false,
       );
 
       if (hit) {
@@ -102,6 +103,7 @@ class SelectTool extends WorkspaceTool {
           rectangle: (r) => [r.p1, r.p2], // p1=top-left, p2=bottom-right
           polygon: (p) => p.points,
           angle: (a) => [a.p1, a.p2],
+          perspective: (_) => <Offset?>[],
         );
 
         for (int i = 0; i < points.length; i++) {
@@ -172,6 +174,7 @@ class SelectTool extends WorkspaceTool {
             p1: pointIdx == 0 && e.p1 != null ? e.p1! + delta : e.p1,
             p2: pointIdx == 1 && e.p2 != null ? e.p2! + delta : e.p2,
           ),
+          perspective: (e) => e,
         );
       });
     }
@@ -194,6 +197,7 @@ class SelectTool extends WorkspaceTool {
           p1: e.p1 != null ? e.p1! + delta : null,
           p2: e.p2 != null ? e.p2! + delta : null,
         ),
+        perspective: (e) => e,
       );
     });
   }

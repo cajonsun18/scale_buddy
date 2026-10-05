@@ -47,3 +47,7 @@ abstract class WorkspaceTool {
     );
   }
 }
+
+class EmptyTool extends WorkspaceTool {
+  const EmptyTool();
+}

@@ -45,4 +45,10 @@ sealed class DrawingEntity with _$DrawingEntity {
     Offset? p2,
     required Color color,
   }) = AngleEntity;
+
+  const factory DrawingEntity.perspective({
+    required String id,
+    required List<Offset> points,
+    required Color color,
+  }) = PerspectiveEntity;
 }

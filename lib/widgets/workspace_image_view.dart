@@ -1,4 +1,4 @@
-import 'dart:math';
+import '../painters/drawing_entity_painter.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +51,7 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
             },
             child: InteractiveViewer(
               transformationController: transformationController,
-              panEnabled: false, // Deaktiviert, da wir manuell mit der mittleren Maustaste verschieben
+              panEnabled: false,
               scaleEnabled: true,
               minScale: 0.1,
               maxScale: 20.0,
@@ -69,7 +69,7 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.medium,
                       ),
-                      _ImageWithPointsOverlay(isCalibrateStep: isCalibrateStep),
+                      _ImageWithPointsOverlay(activeStep: widget.activeStep),
                     ],
                   ),
                 ),
@@ -95,9 +95,9 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
 }
 
 class _ImageWithPointsOverlay extends ConsumerStatefulWidget {
-  final bool isCalibrateStep;
+  final WorkflowStepType activeStep;
 
-  const _ImageWithPointsOverlay({required this.isCalibrateStep});
+  const _ImageWithPointsOverlay({required this.activeStep});
 
   @override
   ConsumerState<_ImageWithPointsOverlay> createState() =>
@@ -206,7 +206,7 @@ class _ImageWithPointsOverlayState
                     child: CustomPaint(
                       painter: EntitiesPainter(
                         entities: state.entities,
-                        isCalibrateStep: widget.isCalibrateStep,
+                        activeStep: widget.activeStep,
                         primaryColor: Theme.of(context).colorScheme.primary,
                         successColor: AppColors.of(context).success,
                         pointColor: Colors.white,
@@ -218,11 +218,19 @@ class _ImageWithPointsOverlayState
               ),
             ),
 
-            if (widget.isCalibrateStep && calib != null) ...[
+            if ((widget.activeStep == WorkflowStepType.calibrate) &&
+                calib != null) ...[
               if (calib.p1 != null)
                 _buildPointHandle(calib.p1!, size, controller),
               if (calib.p2 != null)
                 _buildPointHandle(calib.p2!, size, controller),
+            ],
+
+            if ((widget.activeStep == WorkflowStepType.perspective)) ...[
+              for (final entity
+                  in state.entities.whereType<PerspectiveEntity>())
+                for (final point in entity.points)
+                  _buildPointHandle(point, size, controller),
             ],
 
             if (_showMagnifier && _magnifierPosition != null)
@@ -242,7 +250,7 @@ class _ImageWithPointsOverlayState
                 ),
               ),
 
-            if (widget.isCalibrateStep &&
+            if ((widget.activeStep == WorkflowStepType.calibrate) &&
                 calib != null &&
                 calib.p1 != null &&
                 calib.p2 != null)
@@ -268,7 +276,9 @@ class _ImageWithPointsOverlayState
                             translation: const Offset(-0.5, -0.5),
                             child: CalibrationInputWidget(
                               key: const ValueKey('calib_input_card'),
-                              isDraggable: widget.isCalibrateStep,
+                              isDraggable:
+                                  (widget.activeStep ==
+                                  WorkflowStepType.calibrate),
                               onDragStart: () {
                                 setState(() {
                                   _localLabelPosition = calib.labelPosition;
@@ -306,7 +316,7 @@ class _ImageWithPointsOverlayState
                   },
                 ),
               ),
-            if (!widget.isCalibrateStep)
+            if (widget.activeStep == WorkflowStepType.measure)
               Positioned.fill(child: MeasurementLabelsOverlay(size: size)),
           ],
         );
@@ -435,7 +445,7 @@ class _ImageWithPointsOverlayState
 
 class EntitiesPainter extends CustomPainter {
   final List<DrawingEntity> entities;
-  final bool isCalibrateStep;
+  final WorkflowStepType activeStep;
   final Color primaryColor;
   final Color successColor;
   final Color pointColor;
@@ -443,7 +453,7 @@ class EntitiesPainter extends CustomPainter {
 
   EntitiesPainter({
     required this.entities,
-    required this.isCalibrateStep,
+    required this.activeStep,
     required this.primaryColor,
     required this.successColor,
     required this.pointColor,
@@ -452,340 +462,21 @@ class EntitiesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (final entity in entities) {
-      entity.map(
-        calibration: (e) => _paintCalibration(canvas, size, e),
-        line: (e) {
-          if (!isCalibrateStep) _paintLine(canvas, size, e);
-        },
-        polygon: (e) {
-          if (!isCalibrateStep) _paintPolygon(canvas, size, e);
-        },
-        rectangle: (e) {
-          if (!isCalibrateStep) _paintRectangle(canvas, size, e);
-        },
-        angle: (e) {
-          if (!isCalibrateStep) _paintAngle(canvas, size, e);
-        },
-      );
-    }
-  }
-
-  void _paintAngle(Canvas canvas, Size size, AngleEntity angle) {
-    final p1 = angle.p1;
-    final p2 = angle.p2;
-
-    if (p1 == null && p2 == null) return;
-
-    final paintLine = Paint()
-      ..color = angle.color
-      ..strokeWidth = _getStrokeWidth(angle.id)
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final paintHelper = Paint()
-      ..color = angle.color.withValues(alpha: 0.5)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final paintPoint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = angle.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
-
-    if (p1Pixel != null && p2Pixel != null) {
-      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
-
-      final distance = (p2Pixel - p1Pixel).distance;
-      if (distance > 0) {
-        final dx = p2Pixel.dx - p1Pixel.dx;
-        final dy = p2Pixel.dy - p1Pixel.dy;
-
-        final direction = dx >= 0 ? 1.0 : -1.0;
-        final helperEnd = Offset(
-          p1Pixel.dx + (distance * direction),
-          p1Pixel.dy,
-        );
-
-        const dashWidth = 5.0;
-        const dashSpace = 5.0;
-        double currentX = p1Pixel.dx;
-        if (direction > 0) {
-          while (currentX < helperEnd.dx) {
-            canvas.drawLine(
-              Offset(currentX, p1Pixel.dy),
-              Offset(min(currentX + dashWidth, helperEnd.dx), p1Pixel.dy),
-              paintHelper,
-            );
-            currentX += dashWidth + dashSpace;
-          }
-        } else {
-          while (currentX > helperEnd.dx) {
-            canvas.drawLine(
-              Offset(currentX, p1Pixel.dy),
-              Offset(max(currentX - dashWidth, helperEnd.dx), p1Pixel.dy),
-              paintHelper,
-            );
-            currentX -= dashWidth + dashSpace;
-          }
-        }
-
-        final rect = Rect.fromCircle(center: p1Pixel, radius: distance * 0.3);
-        final baseAngle = direction > 0 ? 0.0 : pi;
-
-        final angleRad = atan2(dy, dx);
-        final sweepAngle = angleRad - baseAngle;
-
-        double normalizedSweep = sweepAngle;
-        while (normalizedSweep > pi) {
-          normalizedSweep -= 2 * pi;
-        }
-        while (normalizedSweep < -pi) {
-          normalizedSweep += 2 * pi;
-        }
-
-        canvas.drawArc(rect, baseAngle, normalizedSweep, false, paintLine);
-
-        // Arrowhead
-        final arrowEndX = p1Pixel.dx + cos(angleRad) * (distance * 0.3);
-        final arrowEndY = p1Pixel.dy + sin(angleRad) * (distance * 0.3);
-
-        final tangentAngle =
-            angleRad + (normalizedSweep > 0 ? pi / 2 : -pi / 2);
-
-        const arrowLength = 10.0;
-        const arrowAngle = pi / 6;
-
-        final arrowP1 = Offset(
-          arrowEndX + cos(tangentAngle + pi + arrowAngle) * arrowLength,
-          arrowEndY + sin(tangentAngle + pi + arrowAngle) * arrowLength,
-        );
-        final arrowP2 = Offset(
-          arrowEndX + cos(tangentAngle + pi - arrowAngle) * arrowLength,
-          arrowEndY + sin(tangentAngle + pi - arrowAngle) * arrowLength,
-        );
-
-        canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP1, paintLine);
-        canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP2, paintLine);
-      }
-    }
-
-    if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
-    }
-    if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
-    }
-  }
-
-  void _paintRectangle(Canvas canvas, Size size, RectangleEntity rect) {
-    final p1 = rect.p1;
-    final p2 = rect.p2;
-
-    if (p1 == null && p2 == null) return;
-
-    final paintLine = Paint()
-      ..color = rect.color
-      ..strokeWidth = _getStrokeWidth(rect.id)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final paintFill = Paint()
-      ..color = rect.color.withValues(alpha: 0.2)
-      ..style = PaintingStyle.fill;
-
-    final paintPoint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = rect.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
-
-    if (p1Pixel != null && p2Pixel != null) {
-      final rectShape = Rect.fromPoints(p1Pixel, p2Pixel);
-      canvas.drawRect(rectShape, paintFill);
-      canvas.drawRect(rectShape, paintLine);
-    }
-
-    if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
-    }
-    if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
-    }
-  }
-
-  void _paintPolygon(Canvas canvas, Size size, PolygonEntity polygon) {
-    if (polygon.points.isEmpty) return;
-
-    final paintLine = Paint()
-      ..color = polygon.color
-      ..strokeWidth = _getStrokeWidth(polygon.id)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final paintFill = Paint()
-      ..color = polygon.color.withValues(alpha: 0.2)
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final firstPoint = Offset(
-      polygon.points.first.dx * size.width,
-      polygon.points.first.dy * size.height,
+    final context = PaintContext(
+      activeStep: activeStep,
+      primaryColor: primaryColor,
+      successColor: successColor,
+      pointColor: pointColor,
+      selectedEntityId: selectedEntityId,
     );
-    path.moveTo(firstPoint.dx, firstPoint.dy);
 
-    for (int i = 1; i < polygon.points.length; i++) {
-      final p = Offset(
-        polygon.points[i].dx * size.width,
-        polygon.points[i].dy * size.height,
-      );
-      path.lineTo(p.dx, p.dy);
-    }
-
-    if (polygon.isClosed) {
-      path.close();
-      canvas.drawPath(path, paintFill);
-    }
-
-    canvas.drawPath(path, paintLine);
-
-    // Points
-    final paintPoint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = polygon.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    for (final normPoint in polygon.points) {
-      final p = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
-      canvas.drawCircle(p, 5.0, paintPoint);
-      canvas.drawCircle(p, 5.0, paintPointBorder);
-    }
-  }
-
-  void _paintLine(Canvas canvas, Size size, LineEntity line) {
-    final p1 = line.p1;
-    final p2 = line.p2;
-
-    if (p1 == null && p2 == null) return;
-
-    final paintLine = Paint()
-      ..color = line.color
-      ..strokeWidth = _getStrokeWidth(line.id)
-      ..strokeCap = StrokeCap.round;
-
-    final paintPoint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = line.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
-
-    if (p1Pixel != null && p2Pixel != null) {
-      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
-    }
-
-    if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
-    }
-    if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
-    }
-  }
-
-  void _paintCalibration(Canvas canvas, Size size, CalibrationEntity calib) {
-    if (!isCalibrateStep) return;
-
-    final p1 = calib.p1;
-    final p2 = calib.p2;
-
-    if (p1 == null && p2 == null) return;
-
-    final color = calib.isConfirmed ? successColor : primaryColor;
-
-    final paintLine = Paint()
-      ..color = color
-      ..strokeWidth = 3.0
-      ..strokeCap = StrokeCap.round;
-
-    final paintPoint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final paintPointBorder = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-
-    if (p1 != null) p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    if (p2 != null) p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-
-    if (p1Pixel != null && p2Pixel != null) {
-      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
-    }
-
-    if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 6.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 6.0, paintPointBorder);
-    }
-
-    if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 6.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 6.0, paintPointBorder);
+    for (final entity in entities) {
+      EntityPainterDispatcher.paintEntity(canvas, size, entity, context);
     }
   }
 
   @override
   bool shouldRepaint(covariant EntitiesPainter oldDelegate) {
-    return true; // Im echten Einsatz könnten wir auf Listen-Änderungen optimieren
-  }
-
-  double _getStrokeWidth(String id) {
-    return id == selectedEntityId ? 5.0 : 3.0;
+    return true; // Im echten Einsatz koennten wir auf Listen-Aenderungen optimieren
   }
 }

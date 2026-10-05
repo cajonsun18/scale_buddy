@@ -14,12 +14,16 @@ enum WorkspaceError { none, loadFailed, selectionCancelled, unknown }
 sealed class WorkspaceState with _$WorkspaceState {
   const factory WorkspaceState({
     LoadedImageInfo? loadedImage,
+    LoadedImageInfo? originalImage,
     @Default(LoadingStatus.initial) LoadingStatus status,
     @Default(WorkspaceError.none) WorkspaceError statusMessage,
 
     @Default([]) List<DrawingEntity> entities,
+    List<DrawingEntity>? preWarpEntities,
     String? selectedEntityId,
     DragDetail? activeDragDetail,
+    @Default(1.0) double perspectiveScaleX,
+    @Default(1.0) double perspectiveScaleY,
   }) = _WorkspaceState;
 
   const WorkspaceState._();
