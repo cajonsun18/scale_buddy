@@ -15,6 +15,9 @@ enum WorkflowStepType {
 
   /// Schritt 4: Durchführen aller Längen-, Flächen- und Dachmessungen.
   measure,
+
+  /// Schritt 5: Bild oder PDF exportieren.
+  export,
 }
 
 /// Der Bearbeitungsstatus eines Schrittes für optische Indikatoren.
@@ -37,6 +40,8 @@ enum ToolAction {
   measurePolygon,
   measureRoofAngle,
   selectEdit,
+  exportImage,
+  exportPdf,
 }
 
 class ToolDefinition {
@@ -183,6 +188,25 @@ class WorkflowStepData {
           action: ToolAction.selectEdit,
           label: 'Auswählen/Bearbeiten',
           icon: Icons.pan_tool_alt,
+        ),
+      ],
+    ),
+    WorkflowStepData(
+      type: WorkflowStepType.export,
+      stepNumber: 5,
+      title: 'Export & Bericht',
+      shortDescription: 'PDF oder Bild speichern',
+      icon: Icons.ios_share,
+      availableTools: [
+        ToolDefinition(
+          action: ToolAction.exportImage,
+          label: 'Als Bild exportieren',
+          icon: Icons.image,
+        ),
+        ToolDefinition(
+          action: ToolAction.exportPdf,
+          label: 'Als PDF-Bericht speichern',
+          icon: Icons.picture_as_pdf,
         ),
       ],
     ),

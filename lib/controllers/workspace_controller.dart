@@ -103,6 +103,9 @@ class WorkspaceController extends Notifier<WorkspaceState> {
       statusMessage: WorkspaceError.none,
     );
 
+    // Yield to let the UI render the loading overlay before opening native dialogs
+    await Future.delayed(const Duration(milliseconds: 50));
+
     try {
       final info = await loaderAction();
       if (info != null) {

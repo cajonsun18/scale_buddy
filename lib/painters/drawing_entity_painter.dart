@@ -92,7 +92,7 @@ class LinePainter extends DrawingEntityPainter<LineEntity> {
 
   @override
   bool isVisibleInStep(WorkflowStepType step) =>
-      step == WorkflowStepType.measure;
+      step == WorkflowStepType.measure || step == WorkflowStepType.export;
 
   @override
   void paint(
@@ -147,7 +147,7 @@ class PolygonPainter extends DrawingEntityPainter<PolygonEntity> {
 
   @override
   bool isVisibleInStep(WorkflowStepType step) =>
-      step == WorkflowStepType.measure;
+      step == WorkflowStepType.measure || step == WorkflowStepType.export;
 
   @override
   void paint(
@@ -212,7 +212,7 @@ class RectanglePainter extends DrawingEntityPainter<RectangleEntity> {
 
   @override
   bool isVisibleInStep(WorkflowStepType step) =>
-      step == WorkflowStepType.measure;
+      step == WorkflowStepType.measure || step == WorkflowStepType.export;
 
   @override
   void paint(
@@ -275,7 +275,7 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
 
   @override
   bool isVisibleInStep(WorkflowStepType step) =>
-      step == WorkflowStepType.measure;
+      step == WorkflowStepType.measure || step == WorkflowStepType.export;
 
   @override
   void paint(

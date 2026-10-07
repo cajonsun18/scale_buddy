@@ -3,6 +3,11 @@ import '../widgets/scale_buddy_app_bar.dart';
 import '../widgets/workspace_status_bar.dart';
 
 import 'package:flutter/material.dart';
+import 'package:file_selector/file_selector.dart';
+
+import 'dart:typed_data';
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +17,7 @@ import '../models/workspace_state.dart';
 import '../controllers/workspace_controller.dart';
 import '../widgets/step_detail_view.dart';
 import '../widgets/workflow_sidebar.dart';
+import '../services/export_service.dart';
 import '../tools/distance_tool.dart';
 import '../tools/calibration_tool.dart';
 import '../tools/polygon_tool.dart';
@@ -35,6 +41,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     WorkflowStepType.perspective: StepStatus.open,
     WorkflowStepType.calibrate: StepStatus.open,
     WorkflowStepType.measure: StepStatus.open,
+    WorkflowStepType.export: StepStatus.open,
   };
   ToolAction? _lastSelectedTool;
 
@@ -75,6 +82,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       case WorkflowStepType.measure:
         return isCalibConfirmed &&
             _stepStatuses[WorkflowStepType.calibrate] == StepStatus.completed;
+      case WorkflowStepType.export:
+        return true;
     }
   }
 
@@ -533,9 +542,89 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       case ToolAction.manualPerspective:
         ref.read(activeToolProvider.notifier).setTool(const PerspectiveTool());
         break;
+      case ToolAction.exportImage:
+        _exportImage(
+          ref.read(workspaceControllerProvider),
+          ref.read(exportServiceProvider),
+        );
+        break;
+      case ToolAction.exportPdf:
+        _exportPdf(
+          ref.read(workspaceControllerProvider),
+          ref.read(exportServiceProvider),
+        );
+        break;
       default:
         break;
     }
+  }
+
+  bool _isExporting = false;
+
+  Future<void> _runExportTask({
+    required String dialogTitle,
+    required String fileName,
+    required Future<Uint8List> Function() generateBytes,
+    List<String>? allowedExtensions,
+    required String successMessage,
+  }) async {
+    final XTypeGroup typeGroup = XTypeGroup(
+      label: 'Export',
+      extensions: allowedExtensions,
+    );
+
+    final FileSaveLocation? result = await getSaveLocation(
+      suggestedName: fileName,
+      acceptedTypeGroups: allowedExtensions != null ? [typeGroup] : [],
+    );
+
+    if (result == null) return;
+
+    setState(() => _isExporting = true);
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    try {
+      final bytes = await generateBytes();
+      final file = File(result.path);
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(successMessage)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler beim Export: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  Future<void> _exportImage(
+    WorkspaceState state,
+    ExportService exportService,
+  ) async {
+    await _runExportTask(
+      dialogTitle: 'Bild exportieren',
+      fileName: 'export.png',
+      generateBytes: () => exportService.generateExportImage(state),
+      successMessage: 'Bild erfolgreich exportiert.',
+    );
+  }
+
+  Future<void> _exportPdf(
+    WorkspaceState state,
+    ExportService exportService,
+  ) async {
+    await _runExportTask(
+      dialogTitle: 'PDF-Bericht exportieren',
+      fileName: 'bericht.pdf',
+      allowedExtensions: ['pdf'],
+      generateBytes: () => exportService.generatePdfReport(state),
+      successMessage: 'PDF-Bericht erfolgreich exportiert.',
+    );
   }
 
   String _stepTitleFor(WorkflowStepType step) {

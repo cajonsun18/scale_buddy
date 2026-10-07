@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/controllers/workspace_controller.dart';
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/models/workspace_state.dart';
+import 'package:scale_buddy/theme/app_theme.dart';
 import 'package:scale_buddy/widgets/measurement_label_widget.dart';
 import 'package:scale_buddy/widgets/measurement_labels_overlay.dart';
 
@@ -42,7 +43,8 @@ void main() {
               () => _TestWorkspaceController(state),
             ),
           ],
-          child: const MaterialApp(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
             home: Scaffold(
               body: SizedBox(
                 width: 1000,
@@ -106,7 +108,8 @@ void main() {
                 () => _TestWorkspaceController(unselectedState),
               ),
             ],
-            child: const MaterialApp(
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
               home: Scaffold(
                 body: SizedBox(
                   width: 1000,
@@ -164,7 +167,8 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
             home: Scaffold(
               body: Focus(
                 child: SizedBox(
@@ -202,7 +206,7 @@ void main() {
               () => _TestWorkspaceController(unselectedState),
             ),
           ],
-          child: const MaterialApp(
+          child: MaterialApp(theme: AppTheme.lightTheme,
             home: Scaffold(
               body: SizedBox(
                 width: 1000,

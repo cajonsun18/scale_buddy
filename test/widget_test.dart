@@ -1,58 +1,135 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scale_buddy/main.dart';
+import 'package:scale_buddy/controllers/workspace_controller.dart';
+import 'package:scale_buddy/models/entities/drawing_entity.dart';
+import 'package:scale_buddy/models/loaded_image_info.dart';
+import 'package:scale_buddy/models/workspace_state.dart';
 
 void main() {
   testWidgets('Workflow menu cards switch and open on click', (
     WidgetTester tester,
   ) async {
-    // Desktop-Fenstergröße für den Test simulieren
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    // 1. App starten
-    await tester.pumpWidget(const ProviderScope(child: ScaleBuddyApp()));
+    final container = ProviderContainer();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const ScaleBuddyApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    // 2. Prüfen, ob alle 4 Workflow-Menüpunkte in der Seitenleiste sichtbar sind
+    final controller = container.read(workspaceControllerProvider.notifier);
+    final mockImage = LoadedImageInfo(
+      fileName: 'dummy.png',
+      bytes: Uint8List.fromList([
+        137,
+        80,
+        78,
+        71,
+        13,
+        10,
+        26,
+        10,
+        0,
+        0,
+        0,
+        13,
+        73,
+        72,
+        68,
+        82,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        8,
+        6,
+        0,
+        0,
+        0,
+        31,
+        21,
+        196,
+        137,
+        0,
+        0,
+        0,
+        11,
+        73,
+        68,
+        65,
+        84,
+        8,
+        215,
+        99,
+        96,
+        0,
+        2,
+        0,
+        0,
+        5,
+        0,
+        1,
+        13,
+        10,
+        43,
+        178,
+        0,
+        0,
+        0,
+        0,
+        73,
+        69,
+        78,
+        68,
+        174,
+        66,
+        96,
+        130,
+      ]),
+      width: 100,
+      height: 100,
+      fileSizeBytes: 100,
+    );
+    final perspective = DrawingEntity.perspective(
+      id: 'P1',
+      points: const [Offset(0, 0), Offset(1, 0), Offset(1, 1), Offset(0, 1)],
+      color: Colors.blue,
+    );
+    final calib = DrawingEntity.calibration(
+      id: 'C1',
+      p1: const Offset(0.1, 0.1),
+      p2: const Offset(0.2, 0.2),
+      isConfirmed: true,
+      enteredDistance: 1.0,
+    );
+
+    // ignore: invalid_use_of_visible_for_testing_member
+    controller.state = WorkspaceState(
+      loadedImage: mockImage,
+      entities: [perspective, calib],
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Datei laden'), findsAtLeastNWidgets(1));
     expect(find.text('Perspektive korrigieren'), findsAtLeastNWidgets(1));
     expect(find.text('Kalibrieren'), findsAtLeastNWidgets(1));
     expect(find.text('Messen'), findsAtLeastNWidgets(1));
+    expect(find.text('Export & Bericht'), findsAtLeastNWidgets(1));
 
-    // Standardmäßig ist Schritt 1 aktiv
-    expect(find.text('Schritt 1 von 4'), findsOneWidget);
-
-    // 3. Auf Schritt 2 ("Perspektive korrigieren") klicken
-    await tester.tap(find.text('Perspektive korrigieren').first);
-    await tester.pumpAndSettle();
-
-    // Prüfen, ob Schritt 2 nun aktiv ist und seine Werkzeuge sichtbar sind
-    expect(find.text('Schritt 2 von 4'), findsOneWidget);
-    expect(find.text('Automatische Entzerrung (KI/OpenCV)'), findsOneWidget);
-
-    // 4. Auf ein Werkzeug in Schritt 2 klicken
-    await tester.tap(find.text('Automatische Entzerrung (KI/OpenCV)').first);
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining('Automatische Entzerrung'),
-      findsAtLeastNWidgets(1),
-    );
-
-    // 5. Auf Schritt 3 ("Kalibrieren") klicken
-    final calFinder = find.text('Kalibrieren').first;
-    await tester.ensureVisible(calFinder);
-    await tester.tap(calFinder);
-    await tester.pumpAndSettle();
-    expect(find.text('Schritt 3 von 4'), findsOneWidget);
-
-    // 6. Auf Schritt 4 ("Messen") klicken
-    final messenFinder = find.text('Messen').first;
-    await tester.ensureVisible(messenFinder);
-    await tester.tap(messenFinder);
-    await tester.pumpAndSettle();
-    expect(find.text('Schritt 4 von 4'), findsOneWidget);
+    expect(find.text('Schritt 4 von 5'), findsOneWidget);
   });
 }

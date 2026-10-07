@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
+import 'package:scale_buddy/theme/app_theme.dart';
 import 'package:scale_buddy/widgets/workspace_image_view.dart';
 
 import 'dart:typed_data';
@@ -12,7 +13,6 @@ import 'package:scale_buddy/models/workspace_state.dart';
 import 'package:scale_buddy/models/workflow_step.dart';
 import 'package:scale_buddy/controllers/workspace_controller.dart';
 import 'package:flutter/gestures.dart';
-import 'package:scale_buddy/theme/app_theme.dart';
 
 class TestWorkspaceController extends WorkspaceController {
   final WorkspaceState _initialState;

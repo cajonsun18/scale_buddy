@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/models/workflow_step.dart';
-import 'package:scale_buddy/widgets/workflow_step_card.dart';
 import 'package:scale_buddy/theme/app_theme.dart';
+import 'package:scale_buddy/widgets/workflow_step_card.dart';
 
 void main() {
   Widget buildTestWidget({
@@ -29,9 +29,9 @@ void main() {
   testWidgets('Encoding (Sonderzeichen) rendering test', (
     WidgetTester tester,
   ) async {
-    // Schritt 1 & 2: Testing text with Sonderzeichen ("Fläche" / "0,5°")
+    // Schritt 1 & 2: Testing text with Sonderzeichen ("Fläche" / "0,5Â°")
     // "Fläche (Frei)" is in WorkflowStepType.measure (Step 4)
-    // "0,5°-Schritte" is in WorkflowStepType.perspective (Step 2)
+    // "0,5Â°-Schritte" is in WorkflowStepType.perspective (Step 2)
 
     final perspectiveStep = WorkflowStepData.allSteps.firstWhere(
       (s) => s.type == WorkflowStepType.perspective,
@@ -42,7 +42,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify "Feinrotation (0,5°-Schritte mit Hilfsgitter)" is rendered correctly
+    // Verify "Feinrotation (0,5Â°-Schritte mit Hilfsgitter)" is rendered correctly
     // Note: Due to potential encoding differences in test, we look for the label defined in models.
     final feinrotationLabel = perspectiveStep.availableTools
         .firstWhere((t) => t.action == ToolAction.fineRotation)

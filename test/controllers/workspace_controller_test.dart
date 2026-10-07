@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +5,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:scale_buddy/controllers/workspace_controller.dart';
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/models/loaded_image_info.dart';
+
+import '../utils/mock_data.dart';
+
 import 'package:scale_buddy/models/workspace_state.dart';
 import 'package:scale_buddy/services/image_loader_service.dart';
 import 'package:scale_buddy/tools/calibration_tool.dart';
@@ -132,7 +133,7 @@ void main() {
       () async {
         final mockImage = LoadedImageInfo(
           fileName: 'test.png',
-          bytes: Uint8List(0),
+          bytes: mockPngBytes,
           width: 800,
           height: 600,
           fileSizeBytes: 0,
@@ -151,7 +152,7 @@ void main() {
         controller.loadFromPicker();
 
         // Allow async operation to complete
-        await Future.delayed(Duration.zero);
+        await Future.delayed(const Duration(milliseconds: 100));
 
         expect(states.length, 2);
         expect(states[0].status, LoadingStatus.loading);
@@ -173,7 +174,7 @@ void main() {
 
       controller.loadFromPicker();
 
-      await Future.delayed(Duration.zero);
+      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(states.length, 2);
       expect(states[0].status, LoadingStatus.loading);

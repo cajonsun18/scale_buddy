@@ -316,7 +316,8 @@ class _ImageWithPointsOverlayState
                   },
                 ),
               ),
-            if (widget.activeStep == WorkflowStepType.measure)
+            if (widget.activeStep == WorkflowStepType.measure ||
+                widget.activeStep == WorkflowStepType.export)
               Positioned.fill(child: MeasurementLabelsOverlay(size: size)),
           ],
         );

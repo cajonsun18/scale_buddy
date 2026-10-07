@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:scale_buddy/models/loaded_image_info.dart';
 import 'package:scale_buddy/services/image_loader_service.dart';
-import 'package:scale_buddy/widgets/workspace_toolbar.dart';
 import 'package:scale_buddy/theme/app_theme.dart';
+import 'package:scale_buddy/widgets/workspace_toolbar.dart';
 
 class MockImageLoaderService extends Mock implements ImageLoaderService {}
 
@@ -54,7 +54,9 @@ void main() {
 
       // Tap it
       await tester.tap(button);
-      await tester.pump(); // Start loading
+      await tester.pump(
+        const Duration(milliseconds: 100),
+      ); // Wait out the UI lock delay
 
       // Verify that the service was called
       verify(() => mockService.generateSampleFloorPlan()).called(1);

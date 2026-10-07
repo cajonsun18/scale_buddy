@@ -91,7 +91,7 @@ class WorkflowSidebar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Schritt ${_stepNumberFor(activeStep)} von 4',
+                        'Schritt ${_stepNumberFor(activeStep)} von 5',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -206,6 +206,8 @@ class WorkflowSidebar extends StatelessWidget {
         return 3;
       case WorkflowStepType.measure:
         return 4;
+      case WorkflowStepType.export:
+        return 5;
     }
   }
 }

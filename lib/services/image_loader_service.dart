@@ -71,6 +71,7 @@ class ImageLoaderService {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: _kAllowedExtensions,
+        windowsOptions: const WindowsOptions(lockParentWindow: true),
       );
 
       if (result.isEmpty) {

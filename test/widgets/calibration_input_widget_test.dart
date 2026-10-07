@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/controllers/workspace_controller.dart';
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/tools/calibration_tool.dart';
-import 'package:scale_buddy/widgets/calibration_input_widget.dart';
 import 'package:scale_buddy/theme/app_theme.dart';
+import 'package:scale_buddy/widgets/calibration_input_widget.dart';
 
 void main() {
   Widget createWidgetUnderTest(ProviderContainer container) {

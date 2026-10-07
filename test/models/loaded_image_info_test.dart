@@ -1,14 +1,14 @@
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/models/loaded_image_info.dart';
+
+import '../utils/mock_data.dart';
 
 void main() {
   test('LoadedImageInfo formattedFileSize', () {
     LoadedImageInfo createInfo(int size) {
       return LoadedImageInfo(
         fileName: 'test.png',
-        bytes: Uint8List(0),
+        bytes: mockPngBytes,
         width: 100,
         height: 100,
         fileSizeBytes: size,
