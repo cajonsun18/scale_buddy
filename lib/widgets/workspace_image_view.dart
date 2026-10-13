@@ -4,12 +4,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/workspace_controller.dart';
 import '../tools/select_tool.dart';
 import '../models/entities/drawing_entity.dart';
+import '../models/mobile_perspective_state.dart';
 import '../models/workflow_step.dart';
 import 'calibration_input_widget.dart';
 import 'measurement_labels_overlay.dart';
@@ -132,13 +134,42 @@ class _ImageWithPointsOverlayState
                 onPointerHover: (event) {},
                 child: GestureDetector(
                   onTapUp: (details) {
-                    Focus.of(context).requestFocus();
+                    Focus.maybeOf(context)?.requestFocus();
                     final renderBox = context.findRenderObject() as RenderBox;
                     controller.handleTapUp(details, renderBox.size);
+
+                    if (context.isMobile &&
+                        widget.activeStep == WorkflowStepType.perspective) {
+                      final perspFlow = ref.read(
+                        mobilePerspectiveStateProvider,
+                      );
+                      // In mobile Step 2, points should only be placed if manual mode was started
+                      if (perspFlow.stepState ==
+                              MobilePerspectiveStepState.manualInProgress ||
+                          perspFlow.stepState ==
+                              MobilePerspectiveStepState.ready4Points) {
+                        final updatedState = ref.read(
+                          workspaceControllerProvider,
+                        );
+                        final pEntity = updatedState.entities
+                            .whereType<PerspectiveEntity>()
+                            .firstOrNull;
+                        final count = pEntity?.points.length ?? 0;
+                        if (count == 4) {
+                          ref
+                              .read(mobilePerspectiveStateProvider.notifier)
+                              .setReady(isAuto: false);
+                        } else if (count > 0) {
+                          ref
+                              .read(mobilePerspectiveStateProvider.notifier)
+                              .setManualInProgress();
+                        }
+                      }
+                    }
                   },
                   onPanStart: isSelectTool
                       ? (details) {
-                          Focus.of(context).requestFocus();
+                          Focus.maybeOf(context)?.requestFocus();
                           final renderBox =
                               context.findRenderObject() as RenderBox;
                           final localPos = renderBox.globalToLocal(
@@ -211,6 +242,7 @@ class _ImageWithPointsOverlayState
                         successColor: AppColors.of(context).success,
                         pointColor: Colors.white,
                         selectedEntityId: state.selectedEntityId,
+                        isMobile: context.isMobile,
                       ),
                     ),
                   ),
@@ -229,25 +261,67 @@ class _ImageWithPointsOverlayState
             if ((widget.activeStep == WorkflowStepType.perspective)) ...[
               for (final entity
                   in state.entities.whereType<PerspectiveEntity>())
-                for (final point in entity.points)
-                  _buildPointHandle(point, size, controller),
+                for (int i = 0; i < entity.points.length; i++)
+                  _buildPointHandle(
+                    entity.points[i],
+                    size,
+                    controller,
+                    pointIndex: i,
+                    entityId: entity.id,
+                  ),
             ],
 
             if (_showMagnifier && _magnifierPosition != null)
-              Positioned(
-                left: _magnifierPosition!.dx - (magnifierSize.width / 2),
-                top: _magnifierPosition!.dy - (magnifierSize.height / 2),
-                child: IgnorePointer(
-                  child: RawMagnifier(
-                    decoration: const MagnifierDecoration(
-                      shape: CircleBorder(
-                        side: BorderSide(color: Colors.white, width: 2),
+              Builder(
+                builder: (context) {
+                  const verticalOffset = 70.0;
+                  final magCenter = Offset(
+                    _magnifierPosition!.dx,
+                    _magnifierPosition!.dy - verticalOffset,
+                  );
+
+                  return Positioned(
+                    left: magCenter.dx - (magnifierSize.width / 2),
+                    top: magCenter.dy - (magnifierSize.height / 2),
+                    child: IgnorePointer(
+                      child: SizedBox(
+                        width: magnifierSize.width,
+                        height: magnifierSize.height,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            RawMagnifier(
+                              focalPointOffset: const Offset(0, verticalOffset),
+                              decoration: MagnifierDecoration(
+                                opacity: 1.0,
+                                shadows: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                                shape: const CircleBorder(
+                                  side: BorderSide(
+                                    color: Color(0xFF38BDF8),
+                                    width: 2.5,
+                                  ),
+                                ),
+                              ),
+                              size: magnifierSize,
+                              magnificationScale: 2.0,
+                            ),
+                            // Fadenkreuz im Zentrum der Lupe
+                            CustomPaint(
+                              size: magnifierSize,
+                              painter: _CrosshairPainter(),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    size: magnifierSize,
-                    magnificationScale: 2.0,
-                  ),
-                ),
+                  );
+                },
               ),
 
             if ((widget.activeStep == WorkflowStepType.calibrate) &&
@@ -328,8 +402,10 @@ class _ImageWithPointsOverlayState
   Widget _buildPointHandle(
     Offset normPoint,
     Size size,
-    WorkspaceController controller,
-  ) {
+    WorkspaceController controller, {
+    int? pointIndex,
+    String? entityId,
+  }) {
     const handleSize = 48.0;
     final center = Offset(
       normPoint.dx * size.width,
@@ -342,6 +418,7 @@ class _ImageWithPointsOverlayState
       width: handleSize,
       height: handleSize,
       child: GestureDetector(
+        key: ValueKey('point_handle_${entityId}_$pointIndex'),
         behavior: HitTestBehavior.opaque,
         onPanStart: (details) {
           final renderBox = context.findRenderObject() as RenderBox;
@@ -355,7 +432,11 @@ class _ImageWithPointsOverlayState
             globalPosition: details.globalPosition,
             localPosition: localPos,
           );
-          controller.handlePanStart(newDetails, size);
+          if (pointIndex != null && entityId != null) {
+            controller.startDraggingEntityPoint(entityId, pointIndex);
+          } else {
+            controller.handlePanStart(newDetails, size);
+          }
         },
         onPanUpdate: (details) {
           final renderBox = context.findRenderObject() as RenderBox;
@@ -451,6 +532,7 @@ class EntitiesPainter extends CustomPainter {
   final Color successColor;
   final Color pointColor;
   final String? selectedEntityId;
+  final bool isMobile;
 
   EntitiesPainter({
     required this.entities,
@@ -459,6 +541,7 @@ class EntitiesPainter extends CustomPainter {
     required this.successColor,
     required this.pointColor,
     this.selectedEntityId,
+    this.isMobile = false,
   });
 
   @override
@@ -469,6 +552,7 @@ class EntitiesPainter extends CustomPainter {
       successColor: successColor,
       pointColor: pointColor,
       selectedEntityId: selectedEntityId,
+      isMobile: isMobile,
     );
 
     for (final entity in entities) {
@@ -480,4 +564,80 @@ class EntitiesPainter extends CustomPainter {
   bool shouldRepaint(covariant EntitiesPainter oldDelegate) {
     return true; // Im echten Einsatz koennten wir auf Listen-Aenderungen optimieren
   }
+}
+
+class _CrosshairPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paintCrosshair = Paint()
+      ..color = const Color(0xFF38BDF8)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    final paintShadow = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke;
+
+    const crosshairLength = 12.0;
+    const gap = 3.0;
+
+    // Horizontale Linie (links & rechts mit kleiner Lücke im Zentrum)
+    // Schatten zuerst
+    canvas.drawLine(
+      Offset(center.dx - crosshairLength, center.dy),
+      Offset(center.dx - gap, center.dy),
+      paintShadow,
+    );
+    canvas.drawLine(
+      Offset(center.dx + gap, center.dy),
+      Offset(center.dx + crosshairLength, center.dy),
+      paintShadow,
+    );
+
+    // Vertikale Linie (oben & unten)
+    canvas.drawLine(
+      Offset(center.dx, center.dy - crosshairLength),
+      Offset(center.dx, center.dy - gap),
+      paintShadow,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy + gap),
+      Offset(center.dx, center.dy + crosshairLength),
+      paintShadow,
+    );
+
+    // Cyan Linien
+    canvas.drawLine(
+      Offset(center.dx - crosshairLength, center.dy),
+      Offset(center.dx - gap, center.dy),
+      paintCrosshair,
+    );
+    canvas.drawLine(
+      Offset(center.dx + gap, center.dy),
+      Offset(center.dx + crosshairLength, center.dy),
+      paintCrosshair,
+    );
+
+    canvas.drawLine(
+      Offset(center.dx, center.dy - crosshairLength),
+      Offset(center.dx, center.dy - gap),
+      paintCrosshair,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy + gap),
+      Offset(center.dx, center.dy + crosshairLength),
+      paintCrosshair,
+    );
+
+    // Kleiner Mittelpunkt
+    final centerDotPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 1.2, centerDotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

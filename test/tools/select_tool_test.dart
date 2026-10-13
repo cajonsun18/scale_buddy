@@ -53,10 +53,10 @@ void main() {
         const Size(100, 100),
       );
 
-      expect(newState.activeDragDetail, isA<DragDetailEntityPoint>());
-      final detail = newState.activeDragDetail as DragDetailEntityPoint;
-      expect(detail.entityId, 'L1');
-      expect(detail.pointIndex, 0);
+      expect(
+        newState.activeDragDetail,
+        const DragDetail.entityPoint(entityId: 'L1', pointIndex: 0),
+      );
     });
 
     test(

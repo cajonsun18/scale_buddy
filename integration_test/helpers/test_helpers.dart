@@ -9,8 +9,7 @@ import 'package:scale_buddy/models/loaded_image_info.dart';
 
 /// Mock-Klasse um den FilePicker zu umgehen und das Testbild zu laden
 class MockImageLoaderService extends ImageLoaderService {
-  @override
-  Future<LoadedImageInfo?> pickImageFromFile() async {
+  Future<LoadedImageInfo?> _loadTestAsset() async {
     try {
       final ByteData data = await rootBundle.load(
         'test_assets/verzerrtes_bild.jpg',
@@ -22,10 +21,31 @@ class MockImageLoaderService extends ImageLoaderService {
       return null;
     }
   }
+
+  @override
+  Future<LoadedImageInfo?> pickImageFromFile() async {
+    return _loadTestAsset();
+  }
+
+  @override
+  Future<LoadedImageInfo?> pickImageFromCamera() async {
+    return _loadTestAsset();
+  }
+
+  @override
+  Future<LoadedImageInfo?> pickImageFromGalleryMobile() async {
+    return _loadTestAsset();
+  }
 }
 
 /// Hilfsfunktion: Startet die App, ladt das verzerrte Bild und geht zu Schritt 2
-Future<void> startAppAndLoadImage(WidgetTester tester) async {
+Future<void> startAppAndLoadImage(
+  WidgetTester tester, {
+  Size screenSize = const Size(1280, 800),
+}) async {
+  tester.view.physicalSize = screenSize;
+  tester.view.devicePixelRatio = 1.0;
+
   // Baue die App mit dem gemockten ImageLoaderService
   await tester.pumpWidget(
     ProviderScope(

@@ -13,12 +13,16 @@ import '../models/workspace_state.dart';
 import 'workspace_image_view.dart';
 import 'workspace_placeholder.dart';
 import 'workspace_toolbar.dart';
+import 'mobile_perspective_header.dart';
+import 'mobile_perspective_dock.dart';
 
 class StepDetailView extends ConsumerStatefulWidget {
   final WorkflowStepType activeStep;
   final StepStatus currentStatus;
   final ToolAction? lastSelectedTool;
   final ValueChanged<StepStatus> onStatusChanged;
+  final ValueChanged<WorkflowStepType>? onStepSelected;
+  final bool isMobile;
 
   const StepDetailView({
     super.key,
@@ -26,6 +30,8 @@ class StepDetailView extends ConsumerStatefulWidget {
     required this.currentStatus,
     this.lastSelectedTool,
     required this.onStatusChanged,
+    this.onStepSelected,
+    this.isMobile = false,
   });
 
   @override
@@ -42,6 +48,10 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
       (s) => s.type == widget.activeStep,
     );
 
+    if (widget.isMobile) {
+      return _buildMobileWorkspace(context, theme, stepData);
+    }
+
     return Container(
       color: theme.colorScheme.surface,
       padding: const EdgeInsets.all(24.0),
@@ -51,14 +61,17 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                stepData.title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+              Expanded(
+                child: Text(
+                  stepData.title,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
+              const SizedBox(width: 16),
               if (widget.currentStatus == StepStatus.active)
                 FilledButton.icon(
                   onPressed: () => widget.onStatusChanged(StepStatus.completed),
@@ -146,13 +159,10 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
             ),
             Positioned.fill(
               top: 56,
-              child: workspaceState.status == LoadingStatus.loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white70),
-                    )
-                  : (workspaceState.loadedImage != null
-                        ? WorkspaceImageView(activeStep: widget.activeStep)
-                        : WorkspacePlaceholder(stepData: stepData)),
+              child: _WorkspaceContent(
+                activeStep: widget.activeStep,
+                stepData: stepData,
+              ),
             ),
             if (_isDragHovering)
               Positioned.fill(
@@ -213,29 +223,116 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                 left: 12,
                 right: 12,
                 bottom: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    workspaceState.statusMessage ==
-                            WorkspaceError.selectionCancelled
-                        ? 'Auswahl abgebrochen'
-                        : 'Fehler beim Laden',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                child: _StatusMessageOverlay(
+                  error: workspaceState.statusMessage,
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileWorkspace(
+    BuildContext context,
+    ThemeData theme,
+    WorkflowStepData stepData,
+  ) {
+    final workspaceState = ref.watch(workspaceControllerProvider);
+
+    return Container(
+      color: AppColors.of(context).toolbarBg,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _WorkspaceContent(
+                activeStep: widget.activeStep,
+                stepData: stepData,
+              ),
+            ),
+            if (widget.activeStep == WorkflowStepType.perspective &&
+                workspaceState.loadedImage != null)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: MobilePerspectiveHeader(),
+              ),
+            if (widget.activeStep == WorkflowStepType.perspective &&
+                workspaceState.loadedImage != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MobilePerspectiveDock(
+                  onSkipOrNext: () {
+                    widget.onStatusChanged(StepStatus.completed);
+                    widget.onStepSelected?.call(WorkflowStepType.calibrate);
+                  },
+                ),
+              ),
+            if (workspaceState.statusMessage != WorkspaceError.none)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: _StatusMessageOverlay(
+                  error: workspaceState.statusMessage,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkspaceContent extends ConsumerWidget {
+  final WorkflowStepType activeStep;
+  final WorkflowStepData stepData;
+
+  const _WorkspaceContent({required this.activeStep, required this.stepData});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workspaceState = ref.watch(workspaceControllerProvider);
+
+    if (workspaceState.status == LoadingStatus.loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white70),
+      );
+    }
+
+    if (workspaceState.loadedImage != null) {
+      return WorkspaceImageView(activeStep: activeStep);
+    }
+
+    return WorkspacePlaceholder(stepData: stepData);
+  }
+}
+
+class _StatusMessageOverlay extends StatelessWidget {
+  final WorkspaceError error;
+
+  const _StatusMessageOverlay({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        error == WorkspaceError.selectionCancelled
+            ? 'Auswahl abgebrochen'
+            : 'Fehler beim Laden',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

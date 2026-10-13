@@ -11,6 +11,7 @@ class PaintContext {
   final Color successColor;
   final Color pointColor;
   final String? selectedEntityId;
+  final bool isMobile;
 
   PaintContext({
     required this.activeStep,
@@ -18,6 +19,7 @@ class PaintContext {
     required this.successColor,
     required this.pointColor,
     this.selectedEntityId,
+    this.isMobile = false,
   });
 
   double getStrokeWidth(String id) => id == selectedEntityId ? 4.0 : 2.0;
@@ -420,15 +422,21 @@ class PerspectivePainter extends DrawingEntityPainter<PerspectiveEntity> {
   ) {
     if (entity.points.isEmpty) return;
 
+    final isMobile = context.isMobile;
+    final strokeColor = isMobile ? const Color(0xFF38BDF8) : entity.color;
+    final fillColor = isMobile
+        ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
+        : entity.color.withValues(alpha: 0.2);
+
     final paintLine = Paint()
-      ..color = entity.color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
+      ..color = strokeColor
+      ..strokeWidth = isMobile ? 2.5 : context.getStrokeWidth(entity.id)
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
     final paintFill = Paint()
-      ..color = entity.color.withValues(alpha: 0.2)
+      ..color = fillColor
       ..style = PaintingStyle.fill;
 
     final path = Path();
@@ -453,19 +461,124 @@ class PerspectivePainter extends DrawingEntityPainter<PerspectiveEntity> {
 
     canvas.drawPath(path, paintLine);
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
+    // Gestrichelte Linie zur Andeutung der Schließung (bei 3 Punkten)
+    if (isMobile && entity.points.length == 3) {
+      final p3 = Offset(
+        entity.points[2].dx * size.width,
+        entity.points[2].dy * size.height,
+      );
+      _drawDashedLine(
+        canvas,
+        p3,
+        firstPoint,
+        strokeColor.withValues(alpha: 0.6),
+      );
+    }
+
+    // Punkte zeichnen
+    final paintPointFill = Paint()
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
+
+    final paintOuterRing = Paint()
+      ..color = isMobile ? strokeColor.withValues(alpha: 0.35) : strokeColor
+      ..strokeWidth = isMobile ? 3.0 : 2.0
+      ..style = PaintingStyle.stroke;
+
     final paintPointBorder = Paint()
-      ..color = entity.color
+      ..color = strokeColor
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    for (final normPoint in entity.points) {
+    for (int i = 0; i < entity.points.length; i++) {
+      final normPoint = entity.points[i];
       final p = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
-      canvas.drawCircle(p, 6.0, paintPoint);
-      canvas.drawCircle(p, 6.0, paintPointBorder);
+
+      if (isMobile) {
+        // Leuchtend blauer/cyanfarbener Kreis-Marker mit weißem Zentrum und transparentem Außenring
+        canvas.drawCircle(p, 9.0, paintOuterRing);
+        canvas.drawCircle(p, 5.0, paintPointFill);
+        canvas.drawCircle(p, 5.0, paintPointBorder);
+
+        // Dezentes Label ("Ecke 1", "Ecke 2", ...)
+        _drawCornerLabel(canvas, size, p, i + 1, entity.points);
+      } else {
+        canvas.drawCircle(p, 6.0, paintPointFill);
+        canvas.drawCircle(p, 6.0, paintPointBorder);
+      }
     }
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset p1, Offset p2, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final dx = p2.dx - p1.dx;
+    final dy = p2.dy - p1.dy;
+    final distance = sqrt(dx * dx + dy * dy);
+    if (distance == 0) return;
+
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+    double drawn = 0.0;
+
+    while (drawn < distance) {
+      final startFraction = drawn / distance;
+      final endFraction = min((drawn + dashWidth) / distance, 1.0);
+
+      canvas.drawLine(
+        Offset(p1.dx + dx * startFraction, p1.dy + dy * startFraction),
+        Offset(p1.dx + dx * endFraction, p1.dy + dy * endFraction),
+        paint,
+      );
+      drawn += dashWidth + dashSpace;
+    }
+  }
+
+  void _drawCornerLabel(
+    Canvas canvas,
+    Size size,
+    Offset point,
+    int index,
+    List<Offset> allPoints,
+  ) {
+    final textSpan = TextSpan(
+      text: 'Ecke $index',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: 0.8),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Positionierung mit leichtem Offset, damit es nicht direkt auf dem Punkt liegt
+    double labelX = point.dx + 12;
+    double labelY = point.dy + 8;
+
+    // Verhindern, dass Label aus dem Canvas ragt
+    if (labelX + textPainter.width > size.width - 4) {
+      labelX = point.dx - textPainter.width - 12;
+    }
+    if (labelY + textPainter.height > size.height - 4) {
+      labelY = point.dy - textPainter.height - 8;
+    }
+
+    textPainter.paint(canvas, Offset(labelX, labelY));
   }
 }
 

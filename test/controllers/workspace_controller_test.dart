@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:scale_buddy/controllers/workspace_controller.dart';
+import 'package:scale_buddy/models/drag_detail.dart';
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/models/loaded_image_info.dart';
-
-import '../utils/mock_data.dart';
-
 import 'package:scale_buddy/models/workspace_state.dart';
 import 'package:scale_buddy/services/image_loader_service.dart';
 import 'package:scale_buddy/tools/calibration_tool.dart';
+
+import '../utils/mock_data.dart';
 
 class MockImageLoaderService extends Mock implements ImageLoaderService {}
 
@@ -226,5 +226,22 @@ void main() {
         expect(controller.canLeaveCalibrationStep(), isTrue);
       },
     );
+
+    test('startDraggingEntityPoint sets activeDragDetail', () {
+      final controller = container.read(workspaceControllerProvider.notifier);
+
+      expect(
+        container.read(workspaceControllerProvider).activeDragDetail,
+        isNull,
+      );
+
+      controller.startDraggingEntityPoint('test-entity-1', 2);
+
+      final state = container.read(workspaceControllerProvider);
+      expect(
+        state.activeDragDetail,
+        const DragDetail.entityPoint(entityId: 'test-entity-1', pointIndex: 2),
+      );
+    });
   });
 }

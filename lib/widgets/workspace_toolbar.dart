@@ -27,82 +27,103 @@ class WorkspaceToolbar extends ConsumerWidget {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          const Text(
-            'Ansicht:',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 12),
-          _ToolbarButton(
-            icon: Icons.image,
-            label: 'Original',
-            isActive: state.loadedImage != null,
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-          _ToolbarButton(
-            icon: Icons.layers,
-            label: 'Messungen',
-            isActive: state.loadedImage != null,
-            onPressed: () {},
-          ),
-          const Spacer(),
-          if (state.status == LoadingStatus.loading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 650;
+          return Row(
+            children: [
+              if (!isCompact) ...[
+                const Text(
+                  'Ansicht:',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _ToolbarButton(
+                  icon: Icons.image,
+                  label: 'Original',
+                  isActive: state.loadedImage != null,
+                  onPressed: () {},
+                ),
+                const SizedBox(width: 8),
+                _ToolbarButton(
+                  icon: Icons.layers,
+                  label: 'Messungen',
+                  isActive: state.loadedImage != null,
+                  onPressed: () {},
+                ),
+              ],
+              const Spacer(),
+              if (state.status == LoadingStatus.loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              FilledButton.icon(
+                onPressed: state.status == LoadingStatus.loading
+                    ? null
+                    : () => controller.loadFromPicker(),
+                icon: const Icon(Icons.folder_open, size: 16),
+                label: const Text(
+                  'Datei laden…',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 36),
                 ),
               ),
-            ),
-          FilledButton.icon(
-            onPressed: state.status == LoadingStatus.loading
-                ? null
-                : () => controller.loadFromPicker(),
-            icon: const Icon(Icons.folder_open, size: 16),
-            label: const Text('Datei laden…', style: TextStyle(fontSize: 13)),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(0, 36),
-            ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: state.status == LoadingStatus.loading
-                ? null
-                : () => controller.loadSample(),
-            icon: const Icon(Icons.science, size: 16),
-            label: const Text('Beispiel laden', style: TextStyle(fontSize: 13)),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.of(context).toolbarBorder,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(0, 36),
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (state.loadedImage != null)
-            IconButton(
-              tooltip: 'Bild entfernen',
-              icon: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-                size: 20,
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: state.status == LoadingStatus.loading
+                    ? null
+                    : () => controller.loadSample(),
+                icon: const Icon(Icons.science, size: 16),
+                label: const Text(
+                  'Beispiel laden',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  backgroundColor: AppColors.of(context).toolbarBorder,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 36),
+                ),
               ),
-              onPressed: state.status == LoadingStatus.loading
-                  ? null
-                  : () => controller.clearImage(),
-            ),
-        ],
+              const SizedBox(width: 8),
+              if (state.loadedImage != null)
+                IconButton(
+                  tooltip: 'Bild entfernen',
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 20,
+                  ),
+                  onPressed: state.status == LoadingStatus.loading
+                      ? null
+                      : () => controller.clearImage(),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

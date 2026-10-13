@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pasteboard/pasteboard.dart';
@@ -101,6 +102,35 @@ class ImageLoaderService {
       pathFallback: null,
       fileName: fileName,
     );
+  }
+
+  Future<LoadedImageInfo?> _pickFromImageSource(
+    ImageSource source,
+    String sourceName,
+  ) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return null;
+
+      final bytes = await pickedFile.readAsBytes();
+      return await _buildFromBytes(
+        bytes: bytes,
+        pathFallback: pickedFile.path,
+        fileName: pickedFile.name,
+      );
+    } catch (e) {
+      debugPrint('Error picking from $sourceName: $e');
+      return null;
+    }
+  }
+
+  Future<LoadedImageInfo?> pickImageFromCamera() {
+    return _pickFromImageSource(ImageSource.camera, 'camera');
+  }
+
+  Future<LoadedImageInfo?> pickImageFromGalleryMobile() {
+    return _pickFromImageSource(ImageSource.gallery, 'gallery');
   }
 
   /// Liest ein Bild aus der Zwischenablage.

@@ -127,8 +127,12 @@ class MeasurementCalculator {
         final angleRad = atan2(dy, dx);
 
         double sweepAngle = angleRad - baseAngle;
-        while (sweepAngle > pi) sweepAngle -= 2 * pi;
-        while (sweepAngle < -pi) sweepAngle += 2 * pi;
+        while (sweepAngle > pi) {
+          sweepAngle -= 2 * pi;
+        }
+        while (sweepAngle < -pi) {
+          sweepAngle += 2 * pi;
+        }
 
         final midAngleRad = baseAngle + (sweepAngle / 2);
         final labelRadius = distance * 0.4;

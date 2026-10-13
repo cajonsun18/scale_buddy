@@ -1,11 +1,12 @@
 import '../models/app_intents.dart';
 import '../widgets/scale_buddy_app_bar.dart';
 import '../widgets/workspace_status_bar.dart';
+import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 import 'package:flutter/material.dart';
 import 'package:file_selector/file_selector.dart';
 
-import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -44,6 +45,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     WorkflowStepType.export: StepStatus.open,
   };
   ToolAction? _lastSelectedTool;
+  // ignore: unused_field
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -196,196 +199,220 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-            appBar: ScaleBuddyAppBar(
-              onNewMeasurement: () {
-                _handleStepSelected(WorkflowStepType.file, calib);
-                _handleToolSelected(
-                  WorkflowStepType.file,
-                  ToolAction.snipScreen,
-                  workspaceController,
-                );
-              },
-              onZoomIn: () {
-                final controller = ref.read(transformationControllerProvider);
-                final matrix = controller.value.clone();
-                // ignore: deprecated_member_use
-                matrix.scale(1.2);
-                controller.value = matrix;
-              },
-              onZoomOut: () {
-                final controller = ref.read(transformationControllerProvider);
-                final matrix = controller.value.clone();
-                // ignore: deprecated_member_use
-                matrix.scale(1.0 / 1.2);
-                controller.value = matrix;
-              },
-            ),
-            body: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      WorkflowSidebar(
-                        activeStep: _activeStep,
-                        stepStatuses: _stepStatuses,
-                        activeToolAction:
-                            currentToolAction ?? _lastSelectedTool,
-                        onStepSelected: (step) =>
-                            _handleStepSelected(step, calib),
-                        onToolSelected: (step, action) => _handleToolSelected(
-                          step,
-                          action,
-                          workspaceController,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = AppBreakpoints.isMobileWidth(
+                constraints.maxWidth,
+              );
+              final sidebar = WorkflowSidebar(
+                activeStep: _activeStep,
+                stepStatuses: _stepStatuses,
+                activeToolAction: currentToolAction ?? _lastSelectedTool,
+                onStepSelected: (step) {
+                  _handleStepSelected(step, calib);
+                },
+                onToolSelected: (step, action) {
+                  _handleToolSelected(step, action, workspaceController);
+                },
+                isStepEnabled: (step) =>
+                    _isStepEnabled(step, workspaceState, isCalibConfirmed),
+                extraContentBuilder: (context, step) {
+                  if (step == WorkflowStepType.perspective) {
+                    final pEntity = workspaceState.entities
+                        .whereType<PerspectiveEntity>()
+                        .firstOrNull;
+                    Widget? actionButton;
+                    if (pEntity != null && pEntity.points.length == 4) {
+                      actionButton = SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            workspaceController.applyPerspectiveCorrection();
+                            setState(() {
+                              _stepStatuses[WorkflowStepType.perspective] =
+                                  StepStatus.completed;
+                            });
+                          },
+                          icon: const Icon(Icons.transform, size: 16),
+                          label: const Text('Entzerren'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.orange.shade600,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
-                        isStepEnabled: (step) => _isStepEnabled(
-                          step,
-                          workspaceState,
-                          isCalibConfirmed,
+                      );
+                    } else if (workspaceState.originalImage != null &&
+                        workspaceState.preWarpEntities != null) {
+                      actionButton = SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            workspaceController.resetPerspective();
+                            setState(() {
+                              _stepStatuses[WorkflowStepType.perspective] =
+                                  StepStatus.active;
+                            });
+                          },
+                          icon: const Icon(Icons.undo, size: 16),
+                          label: const Text('Punkte anpassen'),
                         ),
-                        extraContentBuilder: (context, step) {
-                          if (step == WorkflowStepType.perspective) {
-                            final pEntity = workspaceState.entities
-                                .whereType<PerspectiveEntity>()
-                                .firstOrNull;
-                            Widget? actionButton;
-                            if (pEntity != null && pEntity.points.length == 4) {
-                              actionButton = SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: () {
-                                    workspaceController
-                                        .applyPerspectiveCorrection();
-                                    setState(() {
-                                      _stepStatuses[WorkflowStepType
-                                              .perspective] =
-                                          StepStatus.completed;
-                                    });
-                                  },
-                                  icon: const Icon(Icons.transform, size: 16),
-                                  label: const Text('Entzerren'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.orange.shade600,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                ),
-                              );
-                            } else if (workspaceState.originalImage != null &&
-                                workspaceState.preWarpEntities != null) {
-                              actionButton = SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    workspaceController.resetPerspective();
-                                    setState(() {
-                                      _stepStatuses[WorkflowStepType
-                                              .perspective] =
-                                          StepStatus.active;
-                                    });
-                                  },
-                                  icon: const Icon(Icons.undo, size: 16),
-                                  label: const Text('Punkte anpassen'),
-                                ),
-                              );
-                            }
+                      );
+                    }
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Seitenverhältnis anpassen',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'X-Skalierung',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                    Text(
-                                      workspaceState.perspectiveScaleX
-                                          .toStringAsFixed(2),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Slider(
-                                  value: workspaceState.perspectiveScaleX,
-                                  min: 0.1,
-                                  max: 3.0,
-                                  onChanged: (v) => workspaceController
-                                      .setPerspectiveScaleX(v),
-                                  onChangeEnd: (v) => workspaceController
-                                      .reapplyPerspectiveIfWarped(),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Y-Skalierung',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                    Text(
-                                      workspaceState.perspectiveScaleY
-                                          .toStringAsFixed(2),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Slider(
-                                  value: workspaceState.perspectiveScaleY,
-                                  min: 0.1,
-                                  max: 3.0,
-                                  onChanged: (v) => workspaceController
-                                      .setPerspectiveScaleY(v),
-                                  onChangeEnd: (v) => workspaceController
-                                      .reapplyPerspectiveIfWarped(),
-                                ),
-                                if (actionButton != null)
-                                  const SizedBox(height: 16),
-                                ?actionButton,
-                              ],
-                            );
-                          }
-                          return null;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        Text(
+                          'Seitenverhältnis anpassen',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'X-Skalierung',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            Text(
+                              workspaceState.perspectiveScaleX.toStringAsFixed(
+                                2,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value: workspaceState.perspectiveScaleX,
+                          min: 0.1,
+                          max: 3.0,
+                          onChanged: (v) =>
+                              workspaceController.setPerspectiveScaleX(v),
+                          onChangeEnd: (v) =>
+                              workspaceController.reapplyPerspectiveIfWarped(),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Y-Skalierung',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            Text(
+                              workspaceState.perspectiveScaleY.toStringAsFixed(
+                                2,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value: workspaceState.perspectiveScaleY,
+                          min: 0.1,
+                          max: 3.0,
+                          onChanged: (v) =>
+                              workspaceController.setPerspectiveScaleY(v),
+                          onChangeEnd: (v) =>
+                              workspaceController.reapplyPerspectiveIfWarped(),
+                        ),
+                        if (actionButton != null) const SizedBox(height: 16),
+                        ?actionButton,
+                      ],
+                    );
+                  }
+                  return null;
+                },
+              );
+
+              return Scaffold(
+                backgroundColor: isMobile
+                    ? AppColors.of(context).toolbarBg
+                    : null,
+                drawer: null,
+                floatingActionButton: null,
+                appBar: isMobile
+                    ? null
+                    : ScaleBuddyAppBar(
+                        onNewMeasurement: () {
+                          _handleStepSelected(WorkflowStepType.file, calib);
+                          _handleToolSelected(
+                            WorkflowStepType.file,
+                            ToolAction.snipScreen,
+                            workspaceController,
+                          );
+                        },
+                        onZoomIn: () {
+                          final controller = ref.read(
+                            transformationControllerProvider,
+                          );
+                          final matrix = controller.value.clone();
+                          // ignore: deprecated_member_use
+                          matrix.scale(1.2);
+                          controller.value = matrix;
+                        },
+                        onZoomOut: () {
+                          final controller = ref.read(
+                            transformationControllerProvider,
+                          );
+                          final matrix = controller.value.clone();
+                          // ignore: deprecated_member_use
+                          matrix.scale(1.0 / 1.2);
+                          controller.value = matrix;
                         },
                       ),
-                      Expanded(
-                        child: StepDetailView(
-                          activeStep: _activeStep,
-                          currentStatus:
-                              _stepStatuses[_activeStep] ?? StepStatus.open,
-                          lastSelectedTool: _lastSelectedTool,
-                          onStatusChanged: _handleStatusChanged,
-                        ),
+                body: isMobile
+                    ? StepDetailView(
+                        activeStep: _activeStep,
+                        currentStatus:
+                            _stepStatuses[_activeStep] ?? StepStatus.open,
+                        lastSelectedTool: _lastSelectedTool,
+                        onStatusChanged: _handleStatusChanged,
+                        onStepSelected: (step) =>
+                            _handleStepSelected(step, calib),
+                        isMobile: true,
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                sidebar,
+                                Expanded(
+                                  child: StepDetailView(
+                                    activeStep: _activeStep,
+                                    currentStatus:
+                                        _stepStatuses[_activeStep] ??
+                                        StepStatus.open,
+                                    lastSelectedTool: _lastSelectedTool,
+                                    onStatusChanged: _handleStatusChanged,
+                                    isMobile: false,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          WorkspaceStatusBar(
+                            activeStep: _activeStep,
+                            lastSelectedTool: _lastSelectedTool,
+                            workspaceState: workspaceState,
+                            stepTitleFor: _stepTitleFor,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                WorkspaceStatusBar(
-                  activeStep: _activeStep,
-                  lastSelectedTool: _lastSelectedTool,
-                  workspaceState: workspaceState,
-                  stepTitleFor: _stepTitleFor,
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -558,8 +585,6 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         break;
     }
   }
-
-  bool _isExporting = false;
 
   Future<void> _runExportTask({
     required String dialogTitle,

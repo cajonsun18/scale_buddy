@@ -82,10 +82,10 @@ void main() {
       );
 
       final newState = tool.onPanStart(state, details, size);
-      expect(newState.activeDragDetail, isA<DragDetailCalibrationPoint>());
-      final dragDetail =
-          newState.activeDragDetail as DragDetailCalibrationPoint;
-      expect(dragDetail.isP1, isTrue);
+      expect(
+        newState.activeDragDetail,
+        const DragDetail.calibrationPoint(isP1: true),
+      );
     });
 
     test('onPanUpdate moves p1 and unconfirms', () {

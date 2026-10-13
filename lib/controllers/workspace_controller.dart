@@ -8,6 +8,7 @@ import 'package:opencv_dart/opencv_dart.dart' as cv;
 
 import '../models/loaded_image_info.dart';
 import '../models/workspace_state.dart';
+import '../models/drag_detail.dart';
 import '../models/entities/drawing_entity.dart';
 import '../services/image_loader_service.dart';
 import '../tools/workspace_tool.dart';
@@ -131,6 +132,14 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     () => ref.read(imageLoaderServiceProvider).pickImageFromFile(),
   );
 
+  void loadFromCamera() => _performImageLoad(
+    () => ref.read(imageLoaderServiceProvider).pickImageFromCamera(),
+  );
+
+  void loadFromGalleryMobile() => _performImageLoad(
+    () => ref.read(imageLoaderServiceProvider).pickImageFromGalleryMobile(),
+  );
+
   void loadSample() => _performImageLoad(
     () => ref.read(imageLoaderServiceProvider).generateSampleFloorPlan(),
   );
@@ -174,6 +183,16 @@ class WorkspaceController extends Notifier<WorkspaceState> {
       perspectiveScaleY: 1.0,
       status: LoadingStatus.success,
     );
+  }
+
+  void clearPerspectiveEntities() {
+    if (state.originalImage != null) {
+      resetPerspective();
+    }
+    final remaining = state.entities
+        .where((e) => e is! PerspectiveEntity)
+        .toList();
+    state = state.copyWith(entities: remaining, preWarpEntities: null);
   }
 
   void setPerspectiveScaleX(double value) {
@@ -337,6 +356,16 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   void handlePanEnd(DragEndDetails details, Size size) {
     final tool = ref.read(activeToolProvider);
     state = tool.onPanEnd(state, details, size);
+  }
+
+  /// Startet das Ziehen eines Entity-Punktes (z. B. Perspective- oder Kalibrierungs-Ecke).
+  void startDraggingEntityPoint(String entityId, int pointIndex) {
+    state = state.copyWith(
+      activeDragDetail: DragDetail.entityPoint(
+        entityId: entityId,
+        pointIndex: pointIndex,
+      ),
+    );
   }
 }
 

@@ -83,12 +83,13 @@ void main() {
       ); // within 30px threshold
 
       final newState = tool.onPanStart(state, details, size);
-
-      expect(newState.activeDragDetail, isNotNull);
-      expect(newState.activeDragDetail, isA<DragDetailEntityPoint>());
-      final dragDetail = newState.activeDragDetail as DragDetailEntityPoint;
-      expect(dragDetail.entityId, '1');
-      expect(dragDetail.pointIndex, 1); // Second point
+      expect(
+        newState.activeDragDetail,
+        const DragDetail.entityPoint(
+          entityId: '1',
+          pointIndex: 1, // Second point
+        ),
+      );
     });
 
     test('onPanUpdate moves the selected point', () {
