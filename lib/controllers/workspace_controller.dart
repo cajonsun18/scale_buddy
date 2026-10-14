@@ -83,7 +83,50 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   }
 
   void clearCalibration() {
-    removeEntity(CalibrationTool.defaultCalibrationId);
+    final newList = state.entities
+        .where((e) => e is! CalibrationEntity)
+        .toList();
+    state = state.copyWith(
+      entities: newList,
+      selectedEntityId:
+          state.selectedEntityId == CalibrationTool.defaultCalibrationId
+          ? null
+          : state.selectedEntityId,
+    );
+  }
+
+  void updateCalibrationDistance(double? distance) {
+    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+    if (calib != null) {
+      addOrUpdateEntity(calib.copyWith(enteredDistance: distance));
+    }
+  }
+
+  void updateCalibrationUnit(String unit) {
+    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+    if (calib != null) {
+      addOrUpdateEntity(calib.copyWith(selectedUnit: unit));
+    }
+  }
+
+  void confirmCalibration({double? distance, String? unit}) {
+    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+    if (calib != null) {
+      addOrUpdateEntity(
+        calib.copyWith(
+          enteredDistance: distance ?? calib.enteredDistance,
+          selectedUnit: unit ?? calib.selectedUnit,
+          isConfirmed: true,
+        ),
+      );
+    }
+  }
+
+  void unconfirmCalibration() {
+    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
+    if (calib != null) {
+      addOrUpdateEntity(calib.copyWith(isConfirmed: false));
+    }
   }
 
   bool canLeaveCalibrationStep() {
@@ -350,12 +393,29 @@ class WorkspaceController extends Notifier<WorkspaceState> {
 
   void handlePanUpdate(DragUpdateDetails details, Size size) {
     final tool = ref.read(activeToolProvider);
+    if (state.activeDragDetail is DragDetailCalibrationPoint &&
+        tool is! CalibrationTool) {
+      state = const CalibrationTool().onPanUpdate(state, details, size);
+      return;
+    }
     state = tool.onPanUpdate(state, details, size);
   }
 
   void handlePanEnd(DragEndDetails details, Size size) {
     final tool = ref.read(activeToolProvider);
+    if (state.activeDragDetail is DragDetailCalibrationPoint &&
+        tool is! CalibrationTool) {
+      state = const CalibrationTool().onPanEnd(state, details, size);
+      return;
+    }
     state = tool.onPanEnd(state, details, size);
+  }
+
+  /// Startet das Ziehen eines Kalibrierungs-Punktes (p1 oder p2).
+  void startDraggingCalibrationPoint(bool isP1) {
+    state = state.copyWith(
+      activeDragDetail: DragDetail.calibrationPoint(isP1: isP1),
+    );
   }
 
   /// Startet das Ziehen eines Entity-Punktes (z. B. Perspective- oder Kalibrierungs-Ecke).

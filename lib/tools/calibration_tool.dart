@@ -104,7 +104,18 @@ class CalibrationTool extends WorkspaceTool {
 
     CalibrationEntity updatedCalib = calib;
 
-    if (dragDetail case DragDetailCalibrationPoint(isP1: true)) {
+    final isP1Drag = switch (dragDetail) {
+      DragDetailCalibrationPoint(isP1: true) => true,
+      DragDetailEntityPoint(pointIndex: 0) => true,
+      _ => false,
+    };
+    final isP2Drag = switch (dragDetail) {
+      DragDetailCalibrationPoint(isP1: false) => true,
+      DragDetailEntityPoint(pointIndex: 1) => true,
+      _ => false,
+    };
+
+    if (isP1Drag) {
       if (calib.p2 != null) {
         final newPixel = Offset(newDx * size.width, newDy * size.height);
         final p2Pixel = Offset(
@@ -117,7 +128,7 @@ class CalibrationTool extends WorkspaceTool {
       } else {
         updatedCalib = calib.copyWith(p1: newNormPoint, isConfirmed: false);
       }
-    } else if (dragDetail case DragDetailCalibrationPoint(isP1: false)) {
+    } else if (isP2Drag) {
       if (calib.p1 != null) {
         final newPixel = Offset(newDx * size.width, newDy * size.height);
         final p1Pixel = Offset(

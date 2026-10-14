@@ -243,5 +243,70 @@ void main() {
         const DragDetail.entityPoint(entityId: 'test-entity-1', pointIndex: 2),
       );
     });
+
+    test(
+      'confirmCalibration, updateDistance, updateUnit, unconfirm and clear',
+      () {
+        final controller = container.read(workspaceControllerProvider.notifier);
+
+        // Add unconfirmed calibration entity
+        const initialEntity = DrawingEntity.calibration(
+          id: CalibrationTool.defaultCalibrationId,
+          p1: Offset(0.2, 0.2),
+          p2: Offset(0.8, 0.8),
+          selectedUnit: 'm',
+        );
+        controller.addOrUpdateEntity(initialEntity);
+
+        // Update distance live
+        controller.updateCalibrationDistance(2.10);
+        var calib = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<CalibrationEntity>()
+            .first;
+        expect(calib.enteredDistance, 2.10);
+        expect(calib.isConfirmed, isFalse);
+
+        // Update unit live
+        controller.updateCalibrationUnit('cm');
+        calib = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<CalibrationEntity>()
+            .first;
+        expect(calib.selectedUnit, 'cm');
+
+        // Confirm calibration
+        controller.confirmCalibration(distance: 210.0, unit: 'cm');
+        calib = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<CalibrationEntity>()
+            .first;
+        expect(calib.isConfirmed, isTrue);
+        expect(calib.enteredDistance, 210.0);
+        expect(calib.selectedUnit, 'cm');
+
+        // Unconfirm calibration (for "Anpassen")
+        controller.unconfirmCalibration();
+        calib = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<CalibrationEntity>()
+            .first;
+        expect(calib.isConfirmed, isFalse);
+
+        // Clear calibration (for "Löschen")
+        controller.clearCalibration();
+        expect(
+          container
+              .read(workspaceControllerProvider)
+              .entities
+              .whereType<CalibrationEntity>(),
+          isEmpty,
+        );
+      },
+    );
   });
 }

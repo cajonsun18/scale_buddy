@@ -50,21 +50,51 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
 
     if (p1 == null && p2 == null) return;
 
-    final color = entity.isConfirmed
-        ? context.successColor
-        : context.primaryColor;
-    final paintLine = Paint()
-      ..color = color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
-      ..strokeCap = StrokeCap.round;
+    if (!context.isMobile) {
+      // Desktop-Rendering (unverändert beibehalten)
+      final color = entity.isConfirmed
+          ? context.successColor
+          : context.primaryColor;
+      final paintLine = Paint()
+        ..color = color
+        ..strokeWidth = context.getStrokeWidth(entity.id)
+        ..strokeCap = StrokeCap.round;
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
+      final paintPoint = Paint()
+        ..color = context.pointColor
+        ..style = PaintingStyle.fill;
+      final paintPointBorder = Paint()
+        ..color = color
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
+
+      Offset? p1Pixel, p2Pixel;
+      if (p1 != null) {
+        p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
+      }
+      if (p2 != null) {
+        p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
+      }
+
+      if (p1Pixel != null && p2Pixel != null) {
+        canvas.drawLine(p1Pixel, p2Pixel, paintLine);
+      }
+
+      if (p1Pixel != null) {
+        canvas.drawCircle(p1Pixel, 5.0, paintPoint);
+        canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+      }
+      if (p2Pixel != null) {
+        canvas.drawCircle(p2Pixel, 5.0, paintPoint);
+        canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+      }
+      return;
+    }
+
+    // --- MOBIL-RENDERING (Schritt 3) ---
+    final strokeColor = entity.isConfirmed
+        ? const Color(0xFF10B981) // Smaragdgrün (#10B981)
+        : const Color(0xFF38BDF8); // Cyan (#38BDF8)
 
     Offset? p1Pixel, p2Pixel;
     if (p1 != null) {
@@ -74,18 +104,217 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
       p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
     }
 
+    // 1. Bemaßungslinie & T-Abschlüsse & Wert-Badge (sobald beide Punkte existieren)
     if (p1Pixel != null && p2Pixel != null) {
+      final paintLine = Paint()
+        ..color = strokeColor
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+
+      // Verbindungslinie
       canvas.drawLine(p1Pixel, p2Pixel, paintLine);
+
+      // Rechtwinklige T-Abschlüsse (Querabschlüsse / Bemaßungsbegrenzer)
+      final vec = p2Pixel - p1Pixel;
+      final distance = vec.distance;
+      if (distance > 0) {
+        final normal = Offset(-vec.dy / distance, vec.dx / distance);
+        const tBarHalfLength = 16.0;
+
+        // T-Abschluss an Punkt 1
+        canvas.drawLine(
+          p1Pixel - normal * tBarHalfLength,
+          p1Pixel + normal * tBarHalfLength,
+          paintLine,
+        );
+
+        // T-Abschluss an Punkt 2
+        canvas.drawLine(
+          p2Pixel - normal * tBarHalfLength,
+          p2Pixel + normal * tBarHalfLength,
+          paintLine,
+        );
+      }
+
+      // Mittiges Kapsel-Wert-Badge auf der Linie
+      _drawMeasurementBadge(
+        canvas: canvas,
+        size: size,
+        p1: p1Pixel,
+        p2: p2Pixel,
+        entity: entity,
+        strokeColor: strokeColor,
+      );
     }
 
+    // 2. Punkt-Marker & Labels
+    final paintPointFill = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final paintOuterRing = Paint()
+      ..color = strokeColor.withValues(alpha: 0.35)
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+
+    final paintPointBorder = Paint()
+      ..color = strokeColor
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final paintHaloFill = Paint()
+      ..color = strokeColor.withValues(alpha: 0.15)
+      ..style = PaintingStyle.fill;
+
     if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
+      // Punkt 1: Halo-Aura, Außenring, weißer Innenpunkt
+      canvas.drawCircle(p1Pixel, 9.0, paintHaloFill);
+      canvas.drawCircle(p1Pixel, 9.0, paintOuterRing);
+      canvas.drawCircle(p1Pixel, 5.0, paintPointFill);
       canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+
+      if (!entity.isConfirmed) {
+        _drawPointLabel(canvas, size, p1Pixel, 1);
+      }
     }
+
     if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
+      // Punkt 2: Halo-Aura, Außenring, weißer Innenpunkt
+      canvas.drawCircle(p2Pixel, 9.0, paintHaloFill);
+      canvas.drawCircle(p2Pixel, 9.0, paintOuterRing);
+      canvas.drawCircle(p2Pixel, 5.0, paintPointFill);
       canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+
+      if (!entity.isConfirmed) {
+        _drawPointLabel(canvas, size, p2Pixel, 2);
+      }
     }
+  }
+
+  void _drawMeasurementBadge({
+    required Canvas canvas,
+    required Size size,
+    required Offset p1,
+    required Offset p2,
+    required CalibrationEntity entity,
+    required Color strokeColor,
+  }) {
+    String badgeText;
+    final unit = entity.selectedUnit;
+    if (entity.enteredDistance != null && entity.enteredDistance! > 0) {
+      final dist = entity.enteredDistance!;
+      final formatted = dist.toStringAsFixed(2).replaceAll('.', ',');
+      badgeText = entity.isConfirmed
+          ? '✓ $formatted $unit'
+          : '$formatted $unit';
+    } else {
+      badgeText = entity.isConfirmed ? '✓ -- $unit' : '-- $unit';
+    }
+
+    final textSpan = TextSpan(
+      text: badgeText,
+      style: TextStyle(
+        color: entity.isConfirmed ? const Color(0xFF6EE7B7) : Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 0.2,
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    const badgePaddingH = 12.0;
+    const badgePaddingV = 6.0;
+    final badgeWidth = textPainter.width + (badgePaddingH * 2);
+    final badgeHeight = textPainter.height + (badgePaddingV * 2);
+
+    final mid = Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
+    final badgeRect = Rect.fromCenter(
+      center: mid,
+      width: badgeWidth,
+      height: badgeHeight,
+    );
+    final badgeRRect = RRect.fromRectAndRadius(
+      badgeRect,
+      const Radius.circular(16),
+    );
+
+    // Schatten
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawRRect(badgeRRect.shift(const Offset(0, 2)), shadowPaint);
+
+    // Dunkler Kapsel-Hintergrund
+    final bgPaint = Paint()
+      ..color = entity.isConfirmed
+          ? const Color(0xFF064E3B).withValues(alpha: 0.95) // emerald-900
+          : const Color(0xFF0F172A).withValues(alpha: 0.95) // slate-900
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(badgeRRect, bgPaint);
+
+    // Rahmen (Cyan oder Smaragdgrün)
+    final borderPaint = Paint()
+      ..color = strokeColor
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(badgeRRect, borderPaint);
+
+    // Text zentriert
+    final textOffset = Offset(
+      badgeRect.left + badgePaddingH,
+      badgeRect.top + badgePaddingV,
+    );
+    textPainter.paint(canvas, textOffset);
+  }
+
+  void _drawPointLabel(Canvas canvas, Size size, Offset point, int index) {
+    final textSpan = TextSpan(
+      text: 'Punkt $index',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: 0.8),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Standardmäßig links vom Punkt platzieren (wie in Design-Mockups)
+    double labelX = point.dx - textPainter.width - 14;
+    double labelY = point.dy - (textPainter.height / 2);
+
+    // Falls links zu wenig Platz ist (< 4), rechts platzieren
+    if (labelX < 4) {
+      labelX = point.dx + 14;
+    }
+    // Verhindern, dass Label aus dem rechten/oberen/unteren Canvas ragt
+    if (labelX + textPainter.width > size.width - 4) {
+      labelX = size.width - textPainter.width - 4;
+    }
+    if (labelY < 4) {
+      labelY = 4;
+    }
+    if (labelY + textPainter.height > size.height - 4) {
+      labelY = size.height - textPainter.height - 4;
+    }
+
+    textPainter.paint(canvas, Offset(labelX, labelY));
   }
 }
 

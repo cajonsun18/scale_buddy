@@ -148,9 +148,15 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       if (nextCalib?.isConfirmed == true && prevCalib?.isConfirmed != true) {
         setState(() {
           _stepStatuses[WorkflowStepType.calibrate] = StepStatus.completed;
-          _activeStep = WorkflowStepType.measure;
-          if (_stepStatuses[WorkflowStepType.measure] != StepStatus.completed) {
-            _stepStatuses[WorkflowStepType.measure] = StepStatus.active;
+          final isMobile = AppBreakpoints.isMobileWidth(
+            MediaQuery.sizeOf(context).width,
+          );
+          if (!isMobile) {
+            _activeStep = WorkflowStepType.measure;
+            if (_stepStatuses[WorkflowStepType.measure] !=
+                StepStatus.completed) {
+              _stepStatuses[WorkflowStepType.measure] = StepStatus.active;
+            }
           }
         });
       } else if (nextCalib?.isConfirmed == false &&
@@ -173,7 +179,6 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         SingleActivator(LogicalKeyboardKey.keyV, meta: true):
             PasteImageIntent(),
         SingleActivator(LogicalKeyboardKey.delete): DeleteScaleIntent(),
-        SingleActivator(LogicalKeyboardKey.backspace): DeleteScaleIntent(),
         SingleActivator(LogicalKeyboardKey.escape): EscapeIntent(),
       },
       child: Actions(
@@ -186,6 +191,16 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
           ),
           DeleteScaleIntent: CallbackAction<DeleteScaleIntent>(
             onInvoke: (_) {
+              final primaryFocus = FocusManager.instance.primaryFocus;
+              final isEditingText =
+                  primaryFocus?.context != null &&
+                  (primaryFocus!.context!.widget is EditableText ||
+                      primaryFocus.context!
+                              .findAncestorWidgetOfExactType<EditableText>() !=
+                          null);
+              if (isEditingText) {
+                return null;
+              }
               if (workspaceState.selectedEntityId != null) {
                 workspaceController.removeEntity(
                   workspaceState.selectedEntityId!,

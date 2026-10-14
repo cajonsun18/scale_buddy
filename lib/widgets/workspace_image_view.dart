@@ -11,8 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/workspace_controller.dart';
 import '../tools/select_tool.dart';
 import '../models/entities/drawing_entity.dart';
+import '../models/mobile_calibration_state.dart';
 import '../models/mobile_perspective_state.dart';
 import '../models/workflow_step.dart';
+import '../tools/calibration_tool.dart';
 import 'calibration_input_widget.dart';
 import 'measurement_labels_overlay.dart';
 
@@ -136,7 +138,32 @@ class _ImageWithPointsOverlayState
                   onTapUp: (details) {
                     Focus.maybeOf(context)?.requestFocus();
                     final renderBox = context.findRenderObject() as RenderBox;
+                    if (widget.activeStep == WorkflowStepType.calibrate &&
+                        ref.read(activeToolProvider) is! CalibrationTool) {
+                      ref
+                          .read(activeToolProvider.notifier)
+                          .setTool(const CalibrationTool());
+                    }
                     controller.handleTapUp(details, renderBox.size);
+
+                    if (context.isMobile &&
+                        widget.activeStep == WorkflowStepType.calibrate) {
+                      final updatedState = ref.read(
+                        workspaceControllerProvider,
+                      );
+                      final calibEntity = updatedState.entities
+                          .whereType<CalibrationEntity>()
+                          .firstOrNull;
+                      if (calibEntity?.p1 != null && calibEntity?.p2 != null) {
+                        ref
+                            .read(mobileCalibrationStateProvider.notifier)
+                            .setTwoPointsInput();
+                      } else if (calibEntity?.p1 != null) {
+                        ref
+                            .read(mobileCalibrationStateProvider.notifier)
+                            .setOnePoint();
+                      }
+                    }
 
                     if (context.isMobile &&
                         widget.activeStep == WorkflowStepType.perspective) {
@@ -253,9 +280,23 @@ class _ImageWithPointsOverlayState
             if ((widget.activeStep == WorkflowStepType.calibrate) &&
                 calib != null) ...[
               if (calib.p1 != null)
-                _buildPointHandle(calib.p1!, size, controller),
+                _buildPointHandle(
+                  calib.p1!,
+                  size,
+                  controller,
+                  pointIndex: 0,
+                  entityId: calib.id,
+                  isCalibration: true,
+                ),
               if (calib.p2 != null)
-                _buildPointHandle(calib.p2!, size, controller),
+                _buildPointHandle(
+                  calib.p2!,
+                  size,
+                  controller,
+                  pointIndex: 1,
+                  entityId: calib.id,
+                  isCalibration: true,
+                ),
             ],
 
             if ((widget.activeStep == WorkflowStepType.perspective)) ...[
@@ -324,7 +365,8 @@ class _ImageWithPointsOverlayState
                 },
               ),
 
-            if ((widget.activeStep == WorkflowStepType.calibrate) &&
+            if (!context.isMobile &&
+                (widget.activeStep == WorkflowStepType.calibrate) &&
                 calib != null &&
                 calib.p1 != null &&
                 calib.p2 != null)
@@ -405,6 +447,7 @@ class _ImageWithPointsOverlayState
     WorkspaceController controller, {
     int? pointIndex,
     String? entityId,
+    bool isCalibration = false,
   }) {
     const handleSize = 48.0;
     final center = Offset(
@@ -417,50 +460,76 @@ class _ImageWithPointsOverlayState
       top: center.dy - (handleSize / 2),
       width: handleSize,
       height: handleSize,
-      child: GestureDetector(
-        key: ValueKey('point_handle_${entityId}_$pointIndex'),
-        behavior: HitTestBehavior.opaque,
-        onPanStart: (details) {
-          final renderBox = context.findRenderObject() as RenderBox;
-          final localPos = renderBox.globalToLocal(details.globalPosition);
-          setState(() {
-            _showMagnifier = true;
-            _magnifierPosition = localPos;
-          });
-          final newDetails = DragStartDetails(
-            sourceTimeStamp: details.sourceTimeStamp,
-            globalPosition: details.globalPosition,
-            localPosition: localPos,
-          );
-          if (pointIndex != null && entityId != null) {
-            controller.startDraggingEntityPoint(entityId, pointIndex);
-          } else {
-            controller.handlePanStart(newDetails, size);
-          }
-        },
-        onPanUpdate: (details) {
-          final renderBox = context.findRenderObject() as RenderBox;
-          final localPos = renderBox.globalToLocal(details.globalPosition);
-          setState(() {
-            _magnifierPosition = localPos;
-          });
-          final newDetails = DragUpdateDetails(
-            sourceTimeStamp: details.sourceTimeStamp,
-            delta: details.delta,
-            primaryDelta: details.primaryDelta,
-            globalPosition: details.globalPosition,
-            localPosition: localPos,
-          );
-          controller.handlePanUpdate(newDetails, size);
-        },
-        onPanEnd: (details) {
-          setState(() {
-            _showMagnifier = false;
-            _magnifierPosition = null;
-          });
-          controller.handlePanEnd(details, size);
-        },
-        child: const SizedBox(width: handleSize, height: handleSize),
+      child: Semantics(
+        label: isCalibration
+            ? 'Referenzpunkt ${(pointIndex ?? 0) + 1}'
+            : 'Ecke ${(pointIndex ?? 0) + 1}',
+        button: true,
+        child: GestureDetector(
+          key: ValueKey('point_handle_${entityId}_$pointIndex'),
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (details) {
+            final renderBox = context.findRenderObject() as RenderBox;
+            final localPos = renderBox.globalToLocal(details.globalPosition);
+            setState(() {
+              _showMagnifier = true;
+              _magnifierPosition = localPos;
+            });
+            final newDetails = DragStartDetails(
+              sourceTimeStamp: details.sourceTimeStamp,
+              globalPosition: details.globalPosition,
+              localPosition: localPos,
+            );
+            if (isCalibration) {
+              controller.startDraggingCalibrationPoint(pointIndex == 0);
+            } else if (pointIndex != null && entityId != null) {
+              controller.startDraggingEntityPoint(entityId, pointIndex);
+            } else {
+              controller.handlePanStart(newDetails, size);
+            }
+          },
+          onPanUpdate: (details) {
+            final renderBox = context.findRenderObject() as RenderBox;
+            final localPos = renderBox.globalToLocal(details.globalPosition);
+            setState(() {
+              _magnifierPosition = localPos;
+            });
+            final newDetails = DragUpdateDetails(
+              sourceTimeStamp: details.sourceTimeStamp,
+              delta: details.delta,
+              primaryDelta: details.primaryDelta,
+              globalPosition: details.globalPosition,
+              localPosition: localPos,
+            );
+            controller.handlePanUpdate(newDetails, size);
+          },
+          onPanEnd: (details) {
+            setState(() {
+              _showMagnifier = false;
+              _magnifierPosition = null;
+            });
+            controller.handlePanEnd(details, size);
+
+            if (isCalibration && context.isMobile) {
+              final updatedState = ref.read(workspaceControllerProvider);
+              final currentCalib = updatedState.entities
+                  .whereType<CalibrationEntity>()
+                  .firstOrNull;
+              if (currentCalib != null && !currentCalib.isConfirmed) {
+                if (currentCalib.p1 != null && currentCalib.p2 != null) {
+                  ref
+                      .read(mobileCalibrationStateProvider.notifier)
+                      .setTwoPointsInput();
+                } else if (currentCalib.p1 != null) {
+                  ref
+                      .read(mobileCalibrationStateProvider.notifier)
+                      .setOnePoint();
+                }
+              }
+            }
+          },
+          child: const SizedBox(width: handleSize, height: handleSize),
+        ),
       ),
     );
   }

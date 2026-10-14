@@ -15,6 +15,8 @@ import 'workspace_placeholder.dart';
 import 'workspace_toolbar.dart';
 import 'mobile_perspective_header.dart';
 import 'mobile_perspective_dock.dart';
+import 'mobile_calibration_header.dart';
+import 'mobile_calibration_dock.dart';
 
 class StepDetailView extends ConsumerStatefulWidget {
   final WorkflowStepType activeStep;
@@ -269,6 +271,27 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                   onSkipOrNext: () {
                     widget.onStatusChanged(StepStatus.completed);
                     widget.onStepSelected?.call(WorkflowStepType.calibrate);
+                  },
+                ),
+              ),
+            if (widget.activeStep == WorkflowStepType.calibrate &&
+                workspaceState.loadedImage != null)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: MobileCalibrationHeader(),
+              ),
+            if (widget.activeStep == WorkflowStepType.calibrate &&
+                workspaceState.loadedImage != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MobileCalibrationDock(
+                  onNextStep: () {
+                    widget.onStatusChanged(StepStatus.completed);
+                    widget.onStepSelected?.call(WorkflowStepType.measure);
                   },
                 ),
               ),
