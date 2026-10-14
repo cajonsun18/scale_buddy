@@ -1,0 +1,95 @@
+{
+  "@@locale": "de",
+  "appName": "Scale Buddy",
+  "@appName": {
+    "description": "Name der Anwendung"
+  },
+  "step2HeaderSubtitle": "Schritt 2: Perspektive korrigieren",
+  "@step2HeaderSubtitle": {
+    "description": "Untertitel im Kopfbereich für Schritt 2"
+  },
+  "step2HeaderSemantics": "Kopfbereich Schritt 2: Perspektive korrigieren",
+  "@step2HeaderSemantics": {
+    "description": "Screen-Reader-Label für den Header von Schritt 2"
+  },
+  "step3HeaderSubtitle": "Schritt 3: Maßstab kalibrieren",
+  "@step3HeaderSubtitle": {
+    "description": "Untertitel im Kopfbereich für Schritt 3"
+  },
+  "step3HeaderSemantics": "Kopfbereich Schritt 3: Maßstab kalibrieren",
+  "@step3HeaderSemantics": {
+    "description": "Screen-Reader-Label für den Header von Schritt 3"
+  },
+  "perspectiveInitial": "Wähle eine Methode zur Entzerrung",
+  "@perspectiveInitial": {
+    "description": "Statusmeldung vor Beginn der Entzerrung"
+  },
+  "perspectiveAutoDetected": "✨ Automatisch erkannt",
+  "@perspectiveAutoDetected": {
+    "description": "Statusmeldung nach automatischer Eckenerkennung"
+  },
+  "perspectiveManualReady": "✓ 4 von 4 Ecken gesetzt – Bereit",
+  "@perspectiveManualReady": {
+    "description": "Statusmeldung nach manuellem Setzen aller 4 Ecken"
+  },
+  "perspectiveRectified": "✓ Perspektive entzerrt",
+  "@perspectiveRectified": {
+    "description": "Statusmeldung nach erfolgreicher Entzerrung"
+  },
+  "perspectiveCornerTopLeft": "Ecke 1 von 4 antippen (oben links)",
+  "@perspectiveCornerTopLeft": {
+    "description": "Hilfetext für die erste Ecke"
+  },
+  "perspectiveCornerTopRight": "Ecke 2 von 4 antippen (oben rechts)",
+  "@perspectiveCornerTopRight": {
+    "description": "Hilfetext für die zweite Ecke"
+  },
+  "perspectiveCornerBottomRight": "Ecke 3 von 4 antippen (unten rechts)",
+  "@perspectiveCornerBottomRight": {
+    "description": "Hilfetext für die dritte Ecke"
+  },
+  "perspectiveCornerBottomLeft": "Ecke 4 von 4 antippen (unten links)",
+  "@perspectiveCornerBottomLeft": {
+    "description": "Hilfetext für die vierte Ecke"
+  },
+  "perspectiveCornersAllSet": "4 von 4 Ecken gesetzt",
+  "@perspectiveCornersAllSet": {
+    "description": "Hilfetext wenn alle 4 Ecken gesetzt sind"
+  },
+  "perspectiveManualStatusSemantics": "Status: {pointsCount} von 4 Ecken gesetzt. {helperText}",
+  "@perspectiveManualStatusSemantics": {
+    "description": "Screen-Reader-Status beim schrittweisen Setzen der Ecken",
+    "placeholders": {
+      "pointsCount": {
+        "type": "int",
+        "example": "2"
+      },
+      "helperText": {
+        "type": "String",
+        "example": "Ecke 3 von 4 antippen (unten rechts)"
+      }
+    }
+  },
+  "calibrationPhase1": "Tippe auf den 1. Referenzpunkt",
+  "@calibrationPhase1": {
+    "description": "Statusmeldung für Phase 1 der Kalibrierung"
+  },
+  "calibrationPhase2": "Punkt 1 gesetzt – Tippe auf den 2. Punkt",
+  "@calibrationPhase2": {
+    "description": "Statusmeldung für Phase 2 der Kalibrierung"
+  },
+  "calibrationPhase3": "2 Punkte gesetzt – Reale Länge eingeben",
+  "@calibrationPhase3": {
+    "description": "Statusmeldung für Phase 3 der Kalibrierung"
+  },
+  "statusPrefix": "Status: {text}",
+  "@statusPrefix": {
+    "description": "Präfix für Screen-Reader-Statusmeldungen",
+    "placeholders": {
+      "text": {
+        "type": "String",
+        "example": "Tippe auf den 1. Referenzpunkt"
+      }
+    }
+  }
+}

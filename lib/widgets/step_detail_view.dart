@@ -42,6 +42,15 @@ class StepDetailView extends ConsumerStatefulWidget {
 
 class _StepDetailViewState extends ConsumerState<StepDetailView> {
   bool _isDragHovering = false;
+  bool _isForward = true;
+
+  @override
+  void didUpdateWidget(StepDetailView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeStep != widget.activeStep) {
+      _isForward = widget.activeStep.index >= oldWidget.activeStep.index;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,18 +70,9 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  stepData.title,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
+              Expanded(child: _buildHeaderSwitcher(theme, stepData)),
               const SizedBox(width: 16),
               if (widget.currentStatus == StepStatus.active)
                 FilledButton.icon(
@@ -86,20 +86,74 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            stepData.shortDescription,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
           const SizedBox(height: 16),
           if (widget.lastSelectedTool != null)
             _buildToolIndicator(widget.lastSelectedTool!),
           const SizedBox(height: 16),
           Expanded(child: _buildWorkspace(theme, stepData)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSwitcher(ThemeData theme, WorkflowStepData stepData) {
+    const slideOffset = 160.0;
+    final isForward = _isForward;
+    final sign = isForward ? 1.0 : -1.0;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      switchInCurve: Curves.easeInCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: AlignmentDirectional.topStart,
+          clipBehavior: Clip.none,
+          children: <Widget>[...previousChildren, ?currentChild],
+        );
+      },
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        final isIncoming =
+            child.key == ValueKey<WorkflowStepType>(widget.activeStep);
+        return FadeTransition(
+          opacity: animation,
+          child: AnimatedBuilder(
+            animation: animation,
+            builder: (context, w) {
+              final dx = isIncoming
+                  ? sign * slideOffset * (1.0 - animation.value)
+                  : -sign * slideOffset * (1.0 - animation.value);
+              return Transform.translate(offset: Offset(dx, 0.0), child: w);
+            },
+            child: child,
+          ),
+        );
+      },
+      child: SizedBox(
+        key: ValueKey<WorkflowStepType>(stepData.type),
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              stepData.title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              stepData.shortDescription,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -246,6 +300,7 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
       color: AppColors.of(context).toolbarBg,
       child: SafeArea(
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
             Positioned.fill(
               child: _WorkspaceContent(
@@ -253,48 +308,18 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
                 stepData: stepData,
               ),
             ),
-            if (widget.activeStep == WorkflowStepType.perspective &&
-                workspaceState.loadedImage != null)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: MobilePerspectiveHeader(),
-              ),
-            if (widget.activeStep == WorkflowStepType.perspective &&
-                workspaceState.loadedImage != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: MobilePerspectiveDock(
-                  onSkipOrNext: () {
-                    widget.onStatusChanged(StepStatus.completed);
-                    widget.onStepSelected?.call(WorkflowStepType.calibrate);
-                  },
-                ),
-              ),
-            if (widget.activeStep == WorkflowStepType.calibrate &&
-                workspaceState.loadedImage != null)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: MobileCalibrationHeader(),
-              ),
-            if (widget.activeStep == WorkflowStepType.calibrate &&
-                workspaceState.loadedImage != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: MobileCalibrationDock(
-                  onNextStep: () {
-                    widget.onStatusChanged(StepStatus.completed);
-                    widget.onStepSelected?.call(WorkflowStepType.measure);
-                  },
-                ),
-              ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _buildMobileHeaderSwitcher(workspaceState),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildMobileDockSwitcher(workspaceState),
+            ),
             if (workspaceState.statusMessage != WorkspaceError.none)
               Positioned(
                 left: 12,
@@ -307,6 +332,112 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileHeaderSwitcher(WorkspaceState workspaceState) {
+    Widget? headerWidget;
+    if (workspaceState.loadedImage != null) {
+      if (widget.activeStep == WorkflowStepType.perspective) {
+        headerWidget = const MobilePerspectiveHeader(
+          key: ValueKey<WorkflowStepType>(WorkflowStepType.perspective),
+        );
+      } else if (widget.activeStep == WorkflowStepType.calibrate) {
+        headerWidget = const MobileCalibrationHeader(
+          key: ValueKey<WorkflowStepType>(WorkflowStepType.calibrate),
+        );
+      }
+    }
+
+    const slideOffset = 88.0;
+    final isForward = _isForward;
+    final sign = isForward ? 1.0 : -1.0;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 700),
+      switchInCurve: Curves.easeInCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            ...previousChildren.map((w) => IgnorePointer(child: w)),
+            ?currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        final isIncoming =
+            child.key == ValueKey<WorkflowStepType>(widget.activeStep);
+        return FadeTransition(
+          opacity: animation,
+          child: AnimatedBuilder(
+            animation: animation,
+            builder: (context, w) {
+              final dx = isIncoming
+                  ? sign * slideOffset * (1.0 - animation.value)
+                  : -sign * slideOffset * (1.0 - animation.value);
+              return Transform.translate(offset: Offset(dx, 0.0), child: w);
+            },
+            child: child,
+          ),
+        );
+      },
+      child:
+          headerWidget ??
+          const SizedBox.shrink(key: ValueKey<WorkflowStepType?>(null)),
+    );
+  }
+
+  Widget _buildMobileDockSwitcher(WorkspaceState workspaceState) {
+    Widget? dockWidget;
+    if (workspaceState.loadedImage != null) {
+      if (widget.activeStep == WorkflowStepType.perspective) {
+        dockWidget = MobilePerspectiveDock(
+          key: const ValueKey('mobile_dock_perspective'),
+          onSkipOrNext: () {
+            widget.onStatusChanged(StepStatus.completed);
+            widget.onStepSelected?.call(WorkflowStepType.calibrate);
+          },
+        );
+      } else if (widget.activeStep == WorkflowStepType.calibrate) {
+        dockWidget = MobileCalibrationDock(
+          key: const ValueKey('mobile_dock_calibrate'),
+          onNextStep: () {
+            widget.onStatusChanged(StepStatus.completed);
+            widget.onStepSelected?.call(WorkflowStepType.measure);
+          },
+        );
+      }
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      switchInCurve: Curves.easeInCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            ...previousChildren.map((w) => IgnorePointer(child: w)),
+            ?currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.0, 1.0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child:
+          dockWidget ??
+          const SizedBox.shrink(key: ValueKey('mobile_dock_none')),
     );
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/main_layout_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const ProviderScope(child: ScaleBuddyApp()));
@@ -10,7 +11,9 @@ void main() {
 
 /// Wurzel-Widget der ScaleBuddy-App.
 class ScaleBuddyApp extends StatelessWidget {
-  const ScaleBuddyApp({super.key});
+  final Locale? locale;
+
+  const ScaleBuddyApp({super.key, this.locale});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +21,9 @@ class ScaleBuddyApp extends StatelessWidget {
       title: 'ScaleBuddy',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale ?? const Locale('de'),
       home: const MainLayoutScreen(),
     );
   }

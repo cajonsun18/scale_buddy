@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "appName": "Scale Buddy",
+  "step2HeaderSubtitle": "Step 2: Correct perspective",
+  "step2HeaderSemantics": "Header area step 2: Correct perspective",
+  "step3HeaderSubtitle": "Step 3: Calibrate scale",
+  "step3HeaderSemantics": "Header area step 3: Calibrate scale",
+  "perspectiveInitial": "Select a rectification method",
+  "perspectiveAutoDetected": "✨ Automatically detected",
+  "perspectiveManualReady": "✓ 4 of 4 corners set – Ready",
+  "perspectiveRectified": "✓ Perspective rectified",
+  "perspectiveCornerTopLeft": "Tap corner 1 of 4 (top left)",
+  "perspectiveCornerTopRight": "Tap corner 2 of 4 (top right)",
+  "perspectiveCornerBottomRight": "Tap corner 3 of 4 (bottom right)",
+  "perspectiveCornerBottomLeft": "Tap corner 4 of 4 (bottom left)",
+  "perspectiveCornersAllSet": "4 of 4 corners set",
+  "perspectiveManualStatusSemantics": "Status: {pointsCount} of 4 corners set. {helperText}",
+  "calibrationPhase1": "Tap on the 1st reference point",
+  "calibrationPhase2": "Point 1 set – Tap on the 2nd point",
+  "calibrationPhase3": "2 points set – Enter real length",
+  "statusPrefix": "Status: {text}"
+}
