@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/entities/drawing_entity.dart';
 import '../models/workspace_state.dart';
+import '../theme/measure_tool_colors.dart';
 import 'workspace_tool.dart';
 
 class PolygonTool extends WorkspaceTool {
@@ -29,7 +30,7 @@ class PolygonTool extends WorkspaceTool {
       final newPolygon = DrawingEntity.polygon(
         id: newId,
         points: [normPoint],
-        color: Colors.green, // Könnte später aus dem Theme oder Status kommen
+        color: MeasureToolColors.polygon,
       ) as PolygonEntity;
 
       return state
@@ -45,27 +46,49 @@ class PolygonTool extends WorkspaceTool {
 
       final distance = (details.localPosition - startPix).distance;
 
-      // Hit-Radius to close the polygon (e.g., 20 pixels)
-      if (distance < 20.0) {
+      // Hit-Radius to close the polygon on start point (e.g. 28 pixels)
+      if (distance < 28.0) {
         if (openPolygon.points.length >= 3) {
-          return state.updateEntity(openPolygon.id, (entity) {
-            if (entity is PolygonEntity) {
-              return entity.copyWith(isClosed: true);
-            }
-            return entity;
-          });
+          return state
+              .updateEntity(openPolygon.id, (entity) {
+                if (entity is PolygonEntity) {
+                  return entity.copyWith(isClosed: true);
+                }
+                return entity;
+              })
+              .copyWith(selectedEntityId: null);
         } else {
           // Ignore clicks too close to the start if we don't have enough points yet
           return state;
         }
-      } else {
-        return state.updateEntity(openPolygon.id, (entity) {
-          if (entity is PolygonEntity) {
-            return entity.copyWith(points: [...entity.points, normPoint]);
-          }
-          return entity;
-        });
       }
+
+      // Hit-Radius to close the polygon via double tap or click on last point
+      if (openPolygon.points.length >= 3) {
+        final lastPoint = openPolygon.points.last;
+        final lastPix = Offset(
+          lastPoint.dx * size.width,
+          lastPoint.dy * size.height,
+        );
+        final distanceToLast = (details.localPosition - lastPix).distance;
+        if (distanceToLast < 28.0) {
+          return state
+              .updateEntity(openPolygon.id, (entity) {
+                if (entity is PolygonEntity) {
+                  return entity.copyWith(isClosed: true);
+                }
+                return entity;
+              })
+              .copyWith(selectedEntityId: null);
+        }
+      }
+
+      return state.updateEntity(openPolygon.id, (entity) {
+        if (entity is PolygonEntity) {
+          return entity.copyWith(points: [...entity.points, normPoint]);
+        }
+        return entity;
+      });
     }
   }
 
@@ -76,7 +99,9 @@ class PolygonTool extends WorkspaceTool {
         .where((p) => !p.isClosed)
         .lastOrNull;
     if (openPolygon != null) {
-      return state.removeEntity(openPolygon.id);
+      return state
+          .removeEntity(openPolygon.id)
+          .copyWith(selectedEntityId: null);
     }
     return state;
   }

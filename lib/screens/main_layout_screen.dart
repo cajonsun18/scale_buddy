@@ -471,6 +471,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
         }
       }
     }
+    if (!mounted) return;
     setState(() {
       _activeStep = step;
       if (_stepStatuses[step] != StepStatus.completed) {
@@ -492,7 +493,17 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       });
     } else if (step == WorkflowStepType.measure) {
       final currentTool = ref.read(activeToolProvider);
-      if (currentTool is EmptyTool ||
+      final isMobile = AppBreakpoints.isMobileWidth(
+        MediaQuery.sizeOf(context).width,
+      );
+      if (isMobile) {
+        _handleToolSelected(
+          step,
+          ToolAction.measureDistance,
+          controller,
+          false,
+        );
+      } else if (currentTool is EmptyTool ||
           currentTool is CalibrationTool ||
           currentTool is PerspectiveTool) {
         _handleToolSelected(step, ToolAction.selectEdit, controller, false);

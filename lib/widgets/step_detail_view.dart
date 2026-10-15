@@ -17,6 +17,8 @@ import 'mobile_perspective_header.dart';
 import 'mobile_perspective_dock.dart';
 import 'mobile_calibration_header.dart';
 import 'mobile_calibration_dock.dart';
+import 'mobile_measure_header.dart';
+import 'mobile_measure_dock.dart';
 
 class StepDetailView extends ConsumerStatefulWidget {
   final WorkflowStepType activeStep;
@@ -346,6 +348,10 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
         headerWidget = const MobileCalibrationHeader(
           key: ValueKey<WorkflowStepType>(WorkflowStepType.calibrate),
         );
+      } else if (widget.activeStep == WorkflowStepType.measure) {
+        headerWidget = const MobileMeasureHeader(
+          key: ValueKey<WorkflowStepType>(WorkflowStepType.measure),
+        );
       }
     }
 
@@ -407,6 +413,14 @@ class _StepDetailViewState extends ConsumerState<StepDetailView> {
           onNextStep: () {
             widget.onStatusChanged(StepStatus.completed);
             widget.onStepSelected?.call(WorkflowStepType.measure);
+          },
+        );
+      } else if (widget.activeStep == WorkflowStepType.measure) {
+        dockWidget = MobileMeasureDock(
+          key: const ValueKey('mobile_dock_measure'),
+          onNextStep: () {
+            widget.onStatusChanged(StepStatus.completed);
+            widget.onStepSelected?.call(WorkflowStepType.export);
           },
         );
       }

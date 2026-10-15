@@ -91,5 +91,127 @@
         "example": "Tippe auf den 1. Referenzpunkt"
       }
     }
-  }
+  },
+  "step4HeaderSubtitle": "Schritt 4: Messwerkzeuge",
+  "@step4HeaderSubtitle": {
+    "description": "Untertitel im Kopfbereich für Schritt 4"
+  },
+  "step4HeaderSemantics": "Kopfbereich Schritt 4: Messwerkzeuge",
+  "@step4HeaderSemantics": {
+    "description": "Screen-Reader-Label für den Header von Schritt 4"
+  },
+  "measureStatusStart": "Tippe auf das Bild, um die 1. Messung zu starten",
+  "@measureStatusStart": {
+    "description": "Statusmeldung für Zustand 1 der Messwerkzeuge"
+  },
+  "measureToolDistance": "Strecke",
+  "@measureToolDistance": {
+    "description": "Werkzeug-Label für Streckenmessung"
+  },
+  "measureToolRectangle": "Rechteck",
+  "@measureToolRectangle": {
+    "description": "Werkzeug-Label für Rechteckmessung"
+  },
+  "measureToolPolygon": "Polygon",
+  "@measureToolPolygon": {
+    "description": "Werkzeug-Label für Polygonmessung"
+  },
+  "measureToolAngle": "Winkel",
+  "@measureToolAngle": {
+    "description": "Werkzeug-Label für Winkelmessung"
+  },
+  "measureToolEdit": "Edit",
+  "@measureToolEdit": {
+    "description": "Werkzeug-Label für Bearbeiten/Auswählen"
+  },
+  "measureActionUndo": "Rückgängig",
+  "@measureActionUndo": {
+    "description": "Aktion zum Rückgängigmachen der letzten Messung"
+  },
+  "measureActionExport": "Weiter zu Schritt 5 (Export)",
+  "@measureActionExport": {
+    "description": "Aktion zum Wechsel in den Export-Schritt"
+  },
+  "measureStatusPoint1Set": "{tool}: Punkt 1 gesetzt – Klicke auf Punkt 2",
+  "@measureStatusPoint1Set": {
+    "description": "Statusmeldung für Zustand 2 der Messwerkzeuge wenn Punkt 1 gesetzt ist",
+    "placeholders": {
+      "tool": {
+        "type": "String",
+        "example": "Strecke"
+      }
+    }
+  },
+  "measureStatusReadySingular": "1 Messung erfasst • Bereit für Export",
+  "@measureStatusReadySingular": {
+    "description": "Statusmeldung wenn genau 1 Messung erfasst wurde"
+  },
+  "measureStatusReadyPlural": "{count} Messungen erfasst • Bereit für Export",
+  "@measureStatusReadyPlural": {
+    "description": "Statusmeldung wenn mehrere Messungen erfasst wurden",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "measureActionDiscardPoint1": "Punkt 1 verwerfen",
+  "@measureActionDiscardPoint1": {
+    "description": "Aktion zum Verwerfen des ersten gesetzten Punkts"
+  },
+  "measureStartpointLabel": "Startpunkt",
+  "@measureStartpointLabel": {
+    "description": "Label über dem Startpunkt"
+  },
+  "measureTapPoint2Label": "Tippe Punkt 2",
+  "@measureTapPoint2Label": {
+    "description": "Label über dem Indikator für den 2. Punkt"
+  },
+  "measureStatusPolygonPointsSet": "Polygon: {count} Punkte gesetzt – Klicke Startpunkt zum Schließen",
+  "@measureStatusPolygonPointsSet": {
+    "description": "Statusmeldung wenn mehrere Punkte eines Polygons gesetzt wurden",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "measureStatusElementSelected": "Element ausgewählt: {name} ({type})",
+  "@measureStatusElementSelected": {
+    "description": "Statusmeldung für Zustand 4 wenn ein Element ausgewählt ist",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "F1"
+      },
+      "type": {
+        "type": "String",
+        "example": "Rechteck"
+      }
+    }
+  },
+  "measureActionDelete": "Löschen",
+  "@measureActionDelete": {
+    "description": "Button zum Löschen des ausgewählten Elements"
+  },
+  "measureActionDone": "Fertig",
+  "@measureActionDone": {
+    "description": "Button zum Abschließen der Bearbeitung"
+  },
+  "measureInspectorLengthLabel": "Länge",
+  "measureInspectorAreaLabel": "Fläche",
+  "measureInspectorPerimeterLabel": "Umfang",
+  "measureInspectorAngleLabel": "Winkel",
+  "measureTitleLine": "{identifier} · Streckenlänge",
+  "measureTitleRectangle": "{identifier} · Rechteckfläche",
+  "measureTitlePolygon": "{identifier} · Polygonfläche",
+  "measureTitleAngle": "{identifier} · Dachwinkel",
+  "measureTypeCalibration": "Kalibrierung",
+  "measureTypePerspective": "Perspektive",
+  "measureTypeDistance": "Strecke",
+  "measureTypeRectangle": "Rechteck",
+  "measureTypePolygon": "Polygon",
+  "measureTypeAngle": "Dachwinkel"
 }

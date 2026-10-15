@@ -100,7 +100,14 @@ class SelectTool extends WorkspaceTool {
         final points = selectedEntity.map(
           calibration: (_) => <Offset?>[],
           line: (l) => [l.p1, l.p2],
-          rectangle: (r) => [r.p1, r.p2], // p1=top-left, p2=bottom-right
+          rectangle: (r) => r.p1 != null && r.p2 != null
+              ? [
+                  r.p1!,
+                  Offset(r.p2!.dx, r.p1!.dy),
+                  r.p2!,
+                  Offset(r.p1!.dx, r.p2!.dy),
+                ]
+              : <Offset>[],
           polygon: (p) => p.points,
           angle: (a) => [a.p1, a.p2],
           perspective: (_) => <Offset?>[],
@@ -159,10 +166,25 @@ class SelectTool extends WorkspaceTool {
             p1: pointIdx == 0 && e.p1 != null ? e.p1! + delta : e.p1,
             p2: pointIdx == 1 && e.p2 != null ? e.p2! + delta : e.p2,
           ),
-          rectangle: (e) => e.copyWith(
-            p1: pointIdx == 0 && e.p1 != null ? e.p1! + delta : e.p1,
-            p2: pointIdx == 1 && e.p2 != null ? e.p2! + delta : e.p2,
-          ),
+          rectangle: (e) {
+            if (e.p1 == null || e.p2 == null) return e;
+            if (pointIdx == 0) {
+              return e.copyWith(p1: e.p1! + delta);
+            } else if (pointIdx == 1) {
+              return e.copyWith(
+                p1: Offset(e.p1!.dx, e.p1!.dy + delta.dy),
+                p2: Offset(e.p2!.dx + delta.dx, e.p2!.dy),
+              );
+            } else if (pointIdx == 2) {
+              return e.copyWith(p2: e.p2! + delta);
+            } else if (pointIdx == 3) {
+              return e.copyWith(
+                p1: Offset(e.p1!.dx + delta.dx, e.p1!.dy),
+                p2: Offset(e.p2!.dx, e.p2!.dy + delta.dy),
+              );
+            }
+            return e;
+          },
           polygon: (e) {
             final newPoints = List<Offset>.from(e.points);
             if (pointIdx >= 0 && pointIdx < newPoints.length) {

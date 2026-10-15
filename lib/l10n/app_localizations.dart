@@ -211,6 +211,210 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Status: {text}'**
   String statusPrefix(String text);
+
+  /// Untertitel im Kopfbereich für Schritt 4
+  ///
+  /// In de, this message translates to:
+  /// **'Schritt 4: Messwerkzeuge'**
+  String get step4HeaderSubtitle;
+
+  /// Screen-Reader-Label für den Header von Schritt 4
+  ///
+  /// In de, this message translates to:
+  /// **'Kopfbereich Schritt 4: Messwerkzeuge'**
+  String get step4HeaderSemantics;
+
+  /// Statusmeldung für Zustand 1 der Messwerkzeuge
+  ///
+  /// In de, this message translates to:
+  /// **'Tippe auf das Bild, um die 1. Messung zu starten'**
+  String get measureStatusStart;
+
+  /// Werkzeug-Label für Streckenmessung
+  ///
+  /// In de, this message translates to:
+  /// **'Strecke'**
+  String get measureToolDistance;
+
+  /// Werkzeug-Label für Rechteckmessung
+  ///
+  /// In de, this message translates to:
+  /// **'Rechteck'**
+  String get measureToolRectangle;
+
+  /// Werkzeug-Label für Polygonmessung
+  ///
+  /// In de, this message translates to:
+  /// **'Polygon'**
+  String get measureToolPolygon;
+
+  /// Werkzeug-Label für Winkelmessung
+  ///
+  /// In de, this message translates to:
+  /// **'Winkel'**
+  String get measureToolAngle;
+
+  /// Werkzeug-Label für Bearbeiten/Auswählen
+  ///
+  /// In de, this message translates to:
+  /// **'Edit'**
+  String get measureToolEdit;
+
+  /// Aktion zum Rückgängigmachen der letzten Messung
+  ///
+  /// In de, this message translates to:
+  /// **'Rückgängig'**
+  String get measureActionUndo;
+
+  /// Aktion zum Wechsel in den Export-Schritt
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter zu Schritt 5 (Export)'**
+  String get measureActionExport;
+
+  /// Statusmeldung für Zustand 2 der Messwerkzeuge wenn Punkt 1 gesetzt ist
+  ///
+  /// In de, this message translates to:
+  /// **'{tool}: Punkt 1 gesetzt – Klicke auf Punkt 2'**
+  String measureStatusPoint1Set(String tool);
+
+  /// Statusmeldung wenn genau 1 Messung erfasst wurde
+  ///
+  /// In de, this message translates to:
+  /// **'1 Messung erfasst • Bereit für Export'**
+  String get measureStatusReadySingular;
+
+  /// Statusmeldung wenn mehrere Messungen erfasst wurden
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Messungen erfasst • Bereit für Export'**
+  String measureStatusReadyPlural(int count);
+
+  /// Aktion zum Verwerfen des ersten gesetzten Punkts
+  ///
+  /// In de, this message translates to:
+  /// **'Punkt 1 verwerfen'**
+  String get measureActionDiscardPoint1;
+
+  /// Label über dem Startpunkt
+  ///
+  /// In de, this message translates to:
+  /// **'Startpunkt'**
+  String get measureStartpointLabel;
+
+  /// Label über dem Indikator für den 2. Punkt
+  ///
+  /// In de, this message translates to:
+  /// **'Tippe Punkt 2'**
+  String get measureTapPoint2Label;
+
+  /// Statusmeldung wenn mehrere Punkte eines Polygons gesetzt wurden
+  ///
+  /// In de, this message translates to:
+  /// **'Polygon: {count} Punkte gesetzt – Klicke Startpunkt zum Schließen'**
+  String measureStatusPolygonPointsSet(int count);
+
+  /// Statusmeldung für Zustand 4 wenn ein Element ausgewählt ist
+  ///
+  /// In de, this message translates to:
+  /// **'Element ausgewählt: {name} ({type})'**
+  String measureStatusElementSelected(String name, String type);
+
+  /// Button zum Löschen des ausgewählten Elements
+  ///
+  /// In de, this message translates to:
+  /// **'Löschen'**
+  String get measureActionDelete;
+
+  /// Button zum Abschließen der Bearbeitung
+  ///
+  /// In de, this message translates to:
+  /// **'Fertig'**
+  String get measureActionDone;
+
+  /// No description provided for @measureInspectorLengthLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Länge'**
+  String get measureInspectorLengthLabel;
+
+  /// No description provided for @measureInspectorAreaLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Fläche'**
+  String get measureInspectorAreaLabel;
+
+  /// No description provided for @measureInspectorPerimeterLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Umfang'**
+  String get measureInspectorPerimeterLabel;
+
+  /// No description provided for @measureInspectorAngleLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Winkel'**
+  String get measureInspectorAngleLabel;
+
+  /// No description provided for @measureTitleLine.
+  ///
+  /// In de, this message translates to:
+  /// **'{identifier} · Streckenlänge'**
+  String measureTitleLine(Object identifier);
+
+  /// No description provided for @measureTitleRectangle.
+  ///
+  /// In de, this message translates to:
+  /// **'{identifier} · Rechteckfläche'**
+  String measureTitleRectangle(Object identifier);
+
+  /// No description provided for @measureTitlePolygon.
+  ///
+  /// In de, this message translates to:
+  /// **'{identifier} · Polygonfläche'**
+  String measureTitlePolygon(Object identifier);
+
+  /// No description provided for @measureTitleAngle.
+  ///
+  /// In de, this message translates to:
+  /// **'{identifier} · Dachwinkel'**
+  String measureTitleAngle(Object identifier);
+
+  /// No description provided for @measureTypeCalibration.
+  ///
+  /// In de, this message translates to:
+  /// **'Kalibrierung'**
+  String get measureTypeCalibration;
+
+  /// No description provided for @measureTypePerspective.
+  ///
+  /// In de, this message translates to:
+  /// **'Perspektive'**
+  String get measureTypePerspective;
+
+  /// No description provided for @measureTypeDistance.
+  ///
+  /// In de, this message translates to:
+  /// **'Strecke'**
+  String get measureTypeDistance;
+
+  /// No description provided for @measureTypeRectangle.
+  ///
+  /// In de, this message translates to:
+  /// **'Rechteck'**
+  String get measureTypeRectangle;
+
+  /// No description provided for @measureTypePolygon.
+  ///
+  /// In de, this message translates to:
+  /// **'Polygon'**
+  String get measureTypePolygon;
+
+  /// No description provided for @measureTypeAngle.
+  ///
+  /// In de, this message translates to:
+  /// **'Dachwinkel'**
+  String get measureTypeAngle;
 }
 
 class _AppLocalizationsDelegate

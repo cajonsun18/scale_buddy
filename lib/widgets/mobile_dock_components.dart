@@ -71,7 +71,8 @@ class MobileDockContainer extends StatelessWidget {
 /// Barrierefreier Aktionsbutton für schwebende mobile Docks mit Mindesthöhe von 44dp.
 class MobileDockButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final Color iconColor;
   final Color textColor;
   final Color? backgroundColor;
@@ -83,13 +84,15 @@ class MobileDockButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double iconSpacing;
   final String? semanticsLabel;
+  final bool isTrailingIcon;
 
   const MobileDockButton({
     super.key,
     required this.label,
-    required this.icon,
-    required this.iconColor,
-    required this.textColor,
+    this.icon,
+    this.iconWidget,
+    this.iconColor = const Color(0xFF94A3B8),
+    this.textColor = const Color(0xFF94A3B8),
     this.backgroundColor,
     this.borderColor,
     this.isPrimary = false,
@@ -99,24 +102,31 @@ class MobileDockButton extends StatelessWidget {
     this.padding,
     this.iconSpacing = 6.0,
     this.semanticsLabel,
-  });
+    this.isTrailingIcon = false,
+  }) : assert(
+         icon != null || iconWidget != null,
+         'Either icon or iconWidget must be provided',
+       );
 
   /// Factory für primäre Aktionsbuttons (Leuchtend blau mit Glow-Schatten).
   factory MobileDockButton.primary({
     Key? key,
     required String label,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
     VoidCallback? onPressed,
     int flex = 1,
     bool expanded = true,
     EdgeInsetsGeometry? padding,
     double iconSpacing = 6.0,
     String? semanticsLabel,
+    bool isTrailingIcon = false,
   }) {
     return MobileDockButton(
       key: key,
       label: label,
       icon: icon,
+      iconWidget: iconWidget,
       iconColor: Colors.white,
       textColor: Colors.white,
       backgroundColor: const Color(0xFF2563EB),
@@ -127,6 +137,7 @@ class MobileDockButton extends StatelessWidget {
       padding: padding,
       iconSpacing: iconSpacing,
       semanticsLabel: semanticsLabel,
+      isTrailingIcon: isTrailingIcon,
     );
   }
 
@@ -134,7 +145,8 @@ class MobileDockButton extends StatelessWidget {
   factory MobileDockButton.secondary({
     Key? key,
     required String label,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
     VoidCallback? onPressed,
     Color iconColor = const Color(0xFF94A3B8),
     Color textColor = const Color(0xFF94A3B8),
@@ -145,11 +157,13 @@ class MobileDockButton extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     double iconSpacing = 6.0,
     String? semanticsLabel,
+    bool isTrailingIcon = false,
   }) {
     return MobileDockButton(
       key: key,
       label: label,
       icon: icon,
+      iconWidget: iconWidget,
       iconColor: iconColor,
       textColor: textColor,
       backgroundColor: backgroundColor,
@@ -161,12 +175,17 @@ class MobileDockButton extends StatelessWidget {
       padding: padding,
       iconSpacing: iconSpacing,
       semanticsLabel: semanticsLabel,
+      isTrailingIcon: isTrailingIcon,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isEnabled = onPressed != null;
+
+    final Widget? renderedIcon =
+        iconWidget ??
+        (icon != null ? Icon(icon, size: 16.0, color: iconColor) : null);
 
     final Widget buttonContent = Semantics(
       button: true,
@@ -202,8 +221,10 @@ class MobileDockButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16.0, color: iconColor),
-                SizedBox(width: iconSpacing),
+                if (!isTrailingIcon && renderedIcon != null) ...[
+                  renderedIcon,
+                  SizedBox(width: iconSpacing),
+                ],
                 Flexible(
                   child: Text(
                     label,
@@ -216,6 +237,10 @@ class MobileDockButton extends StatelessWidget {
                     maxLines: 1,
                   ),
                 ),
+                if (isTrailingIcon && renderedIcon != null) ...[
+                  SizedBox(width: iconSpacing),
+                  renderedIcon,
+                ],
               ],
             ),
           ),

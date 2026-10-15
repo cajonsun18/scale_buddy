@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/entities/drawing_entity.dart';
 import '../models/workspace_state.dart';
+import '../theme/measure_tool_colors.dart';
 import 'workspace_tool.dart';
 
 class AngleTool extends WorkspaceTool {
@@ -30,7 +31,7 @@ class AngleTool extends WorkspaceTool {
         id: newId,
         p1: normPoint,
         p2: null,
-        color: Colors.purple, // Distinct color for angles
+        color: MeasureToolColors.angle,
       ) as AngleEntity;
 
       return state
@@ -38,12 +39,14 @@ class AngleTool extends WorkspaceTool {
           .copyWith(selectedEntityId: newId);
     } else {
       // Add second point to existing angle line
-      return state.updateEntity(openAngle.id, (entity) {
-        if (entity is AngleEntity) {
-          return entity.copyWith(p2: normPoint);
-        }
-        return entity;
-      });
+      return state
+          .updateEntity(openAngle.id, (entity) {
+            if (entity is AngleEntity) {
+              return entity.copyWith(p2: normPoint);
+            }
+            return entity;
+          })
+          .copyWith(selectedEntityId: null);
     }
   }
 
@@ -54,7 +57,7 @@ class AngleTool extends WorkspaceTool {
         .where((a) => a.p2 == null)
         .lastOrNull;
     if (openAngle != null) {
-      return state.removeEntity(openAngle.id);
+      return state.removeEntity(openAngle.id).copyWith(selectedEntityId: null);
     }
     return state;
   }

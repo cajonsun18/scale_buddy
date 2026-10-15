@@ -5,6 +5,7 @@ import 'test_helpers.dart';
 
 import 'package:scale_buddy/models/entities/drawing_entity.dart';
 import 'package:scale_buddy/models/workspace_state.dart';
+import 'package:scale_buddy/theme/measure_tool_colors.dart';
 import 'package:scale_buddy/tools/angle_tool.dart';
 
 void main() {
@@ -25,6 +26,7 @@ void main() {
       final angle = entity as AngleEntity;
       expect(angle.p1, const Offset(0.1, 0.2));
       expect(angle.p2, isNull);
+      expect(angle.color, MeasureToolColors.angle);
 
       expect(newState.selectedEntityId, angle.id);
     });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/entities/drawing_entity.dart';
 import '../models/workspace_state.dart';
+import '../theme/measure_tool_colors.dart';
 import 'workspace_tool.dart';
 
 class DistanceTool extends WorkspaceTool {
@@ -30,18 +31,20 @@ class DistanceTool extends WorkspaceTool {
         id: newId,
         p1: normPoint,
         p2: null,
-        color: Colors.blue,
+        color: MeasureToolColors.distance,
       ) as LineEntity;
 
       return state.addOrUpdateEntity(newLine).copyWith(selectedEntityId: newId);
     } else {
       // Add second point to existing line
-      return state.updateEntity(openLine.id, (entity) {
-        if (entity is LineEntity) {
-          return entity.copyWith(p2: normPoint);
-        }
-        return entity;
-      });
+      return state
+          .updateEntity(openLine.id, (entity) {
+            if (entity is LineEntity) {
+              return entity.copyWith(p2: normPoint);
+            }
+            return entity;
+          })
+          .copyWith(selectedEntityId: null);
     }
   }
 
@@ -52,7 +55,7 @@ class DistanceTool extends WorkspaceTool {
         .where((l) => l.p2 == null)
         .lastOrNull;
     if (openLine != null) {
-      return state.removeEntity(openLine.id);
+      return state.removeEntity(openLine.id).copyWith(selectedEntityId: null);
     }
     return state;
   }

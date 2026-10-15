@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/entities/drawing_entity.dart';
 import '../models/workspace_state.dart';
+import '../theme/measure_tool_colors.dart';
 import 'workspace_tool.dart';
 
 class RectangleTool extends WorkspaceTool {
@@ -30,27 +31,29 @@ class RectangleTool extends WorkspaceTool {
         id: newId,
         p1: normPoint,
         p2: null,
-        color: Colors.orange,
+        color: MeasureToolColors.rectangle,
       ) as RectangleEntity;
 
       return state.addOrUpdateEntity(newRect).copyWith(selectedEntityId: newId);
     } else {
       // Add second point to existing rectangle, ensuring p1 is top-left and p2 is bottom-right
-      return state.updateEntity(openRect.id, (entity) {
-        if (entity is RectangleEntity && entity.p1 != null) {
-          final p1 = entity.p1!;
-          final minX = p1.dx < normPoint.dx ? p1.dx : normPoint.dx;
-          final minY = p1.dy < normPoint.dy ? p1.dy : normPoint.dy;
-          final maxX = p1.dx > normPoint.dx ? p1.dx : normPoint.dx;
-          final maxY = p1.dy > normPoint.dy ? p1.dy : normPoint.dy;
+      return state
+          .updateEntity(openRect.id, (entity) {
+            if (entity is RectangleEntity && entity.p1 != null) {
+              final p1 = entity.p1!;
+              final minX = p1.dx < normPoint.dx ? p1.dx : normPoint.dx;
+              final minY = p1.dy < normPoint.dy ? p1.dy : normPoint.dy;
+              final maxX = p1.dx > normPoint.dx ? p1.dx : normPoint.dx;
+              final maxY = p1.dy > normPoint.dy ? p1.dy : normPoint.dy;
 
-          return entity.copyWith(
-            p1: Offset(minX, minY),
-            p2: Offset(maxX, maxY),
-          );
-        }
-        return entity;
-      });
+              return entity.copyWith(
+                p1: Offset(minX, minY),
+                p2: Offset(maxX, maxY),
+              );
+            }
+            return entity;
+          })
+          .copyWith(selectedEntityId: null);
     }
   }
 
@@ -61,7 +64,7 @@ class RectangleTool extends WorkspaceTool {
         .where((r) => r.p2 == null)
         .lastOrNull;
     if (openRect != null) {
-      return state.removeEntity(openRect.id);
+      return state.removeEntity(openRect.id).copyWith(selectedEntityId: null);
     }
     return state;
   }

@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+
+export 'measure_tool_colors.dart';
 
 /// Extension für spezifische App-Farben (wie die dunkle Toolbar oder helle Sidebar),
 /// die über die Standard-Material-Colors (primary, error, etc.) hinausgehen.
@@ -75,6 +77,9 @@ class AppColors extends ThemeExtension<AppColors> {
 }
 
 class AppTheme {
+  /// Global einheitlicher Zoomfaktor für die Präzisionslupe (Mobile & Desktop).
+  static const double magnifierScale = 2.0;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

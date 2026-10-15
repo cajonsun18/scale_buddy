@@ -251,4 +251,225 @@ void main() {
       );
     });
   });
+
+  group('MeasurementCalculator Mobile Formatting Tests', () {
+    test('formatDistance, formatArea and formatAngle with comma', () {
+      expect(
+        MeasurementCalculator.formatDistance(1.04, useComma: true),
+        '1,04 m',
+      );
+      expect(MeasurementCalculator.formatArea(4.00, useComma: true), '4,00 m²');
+      expect(MeasurementCalculator.formatAngle(4.2, useComma: true), '4,2°');
+    });
+
+    test('getMobileMeasurementBadgeText for LineEntity', () {
+      const line = LineEntity(
+        id: 'L1',
+        p1: Offset(0.1, 0.2),
+        p2: Offset(0.4, 0.6), // 5.00 m
+        color: Colors.blue,
+      );
+      final badge = MeasurementCalculator.getMobileMeasurementBadgeText(
+        line,
+        size,
+        pixelsPerMeter,
+        index: 1,
+        useComma: true,
+      );
+      expect(badge, 'S1: 5,00 m');
+
+      final badge2 = MeasurementCalculator.getMobileMeasurementBadgeText(
+        line,
+        size,
+        pixelsPerMeter,
+        index: 2,
+        useComma: true,
+      );
+      expect(badge2, 'S2: 5,00 m');
+    });
+
+    test('getMobileMeasurementBadgeText and getMobileRectangleWidthBadgeText for RectangleEntity', () {
+      const rect = RectangleEntity(
+        id: 'R1',
+        p1: Offset(0.2, 0.3),
+        p2: Offset(0.5, 0.7), // width=3m, height=4m, area=12m²
+        color: Colors.red,
+      );
+      final centerBadge = MeasurementCalculator.getMobileMeasurementBadgeText(
+        rect,
+        size,
+        pixelsPerMeter,
+        index: 1,
+        useComma: true,
+      );
+      expect(centerBadge, 'F1: 12,00 m²');
+
+      final widthBadge = MeasurementCalculator.getMobileRectangleWidthBadgeText(
+        rect,
+        size,
+        pixelsPerMeter,
+        useComma: true,
+      );
+      expect(widthBadge, '3,00 m');
+    });
+
+    test('getMobileMeasurementBadgeText for PolygonEntity uses P prefix', () {
+      const poly = PolygonEntity(
+        id: 'P1',
+        points: [
+          Offset(0.0, 0.0),
+          Offset(0.3, 0.0),
+          Offset(0.0, 0.4),
+        ], // 6.00 m²
+        color: Colors.purple,
+        isClosed: true,
+      );
+      final badge = MeasurementCalculator.getMobileMeasurementBadgeText(
+        poly,
+        size,
+        pixelsPerMeter,
+        index: 1,
+        useComma: true,
+      );
+      expect(badge, 'P1: 6,00 m²');
+    });
+
+    test('getMobileMeasurementBadgeText for AngleEntity uses W prefix', () {
+      const angle = AngleEntity(
+        id: 'A1',
+        p1: Offset(0.1, 0.1),
+        p2: Offset(0.2, 0.2), // 45.0°
+        color: Colors.amber,
+      );
+      final badge = MeasurementCalculator.getMobileMeasurementBadgeText(
+        angle,
+        size,
+        pixelsPerMeter,
+        index: 1,
+        useComma: true,
+      );
+      expect(badge, 'W1: 45,0°');
+    });
+
+    test(
+      'Mobile Inspector formatting and calculations for RectangleEntity',
+      () {
+        // 1000x1000 canvas, 100 px = 1 m
+        // 1.74 m width = 174 px = 0.174
+        // 2.30 m height = 230 px = 0.230
+        const rect = RectangleEntity(
+          id: 'R1',
+          p1: Offset(0.1, 0.1),
+          p2: Offset(0.274, 0.33),
+          color: Colors.green,
+        );
+
+        final allEntities = [rect];
+        expect(
+          MeasurementCalculator.getMobileEntityIdentifier(rect, allEntities),
+          'F1',
+        );
+        expect(MeasurementCalculator.getMobileEntityTypeName(rect), 'Rechteck');
+        expect(
+          MeasurementCalculator.getMobileEntityTitle(rect, allEntities),
+          'F1 · Rechteckfläche',
+        );
+
+        final details = MeasurementCalculator.getMobileEntityDetails(
+          rect,
+          size,
+          pixelsPerMeter,
+          useComma: true,
+        );
+        // Area = 1.74 * 2.30 = 4.002 m² -> 4,00 m²
+        // Perimeter = 2 * (1.74 + 2.30) = 8.08 m -> 8,08 m
+        // 1,74 × 2,30 m
+        expect(details, 'Fläche: 4,00 m² · Umfang: 8,08 m · 1,74 × 2,30 m');
+      },
+    );
+
+    test(
+      'Mobile Inspector formatting and calculations for Line, Polygon, Angle',
+      () {
+        const line = LineEntity(
+          id: 'L1',
+          p1: Offset(0.1, 0.1),
+          p2: Offset(0.1, 0.204), // 104 px = 1.04 m
+          color: Colors.blue,
+        );
+        const poly = PolygonEntity(
+          id: 'P1',
+          points: [
+            Offset(0.0, 0.0),
+            Offset(0.3, 0.0),
+            Offset(0.3, 0.4),
+            Offset(0.0, 0.4),
+          ], // 3m x 4m = 12m², perimeter = 2*(3+4)=14m
+          color: Colors.purple,
+          isClosed: true,
+        );
+        const angle = AngleEntity(
+          id: 'A1',
+          p1: Offset(0.1, 0.1),
+          p2: Offset(0.2, 0.1), // 0°
+          color: Colors.amber,
+        );
+
+        final entities = [line, poly, angle];
+        expect(
+          MeasurementCalculator.getMobileEntityIdentifier(line, entities),
+          'S1',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityTitle(line, entities),
+          'S1 · Streckenlänge',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityDetails(
+            line,
+            size,
+            pixelsPerMeter,
+            useComma: true,
+          ),
+          'Länge: 1,04 m',
+        );
+
+        expect(
+          MeasurementCalculator.getMobileEntityIdentifier(poly, entities),
+          'P1',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityTitle(poly, entities),
+          'P1 · Polygonfläche',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityDetails(
+            poly,
+            size,
+            pixelsPerMeter,
+            useComma: true,
+          ),
+          'Fläche: 12,00 m² · Umfang: 14,00 m',
+        );
+
+        expect(
+          MeasurementCalculator.getMobileEntityIdentifier(angle, entities),
+          'W1',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityTitle(angle, entities),
+          'W1 · Dachwinkel',
+        );
+        expect(
+          MeasurementCalculator.getMobileEntityDetails(
+            angle,
+            size,
+            pixelsPerMeter,
+            useComma: true,
+          ),
+          'Winkel: 0,0°',
+        );
+      },
+    );
+  });
 }

@@ -8,6 +8,10 @@ class MeasurementLabelWidget extends StatelessWidget {
   final GestureDragStartCallback? onPanStart;
   final GestureDragUpdateCallback? onPanUpdate;
   final GestureDragEndCallback? onPanEnd;
+  final bool isMobile;
+  final Color? borderColor;
+  final Color? textColor;
+  final Color? backgroundColor;
 
   const MeasurementLabelWidget({
     super.key,
@@ -18,6 +22,10 @@ class MeasurementLabelWidget extends StatelessWidget {
     this.onPanStart,
     this.onPanUpdate,
     this.onPanEnd,
+    this.isMobile = false,
+    this.borderColor,
+    this.textColor,
+    this.backgroundColor,
   });
 
   @override
@@ -28,33 +36,68 @@ class MeasurementLabelWidget extends StatelessWidget {
       onPanUpdate: onPanUpdate,
       onPanEnd: onPanEnd,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.amber.shade100
-              : Colors.white.withValues(alpha: 0.9),
-          border: Border.all(
-            color: isSelected ? Colors.amber.shade800 : Colors.grey.shade400,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 10 : 8,
+          vertical: 4,
         ),
+        decoration: isMobile
+            ? BoxDecoration(
+                color:
+                    backgroundColor ??
+                    const Color(0xFF0F172A).withValues(alpha: 0.95),
+                border: Border.all(
+                  color:
+                      borderColor ??
+                      (isSelected
+                          ? Colors.amber.shade400
+                          : const Color(0xFF38BDF8)),
+                  width: isSelected ? 2.0 : 1.5,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              )
+            : BoxDecoration(
+                color: isSelected
+                    ? Colors.amber.shade100
+                    : Colors.white.withValues(alpha: 0.9),
+                border: Border.all(
+                  color: isSelected
+                      ? (borderColor ?? Colors.amber.shade800)
+                      : (borderColor ?? Colors.grey.shade400),
+                  width: isSelected ? 2.0 : 1.2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               text,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: Colors.black87,
-              ),
+              style: isMobile
+                  ? TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: textColor ?? Colors.white,
+                    )
+                  : TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w600,
+                      color: textColor ?? Colors.black87,
+                    ),
             ),
             if (isSelected && onDelete != null) ...[
               const SizedBox(width: 8),

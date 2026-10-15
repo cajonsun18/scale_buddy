@@ -52,3 +52,26 @@ sealed class DrawingEntity with _$DrawingEntity {
     required Color color,
   }) = PerspectiveEntity;
 }
+
+/// Status- und Hilfsfunktionen für DrawingEntity.
+extension DrawingEntityStatus on DrawingEntity {
+  /// Prüft, ob ein Zeichenelement vollständig abgeschlossen ist.
+  bool get isCompleted => map(
+    calibration: (c) => c.p1 != null && c.p2 != null,
+    perspective: (p) => p.points.length == 4,
+    line: (l) => l.p1 != null && l.p2 != null,
+    rectangle: (r) => r.p1 != null && r.p2 != null,
+    polygon: (p) => p.isClosed && p.points.length >= 3,
+    angle: (a) => a.p1 != null && a.p2 != null,
+  );
+
+  /// Prüft, ob ein Zeichenelement noch in Bearbeitung / unvollständig ist.
+  bool get isOpen => !isCompleted;
+
+  /// Prüft, ob das Element ein Messwerkzeug ist (Strecke, Rechteck, Polygon, Winkel).
+  bool get isMeasurement =>
+      this is LineEntity ||
+      this is RectangleEntity ||
+      this is PolygonEntity ||
+      this is AngleEntity;
+}

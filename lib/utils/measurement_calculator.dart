@@ -2,23 +2,30 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/entities/drawing_entity.dart';
 import 'geometry_utils.dart';
 
 /// Zentrales Berechnungsmodul für Messwerte, Flächen, Längen, Winkel
 /// und deren Positionierung auf dem Canvas sowie im PDF-Bericht.
 class MeasurementCalculator {
-  /// Formats distance in meters: `1.23 m`
-  static String formatDistance(double distMeters) =>
-      '${distMeters.toStringAsFixed(2)} m';
+  /// Formats distance in meters: `1.23 m` or `1,23 m`
+  static String formatDistance(double distMeters, {bool useComma = false}) {
+    final s = distMeters.toStringAsFixed(2);
+    return '${useComma ? s.replaceAll('.', ',') : s} m';
+  }
 
-  /// Formats area in square meters: `4.56 m²`
-  static String formatArea(double areaSquareMeters) =>
-      '${areaSquareMeters.toStringAsFixed(2)} m²';
+  /// Formats area in square meters: `4.56 m²` or `4,56 m²`
+  static String formatArea(double areaSquareMeters, {bool useComma = false}) {
+    final s = areaSquareMeters.toStringAsFixed(2);
+    return '${useComma ? s.replaceAll('.', ',') : s} m²';
+  }
 
-  /// Formats angle in degrees: `45.0°`
-  static String formatAngle(double angleDeg) =>
-      '${angleDeg.toStringAsFixed(1)}°';
+  /// Formats angle in degrees: `45.0°` or `45,0°`
+  static String formatAngle(double angleDeg, {bool useComma = false}) {
+    final s = angleDeg.toStringAsFixed(1);
+    return '${useComma ? s.replaceAll('.', ',') : s}°';
+  }
 
   /// Calculates the real-world distance in meters between two normalized points.
   static double? calculateDistance(
@@ -68,8 +75,10 @@ class MeasurementCalculator {
   static String? getMeasurementText(
     DrawingEntity entity,
     Size size,
-    double? pixelsPerMeter,
-  ) {
+    double? pixelsPerMeter, {
+    int? index,
+    bool useComma = false,
+  }) {
     return entity.map(
       calibration: (_) => null,
       perspective: (_) => null,
@@ -81,7 +90,9 @@ class MeasurementCalculator {
           size,
           pixelsPerMeter,
         );
-        return dist != null ? formatDistance(dist) : null;
+        if (dist == null) return null;
+        final prefix = index != null ? 'S$index: ' : '';
+        return '$prefix${formatDistance(dist, useComma: useComma)}';
       },
       rectangle: (rect) {
         if (rect.p1 == null || rect.p2 == null) return null;
@@ -91,17 +102,22 @@ class MeasurementCalculator {
           size,
           pixelsPerMeter,
         );
-        return area != null ? formatArea(area) : null;
+        if (area == null) return null;
+        final prefix = index != null ? 'F$index: ' : '';
+        return '$prefix${formatArea(area, useComma: useComma)}';
       },
       polygon: (poly) {
         if (poly.points.length < 3 || !poly.isClosed) return null;
         final area = calculatePolygonArea(poly.points, size, pixelsPerMeter);
-        return area != null ? formatArea(area) : null;
+        if (area == null) return null;
+        final prefix = index != null ? 'P$index: ' : '';
+        return '$prefix${formatArea(area, useComma: useComma)}';
       },
       angle: (angle) {
         if (angle.p1 == null || angle.p2 == null) return null;
         final angleDeg = calculateAngle(angle.p1!, angle.p2!, size);
-        return formatAngle(angleDeg);
+        final prefix = index != null ? 'W$index: ' : '';
+        return '$prefix${formatAngle(angleDeg, useComma: useComma)}';
       },
     );
   }
@@ -200,10 +216,10 @@ class MeasurementCalculator {
         }
 
         final midAngleRad = baseAngle + (sweepAngle / 2);
-        final labelRadius = distance * 0.4;
+        final labelRadius = max(distance * 0.35, 35.0);
         return Offset(
           p1Pix.dx + cos(midAngleRad) * labelRadius,
-          p1Pix.dy + sin(midAngleRad) * labelRadius,
+          p1Pix.dy + sin(midAngleRad) * labelRadius - 16.0,
         );
       },
     );
@@ -218,6 +234,206 @@ class MeasurementCalculator {
       rectangle: (_) => 'Rechteck (Fläche)',
       polygon: (_) => 'Polygon (Fläche)',
       angle: (_) => 'Winkel',
+    );
+  }
+
+  /// Returns the formatted mobile measurement badge text with prefix (e.g. `S1: 1,04 m`, `F1: 4,00 m²`, `P1: 6,40 m²`, `W1: 4,2°`)
+  static String? getMobileMeasurementBadgeText(
+    DrawingEntity entity,
+    Size size,
+    double? pixelsPerMeter, {
+    int index = 1,
+    bool useComma = true,
+  }) {
+    return getMeasurementText(
+      entity,
+      size,
+      pixelsPerMeter,
+      index: index,
+      useComma: useComma,
+    );
+  }
+
+  /// Formatted width text (top edge) for rectangle on mobile (e.g. `1,74 m`).
+  static String? getMobileRectangleWidthBadgeText(
+    RectangleEntity rect,
+    Size size,
+    double? pixelsPerMeter, {
+    bool useComma = true,
+  }) {
+    if (pixelsPerMeter == null || rect.p1 == null || rect.p2 == null) {
+      return null;
+    }
+    final widthMeters =
+        ((rect.p2!.dx - rect.p1!.dx).abs() * size.width) / pixelsPerMeter;
+    return formatDistance(widthMeters, useComma: useComma);
+  }
+
+  /// Calculates the real-world perimeter in meters of a rectangle.
+  static double? calculateRectanglePerimeter(
+    Offset p1,
+    Offset p2,
+    Size size,
+    double? pixelsPerMeter,
+  ) {
+    if (pixelsPerMeter == null) return null;
+    final widthMeters = ((p2.dx - p1.dx).abs() * size.width) / pixelsPerMeter;
+    final heightMeters = ((p2.dy - p1.dy).abs() * size.height) / pixelsPerMeter;
+    return 2 * (widthMeters + heightMeters);
+  }
+
+  /// Calculates the real-world perimeter in meters of a closed polygon.
+  static double? calculatePolygonPerimeter(
+    List<Offset> points,
+    Size size,
+    double? pixelsPerMeter,
+  ) {
+    if (pixelsPerMeter == null || points.length < 2) return null;
+    double totalPix = 0.0;
+    for (int i = 0; i < points.length; i++) {
+      final pCurrent = points[i].toPixel(size);
+      final pNext = points[(i + 1) % points.length].toPixel(size);
+      totalPix += (pNext - pCurrent).distance;
+    }
+    return totalPix / pixelsPerMeter;
+  }
+
+  /// Returns the short identifier for the entity (e.g. `F1`, `S1`, `P1`, `W1`).
+  static String getMobileEntityIdentifier(
+    DrawingEntity entity,
+    List<DrawingEntity> allEntities,
+  ) {
+    return entity.map(
+      calibration: (_) => 'CAL',
+      perspective: (_) => 'PERSP',
+      line: (l) {
+        final lines = allEntities.whereType<LineEntity>().toList();
+        final idx = lines.indexOf(l);
+        return 'S${idx >= 0 ? idx + 1 : 1}';
+      },
+      rectangle: (r) {
+        final rects = allEntities.whereType<RectangleEntity>().toList();
+        final idx = rects.indexOf(r);
+        return 'F${idx >= 0 ? idx + 1 : 1}';
+      },
+      polygon: (p) {
+        final polys = allEntities.whereType<PolygonEntity>().toList();
+        final idx = polys.indexOf(p);
+        return 'P${idx >= 0 ? idx + 1 : 1}';
+      },
+      angle: (a) {
+        final angles = allEntities.whereType<AngleEntity>().toList();
+        final idx = angles.indexOf(a);
+        return 'W${idx >= 0 ? idx + 1 : 1}';
+      },
+    );
+  }
+
+  /// Returns the type name of the entity for badge / status (e.g. `Rechteck`, `Strecke`, `Polygon`, `Dachwinkel`).
+  static String getMobileEntityTypeName(
+    DrawingEntity entity, {
+    AppLocalizations? l10n,
+  }) {
+    return entity.map(
+      calibration: (_) => l10n?.measureTypeCalibration ?? 'Kalibrierung',
+      perspective: (_) => l10n?.measureTypePerspective ?? 'Perspektive',
+      line: (_) => l10n?.measureTypeDistance ?? 'Strecke',
+      rectangle: (_) => l10n?.measureTypeRectangle ?? 'Rechteck',
+      polygon: (_) => l10n?.measureTypePolygon ?? 'Polygon',
+      angle: (_) => l10n?.measureTypeAngle ?? 'Dachwinkel',
+    );
+  }
+
+  /// Returns the title line in the inspector (e.g. `F1 · Rechteckfläche`).
+  static String getMobileEntityTitle(
+    DrawingEntity entity,
+    List<DrawingEntity> allEntities, {
+    AppLocalizations? l10n,
+  }) {
+    final identifier = getMobileEntityIdentifier(entity, allEntities);
+    return entity.map(
+      calibration: (_) =>
+          '$identifier · ${l10n?.measureTypeCalibration ?? 'Kalibrierung'}',
+      perspective: (_) =>
+          '$identifier · ${l10n?.measureTypePerspective ?? 'Perspektive'}',
+      line: (_) =>
+          l10n?.measureTitleLine(identifier) ?? '$identifier · Streckenlänge',
+      rectangle: (_) =>
+          l10n?.measureTitleRectangle(identifier) ??
+          '$identifier · Rechteckfläche',
+      polygon: (_) =>
+          l10n?.measureTitlePolygon(identifier) ??
+          '$identifier · Polygonfläche',
+      angle: (_) =>
+          l10n?.measureTitleAngle(identifier) ?? '$identifier · Dachwinkel',
+    );
+  }
+
+  /// Returns the detailed measurement description for the mobile inspector
+  /// (e.g. `Fläche: 4,00 m² · Umfang: 8,08 m · 1,74 × 2,30 m`).
+  static String? getMobileEntityDetails(
+    DrawingEntity entity,
+    Size size,
+    double? pixelsPerMeter, {
+    AppLocalizations? l10n,
+    bool useComma = true,
+  }) {
+    if (pixelsPerMeter == null) return null;
+
+    final lengthLabel = l10n?.measureInspectorLengthLabel ?? 'Länge';
+    final areaLabel = l10n?.measureInspectorAreaLabel ?? 'Fläche';
+    final perimeterLabel = l10n?.measureInspectorPerimeterLabel ?? 'Umfang';
+    final angleLabel = l10n?.measureInspectorAngleLabel ?? 'Winkel';
+
+    return entity.map(
+      calibration: (_) => null,
+      perspective: (_) => null,
+      line: (line) {
+        if (line.p1 == null || line.p2 == null) return null;
+        final dist = calculateDistance(
+          line.p1!,
+          line.p2!,
+          size,
+          pixelsPerMeter,
+        );
+        if (dist == null) return null;
+        return '$lengthLabel: ${formatDistance(dist, useComma: useComma)}';
+      },
+      rectangle: (rect) {
+        if (rect.p1 == null || rect.p2 == null) return null;
+        final widthMeters =
+            ((rect.p2!.dx - rect.p1!.dx).abs() * size.width) / pixelsPerMeter;
+        final heightMeters =
+            ((rect.p2!.dy - rect.p1!.dy).abs() * size.height) / pixelsPerMeter;
+        final area = widthMeters * heightMeters;
+        final perimeter = 2 * (widthMeters + heightMeters);
+
+        final areaStr = formatArea(area, useComma: useComma);
+        final perimStr = formatDistance(perimeter, useComma: useComma);
+        final wStr = formatDistance(
+          widthMeters,
+          useComma: useComma,
+        ).replaceAll(' m', '');
+        final hStr = formatDistance(heightMeters, useComma: useComma);
+
+        return '$areaLabel: $areaStr · $perimeterLabel: $perimStr · $wStr × $hStr';
+      },
+      polygon: (poly) {
+        if (poly.points.length < 3 || !poly.isClosed) return null;
+        final area = calculatePolygonArea(poly.points, size, pixelsPerMeter);
+        final perimeter = calculatePolygonPerimeter(
+          poly.points,
+          size,
+          pixelsPerMeter,
+        );
+        if (area == null || perimeter == null) return null;
+        return '$areaLabel: ${formatArea(area, useComma: useComma)} · $perimeterLabel: ${formatDistance(perimeter, useComma: useComma)}';
+      },
+      angle: (angle) {
+        if (angle.p1 == null || angle.p2 == null) return null;
+        final angleDeg = calculateAngle(angle.p1!, angle.p2!, size);
+        return '$angleLabel: ${formatAngle(angleDeg, useComma: useComma)}';
+      },
     );
   }
 }

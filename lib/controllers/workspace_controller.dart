@@ -13,6 +13,8 @@ import '../models/entities/drawing_entity.dart';
 import '../services/image_loader_service.dart';
 import '../tools/workspace_tool.dart';
 import '../tools/calibration_tool.dart';
+import '../tools/perspective_tool.dart';
+import '../tools/select_tool.dart';
 
 class ActiveToolNotifier extends Notifier<WorkspaceTool> {
   @override
@@ -84,6 +86,24 @@ class WorkspaceController extends Notifier<WorkspaceState> {
           ? null
           : state.selectedEntityId,
     );
+  }
+
+  void undoLastMeasurement() {
+    final measurements = state.entities
+        .where((e) => e is! CalibrationEntity && e is! PerspectiveEntity)
+        .toList();
+    if (measurements.isNotEmpty) {
+      removeEntity(measurements.last.id);
+    }
+  }
+
+  void cancelOpenMeasurement() {
+    final openMeasurement = state.entities
+        .where((e) => e.isMeasurement && e.isOpen)
+        .lastOrNull;
+    if (openMeasurement != null) {
+      removeEntity(openMeasurement.id);
+    }
   }
 
   void updateCalibrationDistance(double? distance) {
@@ -382,24 +402,34 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     state = tool.onPanStart(state, details, size);
   }
 
-  void handlePanUpdate(DragUpdateDetails details, Size size) {
+  WorkspaceTool _resolveDragTool() {
     final tool = ref.read(activeToolProvider);
     if (state.activeDragDetail is DragDetailCalibrationPoint &&
         tool is! CalibrationTool) {
-      state = const CalibrationTool().onPanUpdate(state, details, size);
-      return;
+      return const CalibrationTool();
     }
-    state = tool.onPanUpdate(state, details, size);
+    if (state.activeDragDetail is DragDetailEntityPoint) {
+      final dragDetail = state.activeDragDetail as DragDetailEntityPoint;
+      final entity = state.entities
+          .where((e) => e.id == dragDetail.entityId)
+          .firstOrNull;
+      if (entity is PerspectiveEntity) {
+        if (tool is! PerspectiveTool) {
+          return const PerspectiveTool();
+        }
+      } else if (tool is! SelectTool) {
+        return const SelectTool();
+      }
+    }
+    return tool;
+  }
+
+  void handlePanUpdate(DragUpdateDetails details, Size size) {
+    state = _resolveDragTool().onPanUpdate(state, details, size);
   }
 
   void handlePanEnd(DragEndDetails details, Size size) {
-    final tool = ref.read(activeToolProvider);
-    if (state.activeDragDetail is DragDetailCalibrationPoint &&
-        tool is! CalibrationTool) {
-      state = const CalibrationTool().onPanEnd(state, details, size);
-      return;
-    }
-    state = tool.onPanEnd(state, details, size);
+    state = _resolveDragTool().onPanEnd(state, details, size);
   }
 
   /// Startet das Ziehen eines Kalibrierungs-Punktes (p1 oder p2).

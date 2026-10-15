@@ -69,4 +69,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String statusPrefix(String text) {
     return 'Status: $text';
   }
+
+  @override
+  String get step4HeaderSubtitle => 'Step 4: Measuring tools';
+
+  @override
+  String get step4HeaderSemantics => 'Header area step 4: Measuring tools';
+
+  @override
+  String get measureStatusStart =>
+      'Tap on the image to start the 1st measurement';
+
+  @override
+  String get measureToolDistance => 'Distance';
+
+  @override
+  String get measureToolRectangle => 'Rectangle';
+
+  @override
+  String get measureToolPolygon => 'Polygon';
+
+  @override
+  String get measureToolAngle => 'Angle';
+
+  @override
+  String get measureToolEdit => 'Edit';
+
+  @override
+  String get measureActionUndo => 'Undo';
+
+  @override
+  String get measureActionExport => 'Continue to Step 5 (Export)';
+
+  @override
+  String measureStatusPoint1Set(String tool) {
+    return '$tool: Point 1 set – Click on point 2';
+  }
+
+  @override
+  String get measureStatusReadySingular =>
+      '1 measurement recorded • Ready for export';
+
+  @override
+  String measureStatusReadyPlural(int count) {
+    return '$count measurements recorded • Ready for export';
+  }
+
+  @override
+  String get measureActionDiscardPoint1 => 'Discard Point 1';
+
+  @override
+  String get measureStartpointLabel => 'Start point';
+
+  @override
+  String get measureTapPoint2Label => 'Tap point 2';
+
+  @override
+  String measureStatusPolygonPointsSet(int count) {
+    return 'Polygon: $count points placed – Tap start to close';
+  }
+
+  @override
+  String measureStatusElementSelected(String name, String type) {
+    return 'Element selected: $name ($type)';
+  }
+
+  @override
+  String get measureActionDelete => 'Delete';
+
+  @override
+  String get measureActionDone => 'Done';
+
+  @override
+  String get measureInspectorLengthLabel => 'Length';
+
+  @override
+  String get measureInspectorAreaLabel => 'Area';
+
+  @override
+  String get measureInspectorPerimeterLabel => 'Perimeter';
+
+  @override
+  String get measureInspectorAngleLabel => 'Angle';
+
+  @override
+  String measureTitleLine(Object identifier) {
+    return '$identifier · Line length';
+  }
+
+  @override
+  String measureTitleRectangle(Object identifier) {
+    return '$identifier · Rectangle area';
+  }
+
+  @override
+  String measureTitlePolygon(Object identifier) {
+    return '$identifier · Polygon area';
+  }
+
+  @override
+  String measureTitleAngle(Object identifier) {
+    return '$identifier · Roof angle';
+  }
+
+  @override
+  String get measureTypeCalibration => 'Calibration';
+
+  @override
+  String get measureTypePerspective => 'Perspective';
+
+  @override
+  String get measureTypeDistance => 'Distance';
+
+  @override
+  String get measureTypeRectangle => 'Rectangle';
+
+  @override
+  String get measureTypePolygon => 'Polygon';
+
+  @override
+  String get measureTypeAngle => 'Roof angle';
 }

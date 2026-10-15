@@ -56,6 +56,41 @@ void main() {
       );
     });
 
+    test('EntityPainterDispatcher does not paint calibration entity in measure step', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      final size = const Size(400, 800);
+
+      final context = PaintContext(
+        activeStep: WorkflowStepType.measure,
+        primaryColor: Colors.blue,
+        successColor: Colors.green,
+        pointColor: Colors.white,
+        isMobile: true,
+      );
+
+      const calibEntity = CalibrationEntity(
+        id: 'calib_1',
+        p1: Offset(0.2, 0.2),
+        p2: Offset(0.8, 0.8),
+        enteredDistance: 2.10,
+        isConfirmed: true,
+      );
+
+      expect(
+        () => EntityPainterDispatcher.paintEntity(
+          canvas,
+          size,
+          calibEntity,
+          context,
+        ),
+        returnsNormally,
+      );
+
+      const painter = CalibrationPainter();
+      expect(painter.isVisibleInStep(WorkflowStepType.measure), isFalse);
+    });
+
     test('CalibrationPainter paints mobile mode with 1 point', () {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
@@ -335,6 +370,162 @@ void main() {
           canvas,
           size,
           perspective3Points,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('LinePainter and RectanglePainter paint in mobile mode (Zustand 2 and Zustand 3)', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(400, 800);
+      final mobileContext = PaintContext(
+        activeStep: WorkflowStepType.measure,
+        primaryColor: const Color(0xFF38BDF8),
+        successColor: const Color(0xFF10B981),
+        pointColor: Colors.white,
+        isMobile: true,
+      );
+
+      // 1. Line: Point 1 set (Zustand 2)
+      const linePoint1 = DrawingEntity.line(
+        id: 'L1',
+        p1: Offset(0.3, 0.4),
+        p2: null,
+        color: Color(0xFF38BDF8),
+      ) as LineEntity;
+      expect(
+        () =>
+            const LinePainter().paint(canvas, size, linePoint1, mobileContext),
+        returnsNormally,
+      );
+
+      // 2. Line: Completed (Zustand 3)
+      const lineCompleted = DrawingEntity.line(
+        id: 'L1',
+        p1: Offset(0.3, 0.4),
+        p2: Offset(0.7, 0.4),
+        color: Color(0xFF38BDF8),
+      ) as LineEntity;
+      expect(
+        () => const LinePainter().paint(
+          canvas,
+          size,
+          lineCompleted,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 3. Rectangle: Point 1 set (Zustand 2)
+      const rectPoint1 = DrawingEntity.rectangle(
+        id: 'R1',
+        p1: Offset(0.2, 0.3),
+        p2: null,
+        color: Color(0xFF10B981),
+      ) as RectangleEntity;
+      expect(
+        () => const RectanglePainter().paint(
+          canvas,
+          size,
+          rectPoint1,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 4. Rectangle: Completed (Zustand 3)
+      const rectCompleted = DrawingEntity.rectangle(
+        id: 'R1',
+        p1: Offset(0.2, 0.3),
+        p2: Offset(0.8, 0.7),
+        color: Color(0xFF10B981),
+      ) as RectangleEntity;
+      expect(
+        () => const RectanglePainter().paint(
+          canvas,
+          size,
+          rectCompleted,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 5. Polygon: Point 1 set (Zustand 2)
+      const polyPoint1 = DrawingEntity.polygon(
+        id: 'P1',
+        points: [Offset(0.2, 0.3)],
+        color: Color(0xFFA855F7),
+      ) as PolygonEntity;
+      expect(
+        () => const PolygonPainter().paint(
+          canvas,
+          size,
+          polyPoint1,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 6. Polygon: Multiple points open
+      const polyOpen = DrawingEntity.polygon(
+        id: 'P1',
+        points: [Offset(0.2, 0.3), Offset(0.5, 0.3), Offset(0.5, 0.6)],
+        color: Color(0xFFA855F7),
+      ) as PolygonEntity;
+      expect(
+        () =>
+            const PolygonPainter().paint(canvas, size, polyOpen, mobileContext),
+        returnsNormally,
+      );
+
+      // 7. Polygon: Completed (Zustand 3)
+      const polyCompleted = PolygonEntity(
+        id: 'P1',
+        points: [Offset(0.2, 0.3), Offset(0.5, 0.3), Offset(0.5, 0.6)],
+        color: Color(0xFFA855F7),
+        isClosed: true,
+      );
+      expect(
+        () => const PolygonPainter().paint(
+          canvas,
+          size,
+          polyCompleted,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 8. Angle: Point 1 set (Zustand 2)
+      const anglePoint1 = DrawingEntity.angle(
+        id: 'A1',
+        p1: Offset(0.2, 0.5),
+        p2: null,
+        color: Color(0xFFF59E0B),
+      ) as AngleEntity;
+      expect(
+        () => const AnglePainter().paint(
+          canvas,
+          size,
+          anglePoint1,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 9. Angle: Completed (Zustand 3)
+      const angleCompleted = DrawingEntity.angle(
+        id: 'A1',
+        p1: Offset(0.2, 0.5),
+        p2: Offset(0.6, 0.4),
+        color: Color(0xFFF59E0B),
+      ) as AngleEntity;
+      expect(
+        () => const AnglePainter().paint(
+          canvas,
+          size,
+          angleCompleted,
           mobileContext,
         ),
         returnsNormally,

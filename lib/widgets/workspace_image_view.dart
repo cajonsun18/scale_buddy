@@ -278,94 +278,6 @@ class _ImageWithPointsOverlayState
               ),
             ),
 
-            if ((widget.activeStep == WorkflowStepType.calibrate) &&
-                calib != null) ...[
-              if (calib.p1 != null)
-                _buildPointHandle(
-                  calib.p1!,
-                  size,
-                  controller,
-                  pointIndex: 0,
-                  entityId: calib.id,
-                  isCalibration: true,
-                ),
-              if (calib.p2 != null)
-                _buildPointHandle(
-                  calib.p2!,
-                  size,
-                  controller,
-                  pointIndex: 1,
-                  entityId: calib.id,
-                  isCalibration: true,
-                ),
-            ],
-
-            if ((widget.activeStep == WorkflowStepType.perspective)) ...[
-              for (final entity
-                  in state.entities.whereType<PerspectiveEntity>())
-                for (int i = 0; i < entity.points.length; i++)
-                  _buildPointHandle(
-                    entity.points[i],
-                    size,
-                    controller,
-                    pointIndex: i,
-                    entityId: entity.id,
-                  ),
-            ],
-
-            if (_showMagnifier && _magnifierPosition != null)
-              Builder(
-                builder: (context) {
-                  const verticalOffset = 70.0;
-                  final magCenter = Offset(
-                    _magnifierPosition!.dx,
-                    _magnifierPosition!.dy - verticalOffset,
-                  );
-
-                  return Positioned(
-                    left: magCenter.dx - (magnifierSize.width / 2),
-                    top: magCenter.dy - (magnifierSize.height / 2),
-                    child: IgnorePointer(
-                      child: SizedBox(
-                        width: magnifierSize.width,
-                        height: magnifierSize.height,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            RawMagnifier(
-                              focalPointOffset: const Offset(0, verticalOffset),
-                              decoration: MagnifierDecoration(
-                                opacity: 1.0,
-                                shadows: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                                shape: const CircleBorder(
-                                  side: BorderSide(
-                                    color: Color(0xFF38BDF8),
-                                    width: 2.5,
-                                  ),
-                                ),
-                              ),
-                              size: magnifierSize,
-                              magnificationScale: 2.0,
-                            ),
-                            // Fadenkreuz im Zentrum der Lupe
-                            CustomPaint(
-                              size: magnifierSize,
-                              painter: _CrosshairPainter(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-
             if (!context.isMobile &&
                 (widget.activeStep == WorkflowStepType.calibrate) &&
                 calib != null &&
@@ -433,9 +345,111 @@ class _ImageWithPointsOverlayState
                   },
                 ),
               ),
+
             if (widget.activeStep == WorkflowStepType.measure ||
                 widget.activeStep == WorkflowStepType.export)
               Positioned.fill(child: MeasurementLabelsOverlay(size: size)),
+
+            if ((widget.activeStep == WorkflowStepType.calibrate) &&
+                calib != null) ...[
+              if (calib.p1 != null)
+                _buildPointHandle(
+                  calib.p1!,
+                  size,
+                  controller,
+                  pointIndex: 0,
+                  entityId: calib.id,
+                  isCalibration: true,
+                ),
+              if (calib.p2 != null)
+                _buildPointHandle(
+                  calib.p2!,
+                  size,
+                  controller,
+                  pointIndex: 1,
+                  entityId: calib.id,
+                  isCalibration: true,
+                ),
+            ],
+
+            if ((widget.activeStep == WorkflowStepType.perspective)) ...[
+              for (final entity
+                  in state.entities.whereType<PerspectiveEntity>())
+                for (int i = 0; i < entity.points.length; i++)
+                  _buildPointHandle(
+                    entity.points[i],
+                    size,
+                    controller,
+                    pointIndex: i,
+                    entityId: entity.id,
+                  ),
+            ],
+
+            if (widget.activeStep == WorkflowStepType.measure &&
+                state.selectedEntityId != null) ...[
+              for (final sel in [
+                state.entities
+                    .where((e) => e.id == state.selectedEntityId)
+                    .firstOrNull,
+              ])
+                if (sel != null &&
+                    _isEntityCompleted(sel) &&
+                    (!context.isMobile || isSelectTool))
+                  ..._buildMeasureEntityHandles(sel, size, controller),
+            ],
+
+            if (_showMagnifier && _magnifierPosition != null)
+              Builder(
+                builder: (context) {
+                  const verticalOffset = 70.0;
+                  final magCenter = Offset(
+                    _magnifierPosition!.dx,
+                    _magnifierPosition!.dy - verticalOffset,
+                  );
+
+                  return Positioned(
+                    left: magCenter.dx - (magnifierSize.width / 2),
+                    top: magCenter.dy - (magnifierSize.height / 2),
+                    child: IgnorePointer(
+                      child: SizedBox(
+                        width: magnifierSize.width,
+                        height: magnifierSize.height,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            RawMagnifier(
+                              focalPointOffset: const Offset(0, verticalOffset),
+                              decoration: MagnifierDecoration(
+                                opacity: 1.0,
+                                shadows: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                                shape: const CircleBorder(
+                                  side: BorderSide(
+                                    color: Color(0xFF38BDF8),
+                                    width: 2.5,
+                                  ),
+                                ),
+                              ),
+                              size: magnifierSize,
+                              magnificationScale: AppTheme.magnifierScale,
+                            ),
+                            // Fadenkreuz im Zentrum der Lupe
+                            CustomPaint(
+                              size: magnifierSize,
+                              painter: _CrosshairPainter(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
           ],
         );
       },
@@ -533,6 +547,105 @@ class _ImageWithPointsOverlayState
         ),
       ),
     );
+  }
+
+  bool _isEntityCompleted(DrawingEntity entity) {
+    return entity.isCompleted;
+  }
+
+  List<Widget> _buildMeasureEntityHandles(
+    DrawingEntity entity,
+    Size size,
+    WorkspaceController controller,
+  ) {
+    final handles = <Widget>[];
+    entity.map(
+      calibration: (_) {},
+      perspective: (_) {},
+      line: (l) {
+        if (l.p1 != null) {
+          handles.add(
+            _buildPointHandle(
+              l.p1!,
+              size,
+              controller,
+              pointIndex: 0,
+              entityId: l.id,
+            ),
+          );
+        }
+        if (l.p2 != null) {
+          handles.add(
+            _buildPointHandle(
+              l.p2!,
+              size,
+              controller,
+              pointIndex: 1,
+              entityId: l.id,
+            ),
+          );
+        }
+      },
+      rectangle: (r) {
+        if (r.p1 != null && r.p2 != null) {
+          final corners = [
+            r.p1!,
+            Offset(r.p2!.dx, r.p1!.dy),
+            r.p2!,
+            Offset(r.p1!.dx, r.p2!.dy),
+          ];
+          for (int i = 0; i < corners.length; i++) {
+            handles.add(
+              _buildPointHandle(
+                corners[i],
+                size,
+                controller,
+                pointIndex: i,
+                entityId: r.id,
+              ),
+            );
+          }
+        }
+      },
+      polygon: (p) {
+        for (int i = 0; i < p.points.length; i++) {
+          handles.add(
+            _buildPointHandle(
+              p.points[i],
+              size,
+              controller,
+              pointIndex: i,
+              entityId: p.id,
+            ),
+          );
+        }
+      },
+      angle: (a) {
+        if (a.p1 != null) {
+          handles.add(
+            _buildPointHandle(
+              a.p1!,
+              size,
+              controller,
+              pointIndex: 0,
+              entityId: a.id,
+            ),
+          );
+        }
+        if (a.p2 != null) {
+          handles.add(
+            _buildPointHandle(
+              a.p2!,
+              size,
+              controller,
+              pointIndex: 1,
+              entityId: a.id,
+            ),
+          );
+        }
+      },
+    );
+    return handles;
   }
 
   Offset _calculateLabelOffset(Offset p1, Offset p2, double t, Size size) {

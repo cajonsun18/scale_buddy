@@ -81,17 +81,19 @@ class HandlePainter {
     double innerRadius = 5.0,
     double outerRadius = 9.0,
     Color innerFillColor = Colors.white,
+    Color? outerRingColor,
     bool drawHalo = false,
   }) {
+    final ringColor = outerRingColor ?? strokeColor;
     if (drawHalo) {
       final paintHalo = Paint()
-        ..color = strokeColor.withValues(alpha: 0.15)
+        ..color = ringColor.withValues(alpha: 0.15)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, outerRadius, paintHalo);
+      canvas.drawCircle(center, outerRadius + 4.0, paintHalo);
     }
 
     final paintOuterRing = Paint()
-      ..color = strokeColor.withValues(alpha: 0.35)
+      ..color = ringColor.withValues(alpha: 0.35)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, outerRadius, paintOuterRing);
@@ -188,26 +190,28 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
       // Verbindungslinie
       canvas.drawLine(p1Pixel, p2Pixel, paintLine);
 
-      // Rechtwinklige T-Abschlüsse (Querabschlüsse / Bemaßungsbegrenzer)
-      final vec = p2Pixel - p1Pixel;
-      final distance = vec.distance;
-      if (distance > 0) {
-        final normal = Offset(-vec.dy / distance, vec.dx / distance);
-        const tBarHalfLength = 16.0;
+      // Rechtwinklige T-Abschlüsse (Querabschlüsse / Bemaßungsbegrenzer nur im Kalibrierschritt)
+      if (context.activeStep == WorkflowStepType.calibrate) {
+        final vec = p2Pixel - p1Pixel;
+        final distance = vec.distance;
+        if (distance > 0) {
+          final normal = Offset(-vec.dy / distance, vec.dx / distance);
+          const tBarHalfLength = 16.0;
 
-        // T-Abschluss an Punkt 1
-        canvas.drawLine(
-          p1Pixel - normal * tBarHalfLength,
-          p1Pixel + normal * tBarHalfLength,
-          paintLine,
-        );
+          // T-Abschluss an Punkt 1
+          canvas.drawLine(
+            p1Pixel - normal * tBarHalfLength,
+            p1Pixel + normal * tBarHalfLength,
+            paintLine,
+          );
 
-        // T-Abschluss an Punkt 2
-        canvas.drawLine(
-          p2Pixel - normal * tBarHalfLength,
-          p2Pixel + normal * tBarHalfLength,
-          paintLine,
-        );
+          // T-Abschluss an Punkt 2
+          canvas.drawLine(
+            p2Pixel - normal * tBarHalfLength,
+            p2Pixel + normal * tBarHalfLength,
+            paintLine,
+          );
+        }
       }
 
       // Mittiges Kapsel-Wert-Badge auf der Linie
@@ -227,7 +231,7 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
         canvas,
         p1Pixel,
         strokeColor: strokeColor,
-        drawHalo: true,
+        drawHalo: context.activeStep == WorkflowStepType.calibrate,
       );
 
       if (!entity.isConfirmed) {
@@ -240,7 +244,7 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
         canvas,
         p2Pixel,
         strokeColor: strokeColor,
-        drawHalo: true,
+        drawHalo: context.activeStep == WorkflowStepType.calibrate,
       );
 
       if (!entity.isConfirmed) {
@@ -399,32 +403,111 @@ class LinePainter extends DrawingEntityPainter<LineEntity> {
 
     if (p1 == null && p2 == null) return;
 
-    final paintLine = Paint()
-      ..color = entity.color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
-      ..strokeCap = StrokeCap.round;
+    if (!context.isMobile) {
+      final paintLine = Paint()
+        ..color = entity.color
+        ..strokeWidth = context.getStrokeWidth(entity.id)
+        ..strokeCap = StrokeCap.round;
 
+      final p1Pixel = p1?.toPixel(size);
+      final p2Pixel = p2?.toPixel(size);
+
+      if (p1Pixel != null && p2Pixel != null) {
+        canvas.drawLine(p1Pixel, p2Pixel, paintLine);
+      }
+
+      if (p1Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p1Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      if (p2Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p2Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      return;
+    }
+
+    // --- MOBIL-RENDERING (Schritt 4: Messwerkzeuge) ---
     final p1Pixel = p1?.toPixel(size);
     final p2Pixel = p2?.toPixel(size);
 
-    if (p1Pixel != null && p2Pixel != null) {
-      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
-    }
-
-    if (p1Pixel != null) {
-      HandlePainter.drawStandard(
+    // Zustand 2: 1. Punkt gesetzt, 2. Punkt ausstehend
+    if (p1Pixel != null && p2Pixel == null) {
+      // Startpunkt: weißer Rand, blauer Kern, Aura
+      HandlePainter.drawMobile(
         canvas,
         p1Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
+        strokeColor: Colors.white,
+        innerFillColor: const Color(0xFF0284C7),
+        outerRingColor: const Color(0xFF38BDF8),
+        drawHalo: true,
       );
+
+      // Schwebendes Hinweisschild ▪ Startpunkt
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: p1Pixel,
+        text: '▪ Startpunkt',
+        backgroundColor: const Color(0xFF0284C7),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: Colors.white,
+      );
+
+      // Dezenter gestrichelter Kreis mit Label „Tippe Punkt 2“
+      final ghostOffset = _calculateGhostPosition(p1Pixel, size);
+      _drawDashedCircle(
+        canvas,
+        ghostOffset,
+        radius: 9.0,
+        color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+      );
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: ghostOffset,
+        text: 'Tippe Punkt 2',
+        backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.95),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: const Color(0xFF38BDF8),
+      );
+      return;
     }
-    if (p2Pixel != null) {
-      HandlePainter.drawStandard(
+
+    // Zustand 3: Strecke abgeschlossen (Cyan #38BDF8)
+    if (p1Pixel != null && p2Pixel != null) {
+      final cyan = entity.color;
+      final paintLine = Paint()
+        ..color = cyan
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawLine(p1Pixel, p2Pixel, paintLine);
+
+      final isSelected = entity.id == context.selectedEntityId;
+
+      // Bemaßungs-Endpunkte
+      HandlePainter.drawMobile(
+        canvas,
+        p1Pixel,
+        strokeColor: cyan,
+        innerFillColor: Colors.white,
+        drawHalo: isSelected,
+      );
+      HandlePainter.drawMobile(
         canvas,
         p2Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
+        strokeColor: cyan,
+        innerFillColor: Colors.white,
+        drawHalo: isSelected,
       );
     }
   }
@@ -446,37 +529,146 @@ class PolygonPainter extends DrawingEntityPainter<PolygonEntity> {
   ) {
     if (entity.points.isEmpty) return;
 
+    if (!context.isMobile) {
+      final paintLine = Paint()
+        ..color = entity.color
+        ..strokeWidth = context.getStrokeWidth(entity.id)
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+
+      final paintFill = Paint()
+        ..color = entity.color.withValues(alpha: 0.2)
+        ..style = PaintingStyle.fill;
+
+      final pixelPoints = entity.points.toPixels(size);
+      final path = Path()..moveTo(pixelPoints.first.dx, pixelPoints.first.dy);
+
+      for (int i = 1; i < pixelPoints.length; i++) {
+        path.lineTo(pixelPoints[i].dx, pixelPoints[i].dy);
+      }
+
+      if (entity.isClosed) {
+        path.close();
+        canvas.drawPath(path, paintFill);
+      }
+
+      canvas.drawPath(path, paintLine);
+
+      HandlePainter.drawStandardList(
+        canvas,
+        pixelPoints,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
+      return;
+    }
+
+    // --- MOBIL-RENDERING (Schritt 4: Polygon) ---
+    final pixelPoints = entity.points.toPixels(size);
+    final purple = entity.color;
+
+    // Zustand 2: Noch nicht abgeschlossen
+    if (!entity.isClosed) {
+      if (pixelPoints.length == 1) {
+        HandlePainter.drawMobile(
+          canvas,
+          pixelPoints.first,
+          strokeColor: Colors.white,
+          innerFillColor: const Color(0xFF0284C7),
+          outerRingColor: purple,
+          drawHalo: true,
+        );
+
+        _drawTooltipBadge(
+          canvas: canvas,
+          size: size,
+          anchor: pixelPoints.first,
+          text: '▪ Startpunkt',
+          backgroundColor: const Color(0xFF0284C7),
+          borderColor: const Color(0xFF38BDF8),
+          textColor: Colors.white,
+        );
+
+        final ghostOffset = _calculateGhostPosition(pixelPoints.first, size);
+        _drawDashedCircle(
+          canvas,
+          ghostOffset,
+          radius: 9.0,
+          color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+        );
+        _drawTooltipBadge(
+          canvas: canvas,
+          size: size,
+          anchor: ghostOffset,
+          text: 'Tippe Punkt 2',
+          backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.95),
+          borderColor: const Color(0xFF38BDF8),
+          textColor: const Color(0xFF38BDF8),
+        );
+        return;
+      }
+
+      // Bei >= 2 Punkten: Konturlinien zeichnen
+      final paintLine = Paint()
+        ..color = purple
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+
+      final path = Path()..moveTo(pixelPoints.first.dx, pixelPoints.first.dy);
+      for (int i = 1; i < pixelPoints.length; i++) {
+        path.lineTo(pixelPoints[i].dx, pixelPoints[i].dy);
+      }
+      canvas.drawPath(path, paintLine);
+
+      // Alle bisherigen Eckpunkte mit HandlePainter.drawMobile
+      for (int i = 0; i < pixelPoints.length; i++) {
+        final isFirst = i == 0;
+        HandlePainter.drawMobile(
+          canvas,
+          pixelPoints[i],
+          strokeColor: isFirst ? Colors.white : purple,
+          innerFillColor: isFirst ? const Color(0xFF0284C7) : Colors.white,
+          outerRingColor: purple,
+          drawHalo: isFirst,
+        );
+      }
+      return;
+    }
+
+    // Zustand 3: Abgeschlossenes Polygon (Lila #A855F7, 20% Transparenz)
     final paintLine = Paint()
-      ..color = entity.color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
+      ..color = purple
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
     final paintFill = Paint()
-      ..color = entity.color.withValues(alpha: 0.2)
+      ..color = purple.withValues(alpha: 0.20)
       ..style = PaintingStyle.fill;
 
-    final pixelPoints = entity.points.toPixels(size);
     final path = Path()..moveTo(pixelPoints.first.dx, pixelPoints.first.dy);
-
     for (int i = 1; i < pixelPoints.length; i++) {
       path.lineTo(pixelPoints[i].dx, pixelPoints[i].dy);
     }
-
-    if (entity.isClosed) {
-      path.close();
-      canvas.drawPath(path, paintFill);
-    }
-
+    path.close();
+    canvas.drawPath(path, paintFill);
     canvas.drawPath(path, paintLine);
 
-    HandlePainter.drawStandardList(
-      canvas,
-      pixelPoints,
-      fillColor: context.pointColor,
-      borderColor: entity.color,
-    );
+    final isSelected = entity.id == context.selectedEntityId;
+
+    for (final p in pixelPoints) {
+      HandlePainter.drawMobile(
+        canvas,
+        p,
+        strokeColor: purple,
+        innerFillColor: Colors.white,
+        drawHalo: isSelected,
+      );
+    }
   }
 }
 
@@ -499,43 +691,229 @@ class RectanglePainter extends DrawingEntityPainter<RectangleEntity> {
 
     if (p1 == null && p2 == null) return;
 
-    final paintLine = Paint()
-      ..color = entity.color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
+    if (!context.isMobile) {
+      final paintLine = Paint()
+        ..color = entity.color
+        ..strokeWidth = context.getStrokeWidth(entity.id)
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
 
-    final paintFill = Paint()
-      ..color = entity.color.withValues(alpha: 0.2)
-      ..style = PaintingStyle.fill;
+      final paintFill = Paint()
+        ..color = entity.color.withValues(alpha: 0.2)
+        ..style = PaintingStyle.fill;
 
+      final p1Pixel = p1?.toPixel(size);
+      final p2Pixel = p2?.toPixel(size);
+
+      if (p1Pixel != null && p2Pixel != null) {
+        final rectShape = Rect.fromPoints(p1Pixel, p2Pixel);
+        canvas.drawRect(rectShape, paintFill);
+        canvas.drawRect(rectShape, paintLine);
+      }
+
+      if (p1Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p1Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      if (p2Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p2Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      return;
+    }
+
+    // --- MOBIL-RENDERING (Schritt 4: Rechteck) ---
     final p1Pixel = p1?.toPixel(size);
     final p2Pixel = p2?.toPixel(size);
 
+    // Zustand 2: 1. Punkt gesetzt, 2. Punkt ausstehend
+    if (p1Pixel != null && p2Pixel == null) {
+      HandlePainter.drawMobile(
+        canvas,
+        p1Pixel,
+        strokeColor: Colors.white,
+        innerFillColor: const Color(0xFF0284C7),
+        outerRingColor: const Color(0xFF38BDF8),
+        drawHalo: true,
+      );
+
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: p1Pixel,
+        text: '▪ Startpunkt',
+        backgroundColor: const Color(0xFF0284C7),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: Colors.white,
+      );
+
+      final ghostOffset = _calculateGhostPosition(p1Pixel, size);
+      _drawDashedCircle(
+        canvas,
+        ghostOffset,
+        radius: 9.0,
+        color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+      );
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: ghostOffset,
+        text: 'Tippe Punkt 2',
+        backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.95),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: const Color(0xFF38BDF8),
+      );
+      return;
+    }
+
+    // Zustand 3: Rechteck aufgespannt (Smaragdgrün #10B981, 20% Transparenz)
     if (p1Pixel != null && p2Pixel != null) {
+      final emerald = entity.color;
+      final paintLine = Paint()
+        ..color = emerald
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+
+      final paintFill = Paint()
+        ..color = emerald.withValues(alpha: 0.20)
+        ..style = PaintingStyle.fill;
+
       final rectShape = Rect.fromPoints(p1Pixel, p2Pixel);
       canvas.drawRect(rectShape, paintFill);
       canvas.drawRect(rectShape, paintLine);
-    }
 
-    if (p1Pixel != null) {
-      HandlePainter.drawStandard(
-        canvas,
-        p1Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
-      );
-    }
-    if (p2Pixel != null) {
-      HandlePainter.drawStandard(
-        canvas,
-        p2Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
-      );
+      final isSelected = entity.id == context.selectedEntityId;
+
+      // Eckpunkte mit HandlePainter.drawMobile
+      final corners = [
+        rectShape.topLeft,
+        rectShape.topRight,
+        rectShape.bottomRight,
+        rectShape.bottomLeft,
+      ];
+      for (final corner in corners) {
+        HandlePainter.drawMobile(
+          canvas,
+          corner,
+          strokeColor: emerald,
+          innerFillColor: Colors.white,
+          drawHalo: isSelected,
+        );
+      }
     }
   }
+}
+
+Offset _calculateGhostPosition(Offset p1, Size size) {
+  double gx = p1.dx + 65.0;
+  double gy = p1.dy;
+  if (gx > size.width - 35) {
+    gx = p1.dx - 65.0;
+  }
+  return Offset(gx, gy);
+}
+
+void _drawDashedCircle(
+  Canvas canvas,
+  Offset center, {
+  required double radius,
+  required Color color,
+  double strokeWidth = 1.5,
+  int dashCount = 12,
+}) {
+  final paint = Paint()
+    ..color = color
+    ..strokeWidth = strokeWidth
+    ..style = PaintingStyle.stroke;
+
+  final sweepAngle = (2 * pi) / dashCount;
+  final dashAngle = sweepAngle * 0.6;
+  final rect = Rect.fromCircle(center: center, radius: radius);
+
+  for (int i = 0; i < dashCount; i++) {
+    final startAngle = i * sweepAngle;
+    canvas.drawArc(rect, startAngle, dashAngle, false, paint);
+  }
+}
+
+void _drawTooltipBadge({
+  required Canvas canvas,
+  required Size size,
+  required Offset anchor,
+  required String text,
+  required Color backgroundColor,
+  required Color borderColor,
+  required Color textColor,
+  double verticalOffset = 20.0,
+}) {
+  final textSpan = TextSpan(
+    text: text,
+    style: TextStyle(
+      color: textColor,
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.2,
+    ),
+  );
+
+  final textPainter = TextPainter(
+    text: textSpan,
+    textDirection: TextDirection.ltr,
+  );
+  textPainter.layout();
+
+  const padH = 8.0;
+  const padV = 4.0;
+  final width = textPainter.width + padH * 2;
+  final height = textPainter.height + padV * 2;
+
+  double left = anchor.dx - (width / 2);
+  double top = anchor.dy - verticalOffset - height;
+
+  if (left < 4) left = 4;
+  if (left + width > size.width - 4) left = size.width - width - 4;
+  if (top < 4) top = anchor.dy + verticalOffset;
+
+  final rect = Rect.fromLTWH(left, top, width, height);
+  final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
+
+  // Schatten
+  canvas.drawRRect(
+    rrect.shift(const Offset(0, 2)),
+    Paint()
+      ..color = Colors.black.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+  );
+
+  // Hintergrund
+  canvas.drawRRect(
+    rrect,
+    Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.fill,
+  );
+
+  // Rand
+  canvas.drawRRect(
+    rrect,
+    Paint()
+      ..color = borderColor
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke,
+  );
+
+  textPainter.paint(canvas, Offset(left + padH, top + padV));
 }
 
 class AnglePainter extends DrawingEntityPainter<AngleEntity> {
@@ -557,21 +935,174 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
 
     if (p1 == null && p2 == null) return;
 
-    final paintLine = Paint()
-      ..color = entity.color
-      ..strokeWidth = context.getStrokeWidth(entity.id)
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
+    if (!context.isMobile) {
+      final paintLine = Paint()
+        ..color = entity.color
+        ..strokeWidth = context.getStrokeWidth(entity.id)
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
 
-    final paintHelper = Paint()
-      ..color = entity.color.withValues(alpha: 0.5)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
+      final paintHelper = Paint()
+        ..color = entity.color.withValues(alpha: 0.5)
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
 
+      final p1Pixel = p1?.toPixel(size);
+      final p2Pixel = p2?.toPixel(size);
+
+      if (p1Pixel != null && p2Pixel != null) {
+        canvas.drawLine(p1Pixel, p2Pixel, paintLine);
+
+        final distance = (p2Pixel - p1Pixel).distance;
+        if (distance > 0) {
+          final dx = p2Pixel.dx - p1Pixel.dx;
+          final dy = p2Pixel.dy - p1Pixel.dy;
+
+          final direction = dx >= 0 ? 1.0 : -1.0;
+          final helperEnd = Offset(
+            p1Pixel.dx + (distance * direction),
+            p1Pixel.dy,
+          );
+
+          const dashWidth = 5.0;
+          const dashSpace = 5.0;
+          double currentX = p1Pixel.dx;
+          if (direction > 0) {
+            while (currentX < helperEnd.dx) {
+              canvas.drawLine(
+                Offset(currentX, p1Pixel.dy),
+                Offset(min(currentX + dashWidth, helperEnd.dx), p1Pixel.dy),
+                paintHelper,
+              );
+              currentX += dashWidth + dashSpace;
+            }
+          } else {
+            while (currentX > helperEnd.dx) {
+              canvas.drawLine(
+                Offset(currentX, p1Pixel.dy),
+                Offset(max(currentX - dashWidth, helperEnd.dx), p1Pixel.dy),
+                paintHelper,
+              );
+              currentX -= dashWidth + dashSpace;
+            }
+          }
+
+          final rect = Rect.fromCircle(center: p1Pixel, radius: distance * 0.3);
+          final baseAngle = direction > 0 ? 0.0 : pi;
+
+          final angleRad = atan2(dy, dx);
+          final sweepAngle = angleRad - baseAngle;
+
+          double normalizedSweep = sweepAngle;
+          while (normalizedSweep > pi) {
+            normalizedSweep -= 2 * pi;
+          }
+          while (normalizedSweep < -pi) {
+            normalizedSweep += 2 * pi;
+          }
+
+          canvas.drawArc(rect, baseAngle, normalizedSweep, false, paintLine);
+
+          final arrowEndX = p1Pixel.dx + cos(angleRad) * (distance * 0.3);
+          final arrowEndY = p1Pixel.dy + sin(angleRad) * (distance * 0.3);
+
+          final tangentAngle =
+              angleRad + (normalizedSweep > 0 ? pi / 2 : -pi / 2);
+
+          const arrowLength = 10.0;
+          const arrowAngle = pi / 6;
+
+          final arrowP1 = Offset(
+            arrowEndX + cos(tangentAngle + pi + arrowAngle) * arrowLength,
+            arrowEndY + sin(tangentAngle + pi + arrowAngle) * arrowLength,
+          );
+          final arrowP2 = Offset(
+            arrowEndX + cos(tangentAngle + pi - arrowAngle) * arrowLength,
+            arrowEndY + sin(tangentAngle + pi - arrowAngle) * arrowLength,
+          );
+
+          canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP1, paintLine);
+          canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP2, paintLine);
+        }
+      }
+
+      if (p1Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p1Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      if (p2Pixel != null) {
+        HandlePainter.drawStandard(
+          canvas,
+          p2Pixel,
+          fillColor: context.pointColor,
+          borderColor: entity.color,
+        );
+      }
+      return;
+    }
+
+    // --- MOBIL-RENDERING (Schritt 4: Dachwinkel) ---
     final p1Pixel = p1?.toPixel(size);
     final p2Pixel = p2?.toPixel(size);
+    final amber = entity.color;
 
+    // Zustand 2: Scheitelpunkt gesetzt, 2. Punkt ausstehend
+    if (p1Pixel != null && p2Pixel == null) {
+      HandlePainter.drawMobile(
+        canvas,
+        p1Pixel,
+        strokeColor: Colors.white,
+        innerFillColor: const Color(0xFF0284C7),
+        outerRingColor: amber,
+        drawHalo: true,
+      );
+
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: p1Pixel,
+        text: '▪ Startpunkt',
+        backgroundColor: const Color(0xFF0284C7),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: Colors.white,
+      );
+
+      final ghostOffset = _calculateGhostPosition(p1Pixel, size);
+      _drawDashedCircle(
+        canvas,
+        ghostOffset,
+        radius: 9.0,
+        color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+      );
+      _drawTooltipBadge(
+        canvas: canvas,
+        size: size,
+        anchor: ghostOffset,
+        text: 'Tippe Punkt 2',
+        backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.95),
+        borderColor: const Color(0xFF38BDF8),
+        textColor: const Color(0xFF38BDF8),
+      );
+      return;
+    }
+
+    // Zustand 3: Dachwinkel aufgespannt
     if (p1Pixel != null && p2Pixel != null) {
+      final paintLine = Paint()
+        ..color = amber
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+
+      final paintHelper = Paint()
+        ..color = amber.withValues(alpha: 0.6)
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
+
       canvas.drawLine(p1Pixel, p2Pixel, paintLine);
 
       final distance = (p2Pixel - p1Pixel).distance;
@@ -585,8 +1116,9 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
           p1Pixel.dy,
         );
 
+        // Gestrichelte horizontale Referenzlinie
         const dashWidth = 5.0;
-        const dashSpace = 5.0;
+        const dashSpace = 4.0;
         double currentX = p1Pixel.dx;
         if (direction > 0) {
           while (currentX < helperEnd.dx) {
@@ -608,6 +1140,7 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
           }
         }
 
+        // Winkelbogen
         final rect = Rect.fromCircle(center: p1Pixel, radius: distance * 0.3);
         final baseAngle = direction > 0 ? 0.0 : pi;
 
@@ -624,13 +1157,14 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
 
         canvas.drawArc(rect, baseAngle, normalizedSweep, false, paintLine);
 
+        // Pfeilspitze am Ende des Winkelbogens
         final arrowEndX = p1Pixel.dx + cos(angleRad) * (distance * 0.3);
         final arrowEndY = p1Pixel.dy + sin(angleRad) * (distance * 0.3);
 
         final tangentAngle =
             angleRad + (normalizedSweep > 0 ? pi / 2 : -pi / 2);
 
-        const arrowLength = 10.0;
+        const arrowLength = 9.0;
         const arrowAngle = pi / 6;
 
         final arrowP1 = Offset(
@@ -645,22 +1179,23 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
         canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP1, paintLine);
         canvas.drawLine(Offset(arrowEndX, arrowEndY), arrowP2, paintLine);
       }
-    }
 
-    if (p1Pixel != null) {
-      HandlePainter.drawStandard(
+      final isSelected = entity.id == context.selectedEntityId;
+
+      // Eckpunkte mit HandlePainter.drawMobile
+      HandlePainter.drawMobile(
         canvas,
         p1Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
+        strokeColor: amber,
+        innerFillColor: Colors.white,
+        drawHalo: isSelected,
       );
-    }
-    if (p2Pixel != null) {
-      HandlePainter.drawStandard(
+      HandlePainter.drawMobile(
         canvas,
         p2Pixel,
-        fillColor: context.pointColor,
-        borderColor: entity.color,
+        strokeColor: amber,
+        innerFillColor: Colors.white,
+        drawHalo: isSelected,
       );
     }
   }
@@ -834,6 +1369,17 @@ class EntityPainterDispatcher {
     DrawingEntity entity,
     PaintContext context,
   ) {
+    final shouldDim =
+        context.isMobile &&
+        context.activeStep == WorkflowStepType.measure &&
+        context.selectedEntityId != null &&
+        context.selectedEntityId != entity.id &&
+        entity is! CalibrationEntity;
+
+    if (shouldDim) {
+      canvas.saveLayer(null, Paint()..color = const Color(0x55FFFFFF));
+    }
+
     entity.map(
       calibration: (e) {
         if (_calibrationPainter.isVisibleInStep(context.activeStep)) {
@@ -866,5 +1412,9 @@ class EntityPainterDispatcher {
         }
       },
     );
+
+    if (shouldDim) {
+      canvas.restore();
+    }
   }
 }
