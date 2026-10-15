@@ -169,5 +169,176 @@ void main() {
         returnsNormally,
       );
     });
+
+    test(
+      'HandlePainter draws standard and mobile handles without throwing',
+      () {
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+
+        expect(
+          () => HandlePainter.drawStandard(
+            canvas,
+            const Offset(50, 50),
+            fillColor: Colors.white,
+            borderColor: Colors.blue,
+          ),
+          returnsNormally,
+        );
+
+        expect(
+          () => HandlePainter.drawStandardList(
+            canvas,
+            [const Offset(10, 10), const Offset(20, 20)],
+            fillColor: Colors.white,
+            borderColor: Colors.red,
+          ),
+          returnsNormally,
+        );
+
+        expect(
+          () => HandlePainter.drawMobile(
+            canvas,
+            const Offset(60, 60),
+            strokeColor: Colors.cyan,
+            drawHalo: true,
+          ),
+          returnsNormally,
+        );
+
+        expect(
+          () => HandlePainter.drawMobile(
+            canvas,
+            const Offset(70, 70),
+            strokeColor: Colors.cyan,
+            drawHalo: false,
+          ),
+          returnsNormally,
+        );
+      },
+    );
+
+    test('LinePainter, RectanglePainter, PolygonPainter and AnglePainter paint handles', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(500, 500);
+      final context = PaintContext(
+        activeStep: WorkflowStepType.measure,
+        primaryColor: Colors.blue,
+        successColor: Colors.green,
+        pointColor: Colors.white,
+      );
+
+      const line = DrawingEntity.line(
+        id: 'l1',
+        p1: Offset(0.1, 0.1),
+        p2: Offset(0.9, 0.9),
+        color: Colors.blue,
+      ) as LineEntity;
+      expect(
+        () => const LinePainter().paint(canvas, size, line, context),
+        returnsNormally,
+      );
+
+      const rect = DrawingEntity.rectangle(
+        id: 'r1',
+        p1: Offset(0.2, 0.2),
+        p2: Offset(0.8, 0.8),
+        color: Colors.amber,
+      ) as RectangleEntity;
+      expect(
+        () => const RectanglePainter().paint(canvas, size, rect, context),
+        returnsNormally,
+      );
+
+      const poly = DrawingEntity.polygon(
+        id: 'p1',
+        points: [Offset(0.1, 0.1), Offset(0.5, 0.1), Offset(0.3, 0.4)],
+        isClosed: true,
+        color: Colors.green,
+      ) as PolygonEntity;
+      expect(
+        () => const PolygonPainter().paint(canvas, size, poly, context),
+        returnsNormally,
+      );
+
+      const angle = DrawingEntity.angle(
+        id: 'a1',
+        p1: Offset(0.5, 0.5),
+        p2: Offset(0.8, 0.8),
+        color: Colors.orange,
+      ) as AngleEntity;
+      expect(
+        () => const AnglePainter().paint(canvas, size, angle, context),
+        returnsNormally,
+      );
+    });
+
+    test('PerspectivePainter paints in desktop and mobile modes', () {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(600, 400);
+
+      const perspective = DrawingEntity.perspective(
+        id: 'persp_1',
+        points: [
+          Offset(0.1, 0.1),
+          Offset(0.9, 0.1),
+          Offset(0.8, 0.8),
+          Offset(0.2, 0.8),
+        ],
+        color: Colors.orange,
+      ) as PerspectiveEntity;
+
+      final desktopContext = PaintContext(
+        activeStep: WorkflowStepType.perspective,
+        primaryColor: Colors.blue,
+        successColor: Colors.green,
+        pointColor: Colors.white,
+        isMobile: false,
+      );
+      expect(
+        () => const PerspectivePainter().paint(
+          canvas,
+          size,
+          perspective,
+          desktopContext,
+        ),
+        returnsNormally,
+      );
+
+      final mobileContext = PaintContext(
+        activeStep: WorkflowStepType.perspective,
+        primaryColor: Colors.blue,
+        successColor: Colors.green,
+        pointColor: Colors.white,
+        isMobile: true,
+      );
+      expect(
+        () => const PerspectivePainter().paint(
+          canvas,
+          size,
+          perspective,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+
+      // 3 points dashed preview in mobile
+      const perspective3Points = DrawingEntity.perspective(
+        id: 'persp_3',
+        points: [Offset(0.1, 0.1), Offset(0.9, 0.1), Offset(0.8, 0.8)],
+        color: Colors.orange,
+      ) as PerspectiveEntity;
+      expect(
+        () => const PerspectivePainter().paint(
+          canvas,
+          size,
+          perspective3Points,
+          mobileContext,
+        ),
+        returnsNormally,
+      );
+    });
   });
 }

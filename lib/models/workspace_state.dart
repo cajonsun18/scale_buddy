@@ -31,7 +31,10 @@ sealed class WorkspaceState with _$WorkspaceState {
   WorkspaceState removeEntity(String id) {
     final newList = List<DrawingEntity>.from(entities)
       ..removeWhere((e) => e.id == id);
-    return copyWith(entities: newList);
+    return copyWith(
+      entities: newList,
+      selectedEntityId: selectedEntityId == id ? null : selectedEntityId,
+    );
   }
 
   WorkspaceState addOrUpdateEntity(DrawingEntity entity) {

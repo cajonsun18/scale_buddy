@@ -54,24 +54,15 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   // --- Generische Entity-Methoden ---
 
   void addOrUpdateEntity(DrawingEntity entity) {
-    final newList = List<DrawingEntity>.from(state.entities);
-    final index = newList.indexWhere((e) => e.id == entity.id);
-    if (index >= 0) {
-      newList[index] = entity;
-    } else {
-      newList.add(entity);
-    }
-    state = state.copyWith(entities: newList);
+    state = state.addOrUpdateEntity(entity);
+  }
+
+  void updateEntity(String id, DrawingEntity Function(DrawingEntity) update) {
+    state = state.updateEntity(id, update);
   }
 
   void removeEntity(String id) {
-    final newList = state.entities.where((e) => e.id != id).toList();
-    state = state.copyWith(
-      entities: newList,
-      selectedEntityId: state.selectedEntityId == id
-          ? null
-          : state.selectedEntityId,
-    );
+    state = state.removeEntity(id);
   }
 
   void selectEntity(String id) {

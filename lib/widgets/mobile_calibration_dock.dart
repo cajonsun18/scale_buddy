@@ -6,6 +6,8 @@ import '../controllers/workspace_controller.dart';
 import '../models/entities/drawing_entity.dart';
 import '../models/mobile_calibration_state.dart';
 import '../theme/responsive.dart';
+import '../utils/calibration_input_utils.dart';
+import 'mobile_dock_components.dart';
 
 /// Schwebende Steuerungsleiste (Floating Dock) am unteren Rand des mobilen Bildschirms in Schritt 3 („Maßstab kalibrieren“).
 ///
@@ -54,18 +56,18 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
     if (calibEntity == null) return;
 
     if (calibEntity.selectedUnit != _selectedUnit &&
-        (calibEntity.selectedUnit == 'm' ||
-            calibEntity.selectedUnit == 'cm' ||
-            calibEntity.selectedUnit == 'mm')) {
+        CalibrationInputUtils.isValidUnit(calibEntity.selectedUnit)) {
       _selectedUnit = calibEntity.selectedUnit;
     }
 
     if (_textController.text.isEmpty &&
         calibEntity.enteredDistance != null &&
         calibEntity.enteredDistance! > 0) {
-      final dist = calibEntity.enteredDistance!;
-      final formatted = dist.toStringAsFixed(2).replaceAll('.', ',');
-      _textController.text = formatted;
+      _textController.text = CalibrationInputUtils.formatDistance(
+        calibEntity.enteredDistance,
+        useComma: true,
+        decimalPlaces: 2,
+      );
     }
   }
 
@@ -137,24 +139,9 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
       container: true,
       label: 'Hinweis: $text',
       child: Center(
-        child: Container(
+        child: MobileDockContainer(
           constraints: const BoxConstraints(minHeight: 44.0),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B).withValues(alpha: 0.95), // Slate-800
-            borderRadius: BorderRadius.circular(30.0),
-            border: Border.all(
-              color: const Color(0xFF334155), // Slate-700
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 16.0,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -185,23 +172,8 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
 
   /// Äußerer Container für das schwebende Dock in den Phasen 2, 3 und 4.
   Widget _buildDockContainer({required Widget child}) {
-    return Container(
+    return MobileDockContainer(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withValues(alpha: 0.95), // Slate-800
-        borderRadius: BorderRadius.circular(30.0), // Pillenform (Radius >= 24)
-        border: Border.all(
-          color: const Color(0xFF334155), // Slate-700
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16.0,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: child,
     );
   }
@@ -235,8 +207,10 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         // [ ↺ Zurücksetzen ]
-        _buildDockButton(
+        MobileDockButton(
           flex: 1,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Zurücksetzen',
           icon: Icons.refresh,
           iconColor: const Color(0xFF94A3B8),
@@ -247,17 +221,19 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
         ),
         const SizedBox(width: 8.0),
         // Vertikaler Trennstrich
-        Container(width: 1.0, height: 20.0, color: const Color(0xFF334155)),
+        const MobileDockDivider(),
         const SizedBox(width: 8.0),
         // [ ✓ Bestätigen ] (strikt deaktiviert)
-        _buildDockButton(
+        const MobileDockButton(
           flex: 1,
+          padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Bestätigen',
           icon: Icons.check,
-          iconColor: const Color(0xFF64748B),
-          borderColor: const Color(0xFF334155),
-          backgroundColor: const Color(0xFF0F172A),
-          textColor: const Color(0xFF64748B),
+          iconColor: Color(0xFF64748B),
+          borderColor: Color(0xFF334155),
+          backgroundColor: Color(0xFF0F172A),
+          textColor: Color(0xFF64748B),
           onPressed: null,
         ),
       ],
@@ -271,14 +247,23 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
     WidgetRef ref,
     WorkspaceController workspaceController,
   ) {
-    final cleanText = _textController.text.replaceAll(',', '.');
-    final val = double.tryParse(cleanText);
-    final bool isValid = val != null && val > 0;
+    final val = CalibrationInputUtils.parseDistance(_textController.text);
+    final bool isValid = val != null;
 
     return Row(
       children: [
         // [ 🗑 Löschen ]
-        _buildDeleteButton(ref, workspaceController, flex: 1),
+        MobileDockButton(
+          flex: 1,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
+          label: 'Löschen',
+          icon: Icons.delete_outline,
+          iconColor: const Color(0xFF94A3B8),
+          textColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.transparent,
+          onPressed: () => _handleDelete(ref, workspaceController),
+        ),
         const SizedBox(width: 6.0),
         // Eingabe-Pille (Cyan-Fokusrahmen, TextField + Dropdown)
         Expanded(
@@ -370,8 +355,10 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
         ),
         const SizedBox(width: 6.0),
         // [ ✓ Bestätigen ]
-        _buildDockButton(
+        MobileDockButton(
           flex: 1,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Bestätigen',
           icon: Icons.check,
           iconColor: isValid ? Colors.white : const Color(0xFF64748B),
@@ -386,59 +373,6 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
               : null,
         ),
       ],
-    );
-  }
-
-  Widget _buildDeleteButton(
-    WidgetRef ref,
-    WorkspaceController workspaceController, {
-    int flex = 1,
-  }) {
-    return Expanded(
-      flex: flex,
-      child: Semantics(
-        button: true,
-        enabled: true,
-        label: 'Löschen',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _handleDelete(ref, workspaceController),
-            borderRadius: BorderRadius.circular(22.0),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 44.0),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6.0,
-                vertical: 8.0,
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.delete_outline,
-                    size: 16.0,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  SizedBox(width: 4.0),
-                  Flexible(
-                    child: Text(
-                      'Löschen',
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 12.0,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -591,8 +525,10 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
     return Row(
       children: [
         // [ ✎ Anpassen ]
-        _buildDockButton(
+        MobileDockButton(
           flex: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Anpassen',
           icon: Icons.edit_outlined,
           iconColor: const Color(0xFF38BDF8),
@@ -612,8 +548,10 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
         ),
         const SizedBox(width: 6.0),
         // [ 🗑 Löschen ]
-        _buildDockButton(
+        MobileDockButton(
           flex: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Löschen',
           icon: Icons.delete_outline,
           iconColor: const Color(0xFF94A3B8),
@@ -624,14 +562,12 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
         ),
         const SizedBox(width: 6.0),
         // [ Weiter zu Schritt 4 › ]
-        _buildDockButton(
+        MobileDockButton.primary(
           flex: 3,
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+          iconSpacing: 4.0,
           label: 'Weiter zu Schritt 4',
           icon: Icons.chevron_right,
-          iconColor: Colors.white,
-          backgroundColor: const Color(0xFF2563EB), // Leuchtend blau
-          textColor: Colors.white,
-          isPrimary: true,
           onPressed: widget.onNextStep,
         ),
       ],
@@ -939,24 +875,19 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
 
   void _handleKeypadDigit(String digit) {
     final text = _textController.text;
-    if (digit == ',') {
-      if (text.contains(',') || text.contains('.')) return;
+    if (digit == ',' || digit == '.') {
+      if (!CalibrationInputUtils.canInsertChar(text, ',')) return;
       if (text.isEmpty) {
         _insertKeypadText('0,');
         return;
       }
     } else {
-      final sep = text.contains(',') ? ',' : (text.contains('.') ? '.' : null);
-      if (sep != null) {
-        final parts = text.split(sep);
-        if (parts.length > 1 && parts[1].length >= 2) {
-          final sel = _textController.selection;
-          if (!sel.isValid ||
-              sel.isCollapsed ||
-              sel.start <= text.indexOf(sep)) {
-            return;
-          }
-        }
+      if (!CalibrationInputUtils.canInsertChar(
+        text,
+        digit,
+        selection: _textController.selection,
+      )) {
+        return;
       }
     }
     _insertKeypadText(digit);
@@ -988,17 +919,10 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
   }
 
   void _syncDistanceToController(String text) {
-    final cText = text.replaceAll(',', '.');
-    final parsed = double.tryParse(cText);
-    if (parsed != null && parsed > 0) {
-      ref
-          .read(workspaceControllerProvider.notifier)
-          .updateCalibrationDistance(parsed);
-    } else {
-      ref
-          .read(workspaceControllerProvider.notifier)
-          .updateCalibrationDistance(null);
-    }
+    final parsed = CalibrationInputUtils.parseDistance(text);
+    ref
+        .read(workspaceControllerProvider.notifier)
+        .updateCalibrationDistance(parsed);
     setState(() {});
   }
 
@@ -1028,81 +952,5 @@ class _MobileCalibrationDockState extends ConsumerState<MobileCalibrationDock> {
       unit: _selectedUnit,
     );
     ref.read(mobileCalibrationStateProvider.notifier).setConfirmed();
-  }
-
-  /// Touch-freundlicher Dock-Button (Mindestens 44x44 dp)
-  Widget _buildDockButton({
-    required String label,
-    required IconData icon,
-    required Color iconColor,
-    required Color textColor,
-    Color? backgroundColor,
-    Color? borderColor,
-    bool isPrimary = false,
-    int flex = 1,
-    VoidCallback? onPressed,
-  }) {
-    final bool isEnabled = onPressed != null;
-
-    return Expanded(
-      flex: flex,
-      child: Semantics(
-        button: true,
-        enabled: isEnabled,
-        label: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(22.0),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 44.0),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6.0,
-                vertical: 8.0,
-              ),
-              decoration: BoxDecoration(
-                color: backgroundColor ?? const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(22.0),
-                border: borderColor != null
-                    ? Border.all(color: borderColor, width: 1.0)
-                    : null,
-                boxShadow: isPrimary
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF2563EB).withValues(alpha: 0.4),
-                          blurRadius: 8.0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 16.0, color: iconColor),
-                  const SizedBox(width: 4.0),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 12.0,
-                        fontWeight: isPrimary
-                            ? FontWeight.bold
-                            : FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

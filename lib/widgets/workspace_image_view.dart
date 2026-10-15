@@ -1,4 +1,5 @@
 import '../painters/drawing_entity_painter.dart';
+import '../utils/geometry_utils.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -535,8 +536,8 @@ class _ImageWithPointsOverlayState
   }
 
   Offset _calculateLabelOffset(Offset p1, Offset p2, double t, Size size) {
-    final p1Pix = Offset(p1.dx * size.width, p1.dy * size.height);
-    final p2Pix = Offset(p2.dx * size.width, p2.dy * size.height);
+    final p1Pix = p1.toPixel(size);
+    final p2Pix = p2.toPixel(size);
     final lineVec = p2Pix - p1Pix;
     final length = lineVec.distance;
 
@@ -577,8 +578,8 @@ class _ImageWithPointsOverlayState
   ) {
     final p1 = calib.p1!;
     final p2 = calib.p2!;
-    final p1Pix = Offset(p1.dx * size.width, p1.dy * size.height);
-    final p2Pix = Offset(p2.dx * size.width, p2.dy * size.height);
+    final p1Pix = p1.toPixel(size);
+    final p2Pix = p2.toPixel(size);
     final lineVec = p2Pix - p1Pix;
     final length = lineVec.distance;
 

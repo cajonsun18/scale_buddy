@@ -2,7 +2,33 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'calibration_input_utils.dart';
+
 class GeometryUtils {
+  /// Skaliert einen normalisierten Punkt (0.0 bis 1.0) auf die gegebene Canvas-/Bild-Größe.
+  static Offset toPixel(Offset normalized, Size size) {
+    return Offset(normalized.dx * size.width, normalized.dy * size.height);
+  }
+
+  /// Skaliert einen optionalen normalisierten Punkt (0.0 bis 1.0) auf die gegebene Canvas-/Bild-Größe.
+  static Offset? toPixelOrNull(Offset? normalized, Size size) {
+    if (normalized == null) return null;
+    return Offset(normalized.dx * size.width, normalized.dy * size.height);
+  }
+
+  /// Skaliert eine Liste normalisierter Punkte auf die gegebene Canvas-/Bild-Größe.
+  static List<Offset> toPixels(List<Offset> normalizedPoints, Size size) {
+    return normalizedPoints
+        .map((p) => Offset(p.dx * size.width, p.dy * size.height))
+        .toList();
+  }
+
+  /// Normalisiert einen Pixelpunkt bezüglich der gegebenen Canvas-/Bild-Größe (0.0 bis 1.0).
+  static Offset toNormalized(Offset pixel, Size size) {
+    if (size.width == 0 || size.height == 0) return Offset.zero;
+    return Offset(pixel.dx / size.width, pixel.dy / size.height);
+  }
+
   /// Berechnet den Flächenschwerpunkt (Centroid) eines Polygons
   static Offset calculatePolygonCentroid(List<Offset> points) {
     if (points.isEmpty) return Offset.zero;
@@ -94,24 +120,17 @@ class GeometryUtils {
       return null;
     }
 
-    final p1Pix = Offset(
-      calibP1.dx * imageSize.width,
-      calibP1.dy * imageSize.height,
-    );
-    final p2Pix = Offset(
-      calibP2.dx * imageSize.width,
-      calibP2.dy * imageSize.height,
-    );
+    final p1Pix = GeometryUtils.toPixel(calibP1, imageSize);
+    final p2Pix = GeometryUtils.toPixel(calibP2, imageSize);
 
     final pixelDistance = (p2Pix - p1Pix).distance;
     if (pixelDistance == 0) return null;
 
-    double distanceInMeters = calibDistance;
-    if (unit == 'cm') {
-      distanceInMeters = calibDistance / 100.0;
-    } else if (unit == 'mm') {
-      distanceInMeters = calibDistance / 1000.0;
-    }
+    final distanceInMeters = CalibrationInputUtils.convertToMeters(
+      calibDistance,
+      unit,
+    );
+    if (distanceInMeters == null || distanceInMeters <= 0) return null;
 
     return pixelDistance / distanceInMeters;
   }
@@ -165,4 +184,16 @@ class GeometryUtils {
     final maxY = max(r1.dy, r2.dy);
     return p.dx >= minX && p.dx <= maxX && p.dy >= minY && p.dy <= maxY;
   }
+}
+
+extension NormalizedOffsetExtension on Offset {
+  Offset toPixel(Size size) => GeometryUtils.toPixel(this, size);
+}
+
+extension NullableNormalizedOffsetExtension on Offset? {
+  Offset? toPixel(Size size) => GeometryUtils.toPixelOrNull(this, size);
+}
+
+extension NormalizedOffsetListExtension on List<Offset> {
+  List<Offset> toPixels(Size size) => GeometryUtils.toPixels(this, size);
 }

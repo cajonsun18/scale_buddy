@@ -128,5 +128,53 @@ void main() {
         isFalse,
       );
     });
+
+    test(
+      'toPixel, toPixelOrNull, toPixels and toNormalized scale correctly',
+      () {
+        const size = Size(800, 600);
+        const normPoint = Offset(0.25, 0.5);
+
+        final pixelPoint = GeometryUtils.toPixel(normPoint, size);
+        expect(pixelPoint, const Offset(200, 300));
+
+        expect(GeometryUtils.toPixelOrNull(null, size), isNull);
+        expect(
+          GeometryUtils.toPixelOrNull(normPoint, size),
+          const Offset(200, 300),
+        );
+
+        final points = [const Offset(0.1, 0.2), const Offset(0.5, 0.8)];
+        final pixelPoints = GeometryUtils.toPixels(points, size);
+        expect(pixelPoints.length, 2);
+        expect(pixelPoints[0], const Offset(80, 120));
+        expect(pixelPoints[1], const Offset(400, 480));
+
+        final convertedBack = GeometryUtils.toNormalized(pixelPoint, size);
+        expect(convertedBack.dx, closeTo(0.25, 0.0001));
+        expect(convertedBack.dy, closeTo(0.5, 0.0001));
+
+        expect(
+          GeometryUtils.toNormalized(const Offset(10, 10), Size.zero),
+          Offset.zero,
+        );
+      },
+    );
+
+    test('NormalizedOffset extension methods work as expected', () {
+      const size = Size(500, 400);
+      const normPoint = Offset(0.4, 0.25);
+      expect(normPoint.toPixel(size), const Offset(200, 100));
+
+      const Offset norm = Offset(0.1, 0.1);
+      final Offset? nullableNorm = norm as Offset?;
+      expect(nullableNorm.toPixel(size), const Offset(50, 40));
+
+      const Offset? nullPoint = null;
+      expect(nullPoint.toPixel(size), isNull);
+
+      final list = [const Offset(0.2, 0.5)];
+      expect(list.toPixels(size), [const Offset(100, 200)]);
+    });
   });
 }

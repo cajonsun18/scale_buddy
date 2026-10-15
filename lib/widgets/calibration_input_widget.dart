@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/workspace_controller.dart';
 import '../models/entities/drawing_entity.dart';
+import '../utils/calibration_input_utils.dart';
 
 class CalibrationInputWidget extends ConsumerStatefulWidget {
   final VoidCallback? onDragStart;
@@ -58,12 +59,12 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
     final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
     if (calib != null) {
       if (calib.enteredDistance != null && _textController.text.isEmpty) {
-        _textController.text = calib.enteredDistance.toString().replaceAll(
-          '.0',
-          '',
+        _textController.text = CalibrationInputUtils.formatDistance(
+          calib.enteredDistance,
         );
       }
-      if (calib.selectedUnit != _selectedUnit) {
+      if (calib.selectedUnit != _selectedUnit &&
+          CalibrationInputUtils.isValidUnit(calib.selectedUnit)) {
         _selectedUnit = calib.selectedUnit;
       }
     }
@@ -78,10 +79,9 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
   }
 
   void _handleConfirm() {
-    final text = _textController.text.replaceAll(',', '.');
-    final val = double.tryParse(text);
+    final val = CalibrationInputUtils.parseDistance(_textController.text);
 
-    if (val == null || val <= 0) {
+    if (val == null) {
       setState(() => _errorText = 'Ungültig');
       _shakeController.forward(from: 0.0);
       _focusNode.requestFocus();
@@ -89,18 +89,9 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
     }
 
     setState(() => _errorText = null);
-    final controller = ref.read(workspaceControllerProvider.notifier);
-    final state = ref.read(workspaceControllerProvider);
-    final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
-    if (calib != null) {
-      controller.addOrUpdateEntity(
-        calib.copyWith(
-          enteredDistance: val,
-          selectedUnit: _selectedUnit,
-          isConfirmed: true,
-        ),
-      );
-    }
+    ref
+        .read(workspaceControllerProvider.notifier)
+        .confirmCalibration(distance: val, unit: _selectedUnit);
   }
 
   @override
@@ -161,18 +152,9 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                   // READ-ONLY MODE
                   GestureDetector(
                     onTap: () {
-                      final controller = ref.read(
-                        workspaceControllerProvider.notifier,
-                      );
-                      final state = ref.read(workspaceControllerProvider);
-                      final calib = state.entities
-                          .whereType<CalibrationEntity>()
-                          .firstOrNull;
-                      if (calib != null) {
-                        controller.addOrUpdateEntity(
-                          calib.copyWith(isConfirmed: false),
-                        );
-                      }
+                      ref
+                          .read(workspaceControllerProvider.notifier)
+                          .unconfirmCalibration();
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) _focusNode.requestFocus();
                       });
@@ -186,7 +168,7 @@ class _CalibrationInputWidgetState extends ConsumerState<CalibrationInputWidget>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '${calib?.enteredDistance.toString().replaceAll('.0', '') ?? ''} $_selectedUnit',
+                            '${CalibrationInputUtils.formatDistance(calib?.enteredDistance)} $_selectedUnit',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,

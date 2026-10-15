@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/entities/drawing_entity.dart';
 import '../models/workspace_state.dart';
 import '../models/drag_detail.dart';
+import '../utils/geometry_utils.dart';
 import 'workspace_tool.dart';
 
 /// Das Werkzeug für die Kalibrierung.
@@ -36,10 +37,7 @@ class CalibrationTool extends WorkspaceTool {
     if (calib.p1 == null) {
       updatedCalib = calib.copyWith(p1: normPoint);
     } else {
-      final p1Pixel = Offset(
-        calib.p1!.dx * size.width,
-        calib.p1!.dy * size.height,
-      );
+      final p1Pixel = calib.p1!.toPixel(size);
       final dist = (p1Pixel - details.localPosition).distance;
       if (dist >= minPointDistance) {
         updatedCalib = calib.copyWith(p2: normPoint);
@@ -62,17 +60,11 @@ class CalibrationTool extends WorkspaceTool {
     double? dist1, dist2;
 
     if (calib.p1 != null) {
-      final p1Pixel = Offset(
-        calib.p1!.dx * size.width,
-        calib.p1!.dy * size.height,
-      );
+      final p1Pixel = calib.p1!.toPixel(size);
       dist1 = (p1Pixel - details.localPosition).distance;
     }
     if (calib.p2 != null) {
-      final p2Pixel = Offset(
-        calib.p2!.dx * size.width,
-        calib.p2!.dy * size.height,
-      );
+      final p2Pixel = calib.p2!.toPixel(size);
       dist2 = (p2Pixel - details.localPosition).distance;
     }
 
@@ -117,11 +109,8 @@ class CalibrationTool extends WorkspaceTool {
 
     if (isP1Drag) {
       if (calib.p2 != null) {
-        final newPixel = Offset(newDx * size.width, newDy * size.height);
-        final p2Pixel = Offset(
-          calib.p2!.dx * size.width,
-          calib.p2!.dy * size.height,
-        );
+        final newPixel = newNormPoint.toPixel(size);
+        final p2Pixel = calib.p2!.toPixel(size);
         if ((newPixel - p2Pixel).distance >= minPointDistance) {
           updatedCalib = calib.copyWith(p1: newNormPoint, isConfirmed: false);
         }
@@ -130,11 +119,8 @@ class CalibrationTool extends WorkspaceTool {
       }
     } else if (isP2Drag) {
       if (calib.p1 != null) {
-        final newPixel = Offset(newDx * size.width, newDy * size.height);
-        final p1Pixel = Offset(
-          calib.p1!.dx * size.width,
-          calib.p1!.dy * size.height,
-        );
+        final newPixel = newNormPoint.toPixel(size);
+        final p1Pixel = calib.p1!.toPixel(size);
         if ((newPixel - p1Pixel).distance >= minPointDistance) {
           updatedCalib = calib.copyWith(p2: newNormPoint, isConfirmed: false);
         }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../models/entities/drawing_entity.dart';
 import '../models/workflow_step.dart';
+import '../utils/calibration_input_utils.dart';
+import '../utils/geometry_utils.dart';
 
 class PaintContext {
   final WorkflowStepType activeStep;
@@ -23,6 +25,88 @@ class PaintContext {
   });
 
   double getStrokeWidth(String id) => id == selectedEntityId ? 4.0 : 2.0;
+}
+
+/// Wiederverwendbare Hilfsklasse zum Zeichnen von interaktiven Kontrollpunkten/Anfassern (Handles).
+class HandlePainter {
+  /// Zeichnet einen Standard-Kontrollpunkt / Anfasser (Kreis mit Füllung und Rahmen).
+  static void drawStandard(
+    Canvas canvas,
+    Offset center, {
+    double radius = 5.0,
+    required Color fillColor,
+    required Color borderColor,
+    double borderWidth = 2.0,
+  }) {
+    final paintFill = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    final paintBorder = Paint()
+      ..color = borderColor
+      ..strokeWidth = borderWidth
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(center, radius, paintFill);
+    canvas.drawCircle(center, radius, paintBorder);
+  }
+
+  /// Zeichnet eine Liste von Standard-Anfassern.
+  static void drawStandardList(
+    Canvas canvas,
+    Iterable<Offset> points, {
+    double radius = 5.0,
+    required Color fillColor,
+    required Color borderColor,
+    double borderWidth = 2.0,
+  }) {
+    final paintFill = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    final paintBorder = Paint()
+      ..color = borderColor
+      ..strokeWidth = borderWidth
+      ..style = PaintingStyle.stroke;
+
+    for (final p in points) {
+      canvas.drawCircle(p, radius, paintFill);
+      canvas.drawCircle(p, radius, paintBorder);
+    }
+  }
+
+  /// Zeichnet einen mobilen Kontrollpunkt / Anfasser (mit Außenring, optionaler Halo-Aura und weißem Innenkern).
+  static void drawMobile(
+    Canvas canvas,
+    Offset center, {
+    required Color strokeColor,
+    double innerRadius = 5.0,
+    double outerRadius = 9.0,
+    Color innerFillColor = Colors.white,
+    bool drawHalo = false,
+  }) {
+    if (drawHalo) {
+      final paintHalo = Paint()
+        ..color = strokeColor.withValues(alpha: 0.15)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, outerRadius, paintHalo);
+    }
+
+    final paintOuterRing = Paint()
+      ..color = strokeColor.withValues(alpha: 0.35)
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, outerRadius, paintOuterRing);
+
+    final paintInnerFill = Paint()
+      ..color = innerFillColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, innerRadius, paintInnerFill);
+
+    final paintInnerBorder = Paint()
+      ..color = strokeColor
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, innerRadius, paintInnerBorder);
+  }
 }
 
 abstract class DrawingEntityPainter<T extends DrawingEntity> {
@@ -60,33 +144,28 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
         ..strokeWidth = context.getStrokeWidth(entity.id)
         ..strokeCap = StrokeCap.round;
 
-      final paintPoint = Paint()
-        ..color = context.pointColor
-        ..style = PaintingStyle.fill;
-      final paintPointBorder = Paint()
-        ..color = color
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke;
-
-      Offset? p1Pixel, p2Pixel;
-      if (p1 != null) {
-        p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-      }
-      if (p2 != null) {
-        p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-      }
+      final p1Pixel = p1?.toPixel(size);
+      final p2Pixel = p2?.toPixel(size);
 
       if (p1Pixel != null && p2Pixel != null) {
         canvas.drawLine(p1Pixel, p2Pixel, paintLine);
       }
 
       if (p1Pixel != null) {
-        canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-        canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+        HandlePainter.drawStandard(
+          canvas,
+          p1Pixel,
+          fillColor: context.pointColor,
+          borderColor: color,
+        );
       }
       if (p2Pixel != null) {
-        canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-        canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+        HandlePainter.drawStandard(
+          canvas,
+          p2Pixel,
+          fillColor: context.pointColor,
+          borderColor: color,
+        );
       }
       return;
     }
@@ -96,13 +175,8 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
         ? const Color(0xFF10B981) // Smaragdgrün (#10B981)
         : const Color(0xFF38BDF8); // Cyan (#38BDF8)
 
-    Offset? p1Pixel, p2Pixel;
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
+    final p1Pixel = p1?.toPixel(size);
+    final p2Pixel = p2?.toPixel(size);
 
     // 1. Bemaßungslinie & T-Abschlüsse & Wert-Badge (sobald beide Punkte existieren)
     if (p1Pixel != null && p2Pixel != null) {
@@ -148,30 +222,13 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
     }
 
     // 2. Punkt-Marker & Labels
-    final paintPointFill = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final paintOuterRing = Paint()
-      ..color = strokeColor.withValues(alpha: 0.35)
-      ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke;
-
-    final paintPointBorder = Paint()
-      ..color = strokeColor
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final paintHaloFill = Paint()
-      ..color = strokeColor.withValues(alpha: 0.15)
-      ..style = PaintingStyle.fill;
-
     if (p1Pixel != null) {
-      // Punkt 1: Halo-Aura, Außenring, weißer Innenpunkt
-      canvas.drawCircle(p1Pixel, 9.0, paintHaloFill);
-      canvas.drawCircle(p1Pixel, 9.0, paintOuterRing);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointFill);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawMobile(
+        canvas,
+        p1Pixel,
+        strokeColor: strokeColor,
+        drawHalo: true,
+      );
 
       if (!entity.isConfirmed) {
         _drawPointLabel(canvas, size, p1Pixel, 1);
@@ -179,11 +236,12 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
     }
 
     if (p2Pixel != null) {
-      // Punkt 2: Halo-Aura, Außenring, weißer Innenpunkt
-      canvas.drawCircle(p2Pixel, 9.0, paintHaloFill);
-      canvas.drawCircle(p2Pixel, 9.0, paintOuterRing);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointFill);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawMobile(
+        canvas,
+        p2Pixel,
+        strokeColor: strokeColor,
+        drawHalo: true,
+      );
 
       if (!entity.isConfirmed) {
         _drawPointLabel(canvas, size, p2Pixel, 2);
@@ -203,7 +261,11 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
     final unit = entity.selectedUnit;
     if (entity.enteredDistance != null && entity.enteredDistance! > 0) {
       final dist = entity.enteredDistance!;
-      final formatted = dist.toStringAsFixed(2).replaceAll('.', ',');
+      final formatted = CalibrationInputUtils.formatDistance(
+        dist,
+        useComma: true,
+        decimalPlaces: 2,
+      );
       badgeText = entity.isConfirmed
           ? '✓ $formatted $unit'
           : '$formatted $unit';
@@ -342,33 +404,28 @@ class LinePainter extends DrawingEntityPainter<LineEntity> {
       ..strokeWidth = context.getStrokeWidth(entity.id)
       ..strokeCap = StrokeCap.round;
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = entity.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
+    final p1Pixel = p1?.toPixel(size);
+    final p2Pixel = p2?.toPixel(size);
 
     if (p1Pixel != null && p2Pixel != null) {
       canvas.drawLine(p1Pixel, p2Pixel, paintLine);
     }
 
     if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p1Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
     if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p2Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
   }
 }
@@ -400,19 +457,11 @@ class PolygonPainter extends DrawingEntityPainter<PolygonEntity> {
       ..color = entity.color.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-    final firstPoint = Offset(
-      entity.points.first.dx * size.width,
-      entity.points.first.dy * size.height,
-    );
-    path.moveTo(firstPoint.dx, firstPoint.dy);
+    final pixelPoints = entity.points.toPixels(size);
+    final path = Path()..moveTo(pixelPoints.first.dx, pixelPoints.first.dy);
 
-    for (int i = 1; i < entity.points.length; i++) {
-      final p = Offset(
-        entity.points[i].dx * size.width,
-        entity.points[i].dy * size.height,
-      );
-      path.lineTo(p.dx, p.dy);
+    for (int i = 1; i < pixelPoints.length; i++) {
+      path.lineTo(pixelPoints[i].dx, pixelPoints[i].dy);
     }
 
     if (entity.isClosed) {
@@ -422,19 +471,12 @@ class PolygonPainter extends DrawingEntityPainter<PolygonEntity> {
 
     canvas.drawPath(path, paintLine);
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = entity.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    for (final normPoint in entity.points) {
-      final p = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
-      canvas.drawCircle(p, 5.0, paintPoint);
-      canvas.drawCircle(p, 5.0, paintPointBorder);
-    }
+    HandlePainter.drawStandardList(
+      canvas,
+      pixelPoints,
+      fillColor: context.pointColor,
+      borderColor: entity.color,
+    );
   }
 }
 
@@ -468,21 +510,8 @@ class RectanglePainter extends DrawingEntityPainter<RectangleEntity> {
       ..color = entity.color.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = entity.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
+    final p1Pixel = p1?.toPixel(size);
+    final p2Pixel = p2?.toPixel(size);
 
     if (p1Pixel != null && p2Pixel != null) {
       final rectShape = Rect.fromPoints(p1Pixel, p2Pixel);
@@ -491,12 +520,20 @@ class RectanglePainter extends DrawingEntityPainter<RectangleEntity> {
     }
 
     if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p1Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
     if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p2Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
   }
 }
@@ -531,22 +568,8 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final paintPoint = Paint()
-      ..color = context.pointColor
-      ..style = PaintingStyle.fill;
-    final paintPointBorder = Paint()
-      ..color = entity.color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    Offset? p1Pixel, p2Pixel;
-
-    if (p1 != null) {
-      p1Pixel = Offset(p1.dx * size.width, p1.dy * size.height);
-    }
-    if (p2 != null) {
-      p2Pixel = Offset(p2.dx * size.width, p2.dy * size.height);
-    }
+    final p1Pixel = p1?.toPixel(size);
+    final p2Pixel = p2?.toPixel(size);
 
     if (p1Pixel != null && p2Pixel != null) {
       canvas.drawLine(p1Pixel, p2Pixel, paintLine);
@@ -625,12 +648,20 @@ class AnglePainter extends DrawingEntityPainter<AngleEntity> {
     }
 
     if (p1Pixel != null) {
-      canvas.drawCircle(p1Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p1Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p1Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
     if (p2Pixel != null) {
-      canvas.drawCircle(p2Pixel, 5.0, paintPoint);
-      canvas.drawCircle(p2Pixel, 5.0, paintPointBorder);
+      HandlePainter.drawStandard(
+        canvas,
+        p2Pixel,
+        fillColor: context.pointColor,
+        borderColor: entity.color,
+      );
     }
   }
 }
@@ -668,22 +699,14 @@ class PerspectivePainter extends DrawingEntityPainter<PerspectiveEntity> {
       ..color = fillColor
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-    final firstPoint = Offset(
-      entity.points.first.dx * size.width,
-      entity.points.first.dy * size.height,
-    );
-    path.moveTo(firstPoint.dx, firstPoint.dy);
+    final pixelPoints = entity.points.toPixels(size);
+    final path = Path()..moveTo(pixelPoints.first.dx, pixelPoints.first.dy);
 
-    for (int i = 1; i < entity.points.length; i++) {
-      final p = Offset(
-        entity.points[i].dx * size.width,
-        entity.points[i].dy * size.height,
-      );
-      path.lineTo(p.dx, p.dy);
+    for (int i = 1; i < pixelPoints.length; i++) {
+      path.lineTo(pixelPoints[i].dx, pixelPoints[i].dy);
     }
 
-    if (entity.points.length == 4) {
+    if (pixelPoints.length == 4) {
       path.close();
       canvas.drawPath(path, paintFill);
     }
@@ -691,49 +714,35 @@ class PerspectivePainter extends DrawingEntityPainter<PerspectiveEntity> {
     canvas.drawPath(path, paintLine);
 
     // Gestrichelte Linie zur Andeutung der Schließung (bei 3 Punkten)
-    if (isMobile && entity.points.length == 3) {
-      final p3 = Offset(
-        entity.points[2].dx * size.width,
-        entity.points[2].dy * size.height,
-      );
+    if (isMobile && pixelPoints.length == 3) {
       _drawDashedLine(
         canvas,
-        p3,
-        firstPoint,
+        pixelPoints[2],
+        pixelPoints.first,
         strokeColor.withValues(alpha: 0.6),
       );
     }
 
     // Punkte zeichnen
-    final paintPointFill = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final paintOuterRing = Paint()
-      ..color = isMobile ? strokeColor.withValues(alpha: 0.35) : strokeColor
-      ..strokeWidth = isMobile ? 3.0 : 2.0
-      ..style = PaintingStyle.stroke;
-
-    final paintPointBorder = Paint()
-      ..color = strokeColor
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    for (int i = 0; i < entity.points.length; i++) {
-      final normPoint = entity.points[i];
-      final p = Offset(normPoint.dx * size.width, normPoint.dy * size.height);
+    for (int i = 0; i < pixelPoints.length; i++) {
+      final p = pixelPoints[i];
 
       if (isMobile) {
-        // Leuchtend blauer/cyanfarbener Kreis-Marker mit weißem Zentrum und transparentem Außenring
-        canvas.drawCircle(p, 9.0, paintOuterRing);
-        canvas.drawCircle(p, 5.0, paintPointFill);
-        canvas.drawCircle(p, 5.0, paintPointBorder);
-
-        // Dezentes Label ("Ecke 1", "Ecke 2", ...)
+        HandlePainter.drawMobile(
+          canvas,
+          p,
+          strokeColor: strokeColor,
+          drawHalo: false,
+        );
         _drawCornerLabel(canvas, size, p, i + 1, entity.points);
       } else {
-        canvas.drawCircle(p, 6.0, paintPointFill);
-        canvas.drawCircle(p, 6.0, paintPointBorder);
+        HandlePainter.drawStandard(
+          canvas,
+          p,
+          radius: 6.0,
+          fillColor: Colors.white,
+          borderColor: strokeColor,
+        );
       }
     }
   }

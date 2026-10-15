@@ -81,5 +81,75 @@ void main() {
       expect((newState.entities.first as LineEntity).color, Colors.red);
       expect(newState, same(state));
     });
+
+    test('removeEntity removes the entity with the matching id', () {
+      const entity1 = DrawingEntity.line(
+        id: '1',
+        p1: Offset(0, 0),
+        p2: Offset(1, 1),
+        color: Colors.red,
+      );
+      const entity2 = DrawingEntity.line(
+        id: '2',
+        p1: Offset(2, 2),
+        p2: Offset(3, 3),
+        color: Colors.blue,
+      );
+
+      final state = const WorkspaceState(entities: [entity1, entity2]);
+      final newState = state.removeEntity('1');
+
+      expect(newState.entities.length, 1);
+      expect(newState.entities.first.id, '2');
+    });
+
+    test(
+      'removeEntity clears selectedEntityId if the removed entity was selected',
+      () {
+        const entity1 = DrawingEntity.line(
+          id: '1',
+          p1: Offset(0, 0),
+          p2: Offset(1, 1),
+          color: Colors.red,
+        );
+
+        final state = const WorkspaceState(
+          entities: [entity1],
+          selectedEntityId: '1',
+        );
+        final newState = state.removeEntity('1');
+
+        expect(newState.entities, isEmpty);
+        expect(newState.selectedEntityId, isNull);
+      },
+    );
+
+    test(
+      'removeEntity preserves selectedEntityId if another entity was selected',
+      () {
+        const entity1 = DrawingEntity.line(
+          id: '1',
+          p1: Offset(0, 0),
+          p2: Offset(1, 1),
+          color: Colors.red,
+        );
+        const entity2 = DrawingEntity.line(
+          id: '2',
+          p1: Offset(2, 2),
+          p2: Offset(3, 3),
+          color: Colors.blue,
+        );
+
+        final state = const WorkspaceState(
+          entities: [entity1, entity2],
+          selectedEntityId: '2',
+        );
+        final newState = state.removeEntity('1');
+
+        expect(newState.entities.length, 1);
+        expect(newState.entities.first.id, '2');
+        expect(newState.selectedEntityId, '2');
+      },
+    );
   });
 }

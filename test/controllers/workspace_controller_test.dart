@@ -113,19 +113,44 @@ void main() {
       container.dispose();
     });
 
-    test('addOrUpdateEntity and removeEntity', () {
+    test('addOrUpdateEntity, updateEntity and removeEntity', () {
       final controller = container.read(workspaceControllerProvider.notifier);
 
-      const entity = DrawingEntity.calibration(id: 'calib_1');
-      controller.addOrUpdateEntity(entity);
+      const entity1 = DrawingEntity.calibration(id: 'calib_1');
+      const entity2 = DrawingEntity.line(
+        id: 'line_1',
+        p1: Offset(0, 0),
+        p2: Offset(1, 1),
+        color: Colors.blue,
+      );
+
+      controller.addOrUpdateEntity(entity1);
+      controller.addOrUpdateEntity(entity2);
 
       var state = container.read(workspaceControllerProvider);
-      expect(state.entities.length, 1);
-      expect(state.entities.first.id, 'calib_1');
+      expect(state.entities.length, 2);
 
+      // Select line_1 and remove calib_1 -> selectedEntityId should stay line_1
+      controller.selectEntity('line_1');
       controller.removeEntity('calib_1');
+
+      state = container.read(workspaceControllerProvider);
+      expect(state.entities.length, 1);
+      expect(state.entities.first.id, 'line_1');
+      expect(state.selectedEntityId, 'line_1');
+
+      // Update line_1
+      controller.updateEntity('line_1', (entity) {
+        return (entity as LineEntity).copyWith(color: Colors.purple);
+      });
+      state = container.read(workspaceControllerProvider);
+      expect((state.entities.first as LineEntity).color, Colors.purple);
+
+      // Removing selected line_1 clears selectedEntityId
+      controller.removeEntity('line_1');
       state = container.read(workspaceControllerProvider);
       expect(state.entities.isEmpty, isTrue);
+      expect(state.selectedEntityId, isNull);
     });
 
     test(
