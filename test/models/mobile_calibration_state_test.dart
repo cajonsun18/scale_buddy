@@ -18,40 +18,33 @@ void main() {
     );
   }
 
-  group('MobileCalibrationState calculateEffectiveState', () {
-    test('returns initial when no points set', () {
+  group('MobileCalibrationState', () {
+    test('calculateEffectiveState resolves correct state from points, confirmation, entity, and overrides', () {
       const state = MobileCalibrationState();
+
+      // No points
       expect(
         state.calculateEffectiveState(),
         MobileCalibrationStepState.initial,
       );
-    });
 
-    test('returns onePoint when only p1 is set', () {
-      const state = MobileCalibrationState();
+      // Only p1
       expect(
         state.calculateEffectiveState(p1: const Offset(0.2, 0.2)),
         MobileCalibrationStepState.onePoint,
       );
-    });
 
-    test(
-      'returns twoPointsInput when both p1 and p2 are set but not confirmed',
-      () {
-        const state = MobileCalibrationState();
-        expect(
-          state.calculateEffectiveState(
-            p1: const Offset(0.2, 0.2),
-            p2: const Offset(0.8, 0.8),
-            isConfirmed: false,
-          ),
-          MobileCalibrationStepState.twoPointsInput,
-        );
-      },
-    );
+      // p1 and p2 unconfirmed
+      expect(
+        state.calculateEffectiveState(
+          p1: const Offset(0.2, 0.2),
+          p2: const Offset(0.8, 0.8),
+          isConfirmed: false,
+        ),
+        MobileCalibrationStepState.twoPointsInput,
+      );
 
-    test('returns confirmed when isConfirmed is true', () {
-      const state = MobileCalibrationState();
+      // Confirmed
       expect(
         state.calculateEffectiveState(
           p1: const Offset(0.2, 0.2),
@@ -60,57 +53,43 @@ void main() {
         ),
         MobileCalibrationStepState.confirmed,
       );
-    });
 
-    test('respects stepState overrides', () {
-      const confirmedState = MobileCalibrationState(
-        stepState: MobileCalibrationStepState.confirmed,
-      );
+      // Overrides
       expect(
-        confirmedState.calculateEffectiveState(),
+        const MobileCalibrationState(
+          stepState: MobileCalibrationStepState.confirmed,
+        ).calculateEffectiveState(),
         MobileCalibrationStepState.confirmed,
       );
-
-      const twoPointsState = MobileCalibrationState(
-        stepState: MobileCalibrationStepState.twoPointsInput,
-      );
       expect(
-        twoPointsState.calculateEffectiveState(),
+        const MobileCalibrationState(
+          stepState: MobileCalibrationStepState.twoPointsInput,
+        ).calculateEffectiveState(),
         MobileCalibrationStepState.twoPointsInput,
       );
+      expect(
+        const MobileCalibrationState(
+          stepState: MobileCalibrationStepState.onePoint,
+        ).calculateEffectiveState(),
+        MobileCalibrationStepState.onePoint,
+      );
 
-      const onePointState = MobileCalibrationState(
-        stepState: MobileCalibrationStepState.onePoint,
+      // Entity resolution
+      const entity = DrawingEntity.calibration(
+        id: 'calib_1',
+        p1: Offset(0.1, 0.1),
+        p2: Offset(0.5, 0.5),
+        isConfirmed: true,
       );
       expect(
-        onePointState.calculateEffectiveState(),
-        MobileCalibrationStepState.onePoint,
+        state.calculateEffectiveStateForEntity(entity as CalibrationEntity),
+        MobileCalibrationStepState.confirmed,
       );
     });
 
-    test(
-      'calculateEffectiveStateForEntity works cleanly with CalibrationEntity',
-      () {
-        const state = MobileCalibrationState();
-        const entity = DrawingEntity.calibration(
-          id: 'calib_1',
-          p1: Offset(0.1, 0.1),
-          p2: Offset(0.5, 0.5),
-          isConfirmed: true,
-        );
-        expect(
-          state.calculateEffectiveStateForEntity(entity as CalibrationEntity),
-          MobileCalibrationStepState.confirmed,
-        );
-      },
-    );
-  });
-
-  group('MobileCalibrationState pixel factor & confirmed text', () {
-    test('calculatePixelFactor computes correct factor', () {
+    test('calculatePixelFactor and formatConfirmedText compute pixel factors and labels across units', () {
       // 1000x1000 image, p1 at (0.2, 0.5), p2 at (0.4079, 0.5)
-      // distance in pixel = 207.9 px
-      // enteredDistance = 2.10 m -> (207.9 / 2.10) = 99 px
+      // distance in pixel = 207.9 px; enteredDistance = 2.10 m -> (207.9 / 2.10) = 99 px
       final factor = MobileCalibrationState.calculatePixelFactor(
         p1: const Offset(0.2, 0.5),
         p2: const Offset(0.4079, 0.5),
@@ -118,11 +97,10 @@ void main() {
         imageSize: const Size(1000, 1000),
       );
       expect(factor, 99);
-    });
 
-    test('formatConfirmedText returns expected formatted string for m', () {
+      // Formatted text for meters
       final image = createMockImage(width: 1000, height: 1000);
-      const calib = DrawingEntity.calibration(
+      const calibM = DrawingEntity.calibration(
         id: 'calib_1',
         p1: Offset(0.2, 0.5),
         p2: Offset(0.4079, 0.5),
@@ -130,68 +108,70 @@ void main() {
         selectedUnit: 'm',
         isConfirmed: true,
       );
-
-      final text = MobileCalibrationState.formatConfirmedText(
-        calib: calib as CalibrationEntity,
-        imageInfo: image,
+      expect(
+        MobileCalibrationState.formatConfirmedText(
+          calib: calibM as CalibrationEntity,
+          imageInfo: image,
+        ),
+        '✓ Maßstab kalibriert: 1 m = 99 px',
       );
-      expect(text, '✓ Maßstab kalibriert: 1 m = 99 px');
-    });
 
-    test('formatConfirmedText handles custom unit such as cm', () {
-      final image = createMockImage(width: 1000, height: 1000);
-      const calib = DrawingEntity.calibration(
-        id: 'calib_1',
+      // Formatted text for centimeters (500 px / 50 = 10 px)
+      const calibCm = DrawingEntity.calibration(
+        id: 'calib_2',
         p1: Offset(0.1, 0.5),
         p2: Offset(0.6, 0.5),
         enteredDistance: 50.0,
         selectedUnit: 'cm',
         isConfirmed: true,
       );
-
-      // pixel dist = 500 px. 500 / 50 = 10 px
-      final text = MobileCalibrationState.formatConfirmedText(
-        calib: calib as CalibrationEntity,
-        imageInfo: image,
-      );
-      expect(text, '✓ Maßstab kalibriert: 1 cm = 10 px');
-    });
-  });
-
-  group('MobileCalibrationNotifier', () {
-    test('transitions state through helper methods', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final notifier = container.read(mobileCalibrationStateProvider.notifier);
       expect(
-        container.read(mobileCalibrationStateProvider).stepState,
-        MobileCalibrationStepState.initial,
-      );
-
-      notifier.setOnePoint();
-      expect(
-        container.read(mobileCalibrationStateProvider).stepState,
-        MobileCalibrationStepState.onePoint,
-      );
-
-      notifier.setTwoPointsInput();
-      expect(
-        container.read(mobileCalibrationStateProvider).stepState,
-        MobileCalibrationStepState.twoPointsInput,
-      );
-
-      notifier.setConfirmed();
-      expect(
-        container.read(mobileCalibrationStateProvider).stepState,
-        MobileCalibrationStepState.confirmed,
-      );
-
-      notifier.reset();
-      expect(
-        container.read(mobileCalibrationStateProvider).stepState,
-        MobileCalibrationStepState.initial,
+        MobileCalibrationState.formatConfirmedText(
+          calib: calibCm as CalibrationEntity,
+          imageInfo: image,
+        ),
+        '✓ Maßstab kalibriert: 1 cm = 10 px',
       );
     });
+
+    test(
+      'MobileCalibrationNotifier transitions state through helper methods',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final notifier = container.read(
+          mobileCalibrationStateProvider.notifier,
+        );
+        expect(
+          container.read(mobileCalibrationStateProvider).stepState,
+          MobileCalibrationStepState.initial,
+        );
+
+        notifier.setOnePoint();
+        expect(
+          container.read(mobileCalibrationStateProvider).stepState,
+          MobileCalibrationStepState.onePoint,
+        );
+
+        notifier.setTwoPointsInput();
+        expect(
+          container.read(mobileCalibrationStateProvider).stepState,
+          MobileCalibrationStepState.twoPointsInput,
+        );
+
+        notifier.setConfirmed();
+        expect(
+          container.read(mobileCalibrationStateProvider).stepState,
+          MobileCalibrationStepState.confirmed,
+        );
+
+        notifier.reset();
+        expect(
+          container.read(mobileCalibrationStateProvider).stepState,
+          MobileCalibrationStepState.initial,
+        );
+      },
+    );
   });
 }

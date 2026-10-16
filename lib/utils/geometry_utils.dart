@@ -184,6 +184,80 @@ class GeometryUtils {
     final maxY = max(r1.dy, r2.dy);
     return p.dx >= minX && p.dx <= maxX && p.dy >= minY && p.dy <= maxY;
   }
+
+  /// Prüft, ob ein Rechteck und ein Kreis sich schneiden.
+  static bool rectIntersectsCircle(Rect rect, Offset center, double radius) {
+    final closestX = center.dx.clamp(rect.left, rect.right);
+    final closestY = center.dy.clamp(rect.top, rect.bottom);
+    final dx = center.dx - closestX;
+    final dy = center.dy - closestY;
+    return (dx * dx + dy * dy) <= (radius * radius);
+  }
+
+  /// Standard-Liniendicke für gestrichelte Maßhilfslinien (Leader Lines).
+  static const double defaultLeaderLineWidth = 1.0;
+
+  /// Standard-Strichlänge für gestrichelte Maßhilfslinien.
+  static const double defaultDashWidth = 4.0;
+
+  /// Standard-Lückenlänge für gestrichelte Maßhilfslinien.
+  static const double defaultDashSpace = 3.0;
+
+  /// Zeichnet eine gestrichelte Linie zwischen zwei Punkten.
+  static void drawDashedLine(
+    Canvas canvas,
+    Offset p1,
+    Offset p2,
+    Paint paint, {
+    double dashWidth = defaultDashWidth,
+    double dashSpace = defaultDashSpace,
+  }) {
+    final dx = p2.dx - p1.dx;
+    final dy = p2.dy - p1.dy;
+    final distance = sqrt(dx * dx + dy * dy);
+    if (distance == 0) return;
+
+    double drawn = 0.0;
+    while (drawn < distance) {
+      final startFraction = drawn / distance;
+      final endFraction = min((drawn + dashWidth) / distance, 1.0);
+
+      canvas.drawLine(
+        Offset(p1.dx + dx * startFraction, p1.dy + dy * startFraction),
+        Offset(p1.dx + dx * endFraction, p1.dy + dy * endFraction),
+        paint,
+      );
+      drawn += dashWidth + dashSpace;
+    }
+  }
+
+  /// Zeichnet eine gestrichelte Maßhilfslinie (Leader Line) mit zentralen Standardparametern.
+  /// Zeichnet erst ab einem Schwellwert von > 1.0 px Versatz.
+  static void drawDashedLeaderLine(
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    Color color, {
+    double opacity = 0.75,
+    double scale = 1.0,
+  }) {
+    if ((end - start).distance <= 1.0) return;
+
+    final effectiveScale = max(1.0, scale);
+    final paint = Paint()
+      ..color = color.withValues(alpha: opacity)
+      ..strokeWidth = defaultLeaderLineWidth * effectiveScale
+      ..style = PaintingStyle.stroke;
+
+    drawDashedLine(
+      canvas,
+      start,
+      end,
+      paint,
+      dashWidth: defaultDashWidth * effectiveScale,
+      dashSpace: defaultDashSpace * effectiveScale,
+    );
+  }
 }
 
 extension NormalizedOffsetExtension on Offset {

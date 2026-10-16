@@ -3,25 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/utils/calibration_input_utils.dart';
 
 void main() {
-  group('CalibrationInputUtils - parseDistance & isValidDistance', () {
-    test('parses decimal point and comma correctly', () {
+  group('CalibrationInputUtils', () {
+    test('parseDistance & isValidDistance correctly parse valid inputs and reject invalid/negative inputs', () {
+      // Valid decimal points and commas
       expect(CalibrationInputUtils.parseDistance('2.5'), 2.5);
       expect(CalibrationInputUtils.parseDistance('2,5'), 2.5);
       expect(CalibrationInputUtils.parseDistance('123.45'), 123.45);
       expect(CalibrationInputUtils.parseDistance('123,45'), 123.45);
-    });
 
-    test('trims surrounding whitespace and line breaks', () {
+      // Trimming surrounding whitespace
       expect(CalibrationInputUtils.parseDistance('  3.14  '), 3.14);
       expect(CalibrationInputUtils.parseDistance('\t10,5\n'), 10.5);
-    });
 
-    test('parses leading separator properly', () {
+      // Leading separators
       expect(CalibrationInputUtils.parseDistance('.5'), 0.5);
       expect(CalibrationInputUtils.parseDistance(',5'), 0.5);
-    });
 
-    test('rejects zero, negative and non-numeric inputs', () {
+      // Rejection of zero, negative, empty and non-numeric inputs
       expect(CalibrationInputUtils.parseDistance('0'), isNull);
       expect(CalibrationInputUtils.parseDistance('0.0'), isNull);
       expect(CalibrationInputUtils.parseDistance('0,00'), isNull);
@@ -33,26 +31,23 @@ void main() {
       expect(CalibrationInputUtils.parseDistance('   '), isNull);
       expect(CalibrationInputUtils.parseDistance(null), isNull);
       expect(CalibrationInputUtils.parseDistance('1.2.3'), isNull);
-    });
 
-    test('isValidDistance matches parseDistance != null', () {
+      // isValidDistance consistency
       expect(CalibrationInputUtils.isValidDistance('2.5'), isTrue);
       expect(CalibrationInputUtils.isValidDistance('0'), isFalse);
       expect(CalibrationInputUtils.isValidDistance('abc'), isFalse);
     });
-  });
 
-  group('CalibrationInputUtils - Units & Conversion', () {
-    test('isValidUnit checks supported units', () {
+    test('isValidUnit and convertToMeters handle supported units and conversion logic', () {
+      // Unit validation
       expect(CalibrationInputUtils.isValidUnit('m'), isTrue);
       expect(CalibrationInputUtils.isValidUnit('cm'), isTrue);
       expect(CalibrationInputUtils.isValidUnit('mm'), isTrue);
       expect(CalibrationInputUtils.isValidUnit('km'), isFalse);
       expect(CalibrationInputUtils.isValidUnit('inch'), isFalse);
       expect(CalibrationInputUtils.isValidUnit(null), isFalse);
-    });
 
-    test('convertToMeters converts correctly', () {
+      // Conversion
       expect(CalibrationInputUtils.convertToMeters(2.5, 'm'), 2.5);
       expect(CalibrationInputUtils.convertToMeters(250.0, 'cm'), 2.5);
       expect(CalibrationInputUtils.convertToMeters(2500.0, 'mm'), 2.5);
@@ -60,16 +55,14 @@ void main() {
       expect(CalibrationInputUtils.convertToMeters(-5, 'm'), isNull);
       expect(CalibrationInputUtils.convertToMeters(null, 'm'), isNull);
     });
-  });
 
-  group('CalibrationInputUtils - formatDistance', () {
-    test('formats distance with trimmed trailing .0 by default', () {
+    test('formatDistance formats distances with decimal trimming and locale formatting', () {
+      // Default formatting with trimming
       expect(CalibrationInputUtils.formatDistance(5.0), '5');
       expect(CalibrationInputUtils.formatDistance(5.25), '5.25');
       expect(CalibrationInputUtils.formatDistance(null), '');
-    });
 
-    test('formats distance with comma and fixed decimal places', () {
+      // Comma and fixed decimal places
       expect(
         CalibrationInputUtils.formatDistance(
           2.5,
@@ -87,30 +80,25 @@ void main() {
         '2.10',
       );
     });
-  });
 
-  group('CalibrationInputUtils - canInsertChar', () {
-    test('allows single comma or dot', () {
+    test('canInsertChar validates character insertions, decimals limit, and selections', () {
+      // Allowed comma/dot
       expect(CalibrationInputUtils.canInsertChar('12', ','), isTrue);
       expect(CalibrationInputUtils.canInsertChar('12', '.'), isTrue);
-    });
 
-    test('rejects second comma or dot', () {
+      // Duplicate comma/dot rejected
       expect(CalibrationInputUtils.canInsertChar('12,5', ','), isFalse);
       expect(CalibrationInputUtils.canInsertChar('12.5', ','), isFalse);
       expect(CalibrationInputUtils.canInsertChar('12,5', '.'), isFalse);
-    });
 
-    test('rejects non-digit characters', () {
+      // Non-digits rejected
       expect(CalibrationInputUtils.canInsertChar('12', 'a'), isFalse);
       expect(CalibrationInputUtils.canInsertChar('12', '-'), isFalse);
       expect(CalibrationInputUtils.canInsertChar('12', ' '), isFalse);
-    });
 
-    test('enforces max decimals', () {
+      // Max decimal places enforcement and selection handling
       expect(CalibrationInputUtils.canInsertChar('12,5', '0'), isTrue);
       expect(CalibrationInputUtils.canInsertChar('12,50', '5'), isFalse);
-      // But allows inserting before separator
       expect(
         CalibrationInputUtils.canInsertChar(
           '12,50',
@@ -119,7 +107,6 @@ void main() {
         ),
         isTrue,
       );
-      // And allows replacing when text selected
       expect(
         CalibrationInputUtils.canInsertChar(
           '12,50',

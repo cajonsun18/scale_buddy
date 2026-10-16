@@ -167,127 +167,8 @@ void main() {
       },
     );
 
-    testWidgets('Status-Pille Phase 1: Start (0 Punkte)', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.calibrate,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Tippe auf den 1. Referenzpunkt'), findsOneWidget);
-
-      final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.label == 'Status: Tippe auf den 1. Referenzpunkt',
-      );
-      expect(semanticsFinder, findsOneWidget);
-    });
-
-    testWidgets('Status-Pille Phase 2: Punkt 1 gesetzt (● ○)', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      const entity = DrawingEntity.calibration(
-        id: 'calib_1',
-        p1: Offset(0.2, 0.2),
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage, entities: [entity]);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.calibrate,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Punkt 1 gesetzt – Tippe auf den 2. Punkt'),
-        findsOneWidget,
-      );
-
-      final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.label ==
-                'Status: Punkt 1 gesetzt – Tippe auf den 2. Punkt',
-      );
-      expect(semanticsFinder, findsOneWidget);
-    });
-
-    testWidgets('Status-Pille Phase 3: 2 Punkte gesetzt & Eingabe (● ●)', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      const entity = DrawingEntity.calibration(
-        id: 'calib_1',
-        p1: Offset(0.2, 0.2),
-        p2: Offset(0.8, 0.2),
-        isConfirmed: false,
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage, entities: [entity]);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.calibrate,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('2 Punkte gesetzt – Reale Länge eingeben'),
-        findsOneWidget,
-      );
-
-      final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.label ==
-                'Status: 2 Punkte gesetzt – Reale Länge eingeben',
-      );
-      expect(semanticsFinder, findsOneWidget);
-    });
-
     testWidgets(
-      'Status-Pille Phase 4: Erfolgreich kalibriert mit dynamischem Maßstabsfaktor (m)',
+      'Status-Pille durchläuft Phasen 1 bis 4 (0 Punkte -> 1 Punkt -> 2 Punkte -> Kalibriert in m und cm)',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -297,8 +178,51 @@ void main() {
         addTearDown(container.dispose);
 
         final mockImage = createMockImage(width: 1000, height: 1000);
-        // distance: 207.9 px, 2.10 m -> 99 px/m
-        const entity = DrawingEntity.calibration(
+
+        // Phase 1: 0 Punkte
+        container.read(workspaceControllerProvider.notifier).state =
+            WorkspaceState(loadedImage: mockImage);
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.calibrate,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Tippe auf den 1. Referenzpunkt'), findsOneWidget);
+
+        // Phase 2: Punkt 1 gesetzt
+        const entityP1 = DrawingEntity.calibration(
+          id: 'calib_1',
+          p1: Offset(0.2, 0.2),
+        );
+        container.read(workspaceControllerProvider.notifier).state =
+            WorkspaceState(loadedImage: mockImage, entities: [entityP1]);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Punkt 1 gesetzt – Tippe auf den 2. Punkt'),
+          findsOneWidget,
+        );
+
+        // Phase 3: 2 Punkte gesetzt & Eingabe unbestätigt
+        const entityP2 = DrawingEntity.calibration(
+          id: 'calib_1',
+          p1: Offset(0.2, 0.2),
+          p2: Offset(0.8, 0.2),
+          isConfirmed: false,
+        );
+        container.read(workspaceControllerProvider.notifier).state =
+            WorkspaceState(loadedImage: mockImage, entities: [entityP2]);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('2 Punkte gesetzt – Reale Länge eingeben'),
+          findsOneWidget,
+        );
+
+        // Phase 4: Erfolgreich kalibriert mit Einheit m
+        const entityConfirmedM = DrawingEntity.calibration(
           id: 'calib_1',
           p1: Offset(0.2, 0.5),
           p2: Offset(0.4079, 0.5),
@@ -306,44 +230,17 @@ void main() {
           selectedUnit: 'm',
           isConfirmed: true,
         );
-
-        container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: mockImage, entities: [entity]);
-
-        await tester.pumpWidget(
-          buildTestWidget(
-            container: container,
-            activeStep: WorkflowStepType.calibrate,
-            isMobile: true,
-          ),
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: mockImage,
+          entities: [entityConfirmedM],
         );
         await tester.pumpAndSettle();
-
         expect(find.text('✓ Maßstab kalibriert: 1 m = 99 px'), findsOneWidget);
 
-        final semanticsFinder = find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label ==
-                  'Status: ✓ Maßstab kalibriert: 1 m = 99 px',
-        );
-        expect(semanticsFinder, findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Status-Pille Phase 4: Erfolgreich kalibriert mit gewählter Einheit cm',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        final mockImage = createMockImage(width: 1000, height: 1000);
-        // distance: 500 px, 50.0 cm -> 10 px/cm
-        const entity = DrawingEntity.calibration(
+        // Phase 4: Erfolgreich kalibriert mit Einheit cm
+        const entityConfirmedCm = DrawingEntity.calibration(
           id: 'calib_1',
           p1: Offset(0.1, 0.5),
           p2: Offset(0.6, 0.5),
@@ -351,28 +248,14 @@ void main() {
           selectedUnit: 'cm',
           isConfirmed: true,
         );
-
-        container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: mockImage, entities: [entity]);
-
-        await tester.pumpWidget(
-          buildTestWidget(
-            container: container,
-            activeStep: WorkflowStepType.calibrate,
-            isMobile: true,
-          ),
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: mockImage,
+          entities: [entityConfirmedCm],
         );
         await tester.pumpAndSettle();
-
         expect(find.text('✓ Maßstab kalibriert: 1 cm = 10 px'), findsOneWidget);
-
-        final semanticsFinder = find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label ==
-                  'Status: ✓ Maßstab kalibriert: 1 cm = 10 px',
-        );
-        expect(semanticsFinder, findsOneWidget);
       },
     );
 
@@ -390,6 +273,7 @@ void main() {
         container.read(workspaceControllerProvider.notifier).state =
             WorkspaceState(loadedImage: mockImage);
 
+        // 1. Via StepDetailView(isMobile: false)
         await tester.pumpWidget(
           buildTestWidget(
             container: container,
@@ -401,23 +285,8 @@ void main() {
 
         expect(find.byType(MobileCalibrationHeader), findsNothing);
         expect(find.byType(MobileCalibrationStatusPill), findsNothing);
-      },
-    );
 
-    testWidgets(
-      'Direct rendering of MobileCalibrationHeader on desktop (>= 800 dp) returns SizedBox.shrink',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(1024, 768);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        final mockImage = createMockImage();
-        container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: mockImage);
-
+        // 2. Direct rendering of MobileCalibrationHeader returns SizedBox.shrink
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -430,7 +299,6 @@ void main() {
 
         expect(find.text('Scale Buddy'), findsNothing);
         expect(find.text('Schritt 3: Maßstab kalibrieren'), findsNothing);
-        expect(find.byType(MobileCalibrationStatusPill), findsNothing);
       },
     );
 

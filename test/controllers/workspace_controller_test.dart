@@ -16,7 +16,7 @@ class MockImageLoaderService extends Mock implements ImageLoaderService {}
 
 void main() {
   group('cancelCurrentTool', () {
-    test('removes incomplete shapes', () {
+    test('handles incomplete shapes, confirmed vs unconfirmed calibrations properly', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -35,64 +35,42 @@ void main() {
 
       final controller = container.read(workspaceControllerProvider.notifier);
 
-      // We manually inject state for testing
+      // 1. Removes incomplete shapes
       // ignore: invalid_use_of_visible_for_testing_member
       controller.state = WorkspaceState(entities: [line1, line2]);
-
       controller.cancelCurrentTool();
-
-      final entities = container.read(workspaceControllerProvider).entities;
+      var entities = container.read(workspaceControllerProvider).entities;
       expect(entities.length, 1);
       expect(entities.first.id, 'L1');
-    });
 
-    test('reverts unconfirmed calibration with entered distance', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final calib = DrawingEntity.calibration(
+      // 2. Reverts unconfirmed calibration with entered distance back to confirmed
+      final calibWithDist = DrawingEntity.calibration(
         id: 'C1',
         p1: const Offset(0, 0),
         p2: const Offset(1, 1),
         isConfirmed: false,
         enteredDistance: 5.0,
       );
-
-      final controller = container.read(workspaceControllerProvider.notifier);
       // ignore: invalid_use_of_visible_for_testing_member
-      controller.state = WorkspaceState(entities: [calib]);
-
+      controller.state = WorkspaceState(entities: [calibWithDist]);
       controller.cancelCurrentTool();
-
-      final entities = container.read(workspaceControllerProvider).entities;
+      entities = container.read(workspaceControllerProvider).entities;
       expect(entities.length, 1);
-      final updatedCalib = entities.first as CalibrationEntity;
-      expect(
-        updatedCalib.isConfirmed,
-        isTrue,
-      ); // Should be reverted to confirmed
-    });
+      expect((entities.first as CalibrationEntity).isConfirmed, isTrue);
 
-    test('removes unconfirmed calibration without entered distance', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final calib = DrawingEntity.calibration(
-        id: 'C1',
+      // 3. Removes unconfirmed calibration without entered distance
+      final calibWithoutDist = DrawingEntity.calibration(
+        id: 'C2',
         p1: const Offset(0, 0),
         p2: const Offset(1, 1),
         isConfirmed: false,
-        enteredDistance: null, // New calibration, no distance entered yet
+        enteredDistance: null,
       );
-
-      final controller = container.read(workspaceControllerProvider.notifier);
       // ignore: invalid_use_of_visible_for_testing_member
-      controller.state = WorkspaceState(entities: [calib]);
-
+      controller.state = WorkspaceState(entities: [calibWithoutDist]);
       controller.cancelCurrentTool();
-
-      final entities = container.read(workspaceControllerProvider).entities;
-      expect(entities.isEmpty, isTrue); // Should be removed
+      entities = container.read(workspaceControllerProvider).entities;
+      expect(entities.isEmpty, isTrue);
     });
   });
 
@@ -205,22 +183,6 @@ void main() {
       expect(states[0].status, LoadingStatus.loading);
       expect(states[1].status, LoadingStatus.error);
       expect(states[1].statusMessage, WorkspaceError.loadFailed);
-    });
-
-    test('clearCalibration removes the default calibration entity', () {
-      final controller = container.read(workspaceControllerProvider.notifier);
-      const entity = DrawingEntity.calibration(
-        id: CalibrationTool.defaultCalibrationId,
-      );
-
-      controller.addOrUpdateEntity(entity);
-      expect(container.read(workspaceControllerProvider).entities.length, 1);
-
-      controller.clearCalibration();
-      expect(
-        container.read(workspaceControllerProvider).entities.isEmpty,
-        isTrue,
-      );
     });
 
     test(

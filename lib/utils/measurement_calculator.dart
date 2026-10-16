@@ -80,7 +80,15 @@ class MeasurementCalculator {
     bool useComma = false,
   }) {
     return entity.map(
-      calibration: (_) => null,
+      calibration: (calib) {
+        final unit = calib.selectedUnit;
+        if (calib.enteredDistance != null && calib.enteredDistance! > 0) {
+          final s = calib.enteredDistance!.toStringAsFixed(2);
+          final formatted = useComma ? s.replaceAll('.', ',') : s;
+          return calib.isConfirmed ? '✓ $formatted $unit' : '$formatted $unit';
+        }
+        return calib.isConfirmed ? '✓ -- $unit' : '-- $unit';
+      },
       perspective: (_) => null,
       line: (line) {
         if (line.p1 == null || line.p2 == null) return null;
@@ -150,77 +158,413 @@ class MeasurementCalculator {
     return formatDistance(heightMeters);
   }
 
-  /// Label position for the top edge of a rectangle.
+  /// Schwellenwert für das Umklappen des oberen Rechteck-Breiten-Badges (in Pixel).
+  static const double rectangleWidthFlipThreshold = 35.0;
+
+  /// Schwellenwert für das Umklappen des linken Rechteck-Höhen-Badges (in Pixel).
+  static const double rectangleHeightFlipThreshold = 60.0;
+
+  /// Berechnet die Platzierung für das Breiten-Badge eines Rechtecks (oben oder unten umgeklappt).
+  static RectangleBadgePlacement? getRectangleWidthBadgePlacement(
+    RectangleEntity rect,
+    Size size,
+  ) {
+    if (rect.p1 == null || rect.p2 == null) return null;
+    final p1Pix = rect.p1!.toPixel(size);
+    final p2Pix = rect.p2!.toPixel(size);
+    final centerX = (p1Pix.dx + p2Pix.dx) / 2;
+    final minY = min(p1Pix.dy, p2Pix.dy);
+    final maxY = max(p1Pix.dy, p2Pix.dy);
+    final isFlipped = minY < rectangleWidthFlipThreshold;
+
+    final y = isFlipped ? maxY : minY;
+    final translation = isFlipped
+        ? const Offset(-0.5, 0.6)
+        : const Offset(-0.5, -1.6);
+
+    return RectangleBadgePlacement(
+      position: Offset(centerX, y),
+      isFlipped: isFlipped,
+      widgetTranslation: translation,
+    );
+  }
+
+  /// Berechnet die Platzierung für das Höhen-Badge eines Rechtecks (links oder rechts umgeklappt).
+  static RectangleBadgePlacement? getRectangleHeightBadgePlacement(
+    RectangleEntity rect,
+    Size size,
+  ) {
+    if (rect.p1 == null || rect.p2 == null) return null;
+    final p1Pix = rect.p1!.toPixel(size);
+    final p2Pix = rect.p2!.toPixel(size);
+    final minX = min(p1Pix.dx, p2Pix.dx);
+    final maxX = max(p1Pix.dx, p2Pix.dx);
+    final centerY = (p1Pix.dy + p2Pix.dy) / 2;
+    final isFlipped = minX < rectangleHeightFlipThreshold;
+
+    final x = isFlipped ? maxX : minX;
+    final translation = isFlipped
+        ? const Offset(0.4, -0.5)
+        : const Offset(-1.4, -0.5);
+
+    return RectangleBadgePlacement(
+      position: Offset(x, centerY),
+      isFlipped: isFlipped,
+      widgetTranslation: translation,
+    );
+  }
+
+  /// Gibt die Standard-Position für das Breiten-Label eines Rechtecks zurück (Mitte obere Kante).
   static Offset? getRectangleWidthLabelPosition(
     RectangleEntity rect,
     Size size,
   ) {
     if (rect.p1 == null || rect.p2 == null) return null;
-    final centerPix = getMeasurementLabelPosition(rect, size);
-    if (centerPix == null) return null;
-    return Offset(centerPix.dx, rect.p1!.dy * size.height);
+    final p1Pix = rect.p1!.toPixel(size);
+    final p2Pix = rect.p2!.toPixel(size);
+    return Offset((p1Pix.dx + p2Pix.dx) / 2, min(p1Pix.dy, p2Pix.dy));
   }
 
-  /// Label position for the left edge of a rectangle.
+  /// Gibt die Standard-Position für das Höhen-Label eines Rechtecks zurück (Mitte linke Kante).
   static Offset? getRectangleHeightLabelPosition(
     RectangleEntity rect,
     Size size,
   ) {
     if (rect.p1 == null || rect.p2 == null) return null;
-    final centerPix = getMeasurementLabelPosition(rect, size);
-    if (centerPix == null) return null;
-    return Offset(rect.p1!.dx * size.width, centerPix.dy);
+    final p1Pix = rect.p1!.toPixel(size);
+    final p2Pix = rect.p2!.toPixel(size);
+    return Offset(min(p1Pix.dx, p2Pix.dx), (p1Pix.dy + p2Pix.dy) / 2);
+  }
+
+  /// Geschätzte maximale Breite der Mess-Pille für Kollisionsprüfungen.
+  static const double defaultPillWidth = 140.0;
+
+  /// Geschätzte Höhe der Mess-Pille für Kollisionsprüfungen.
+  static const double defaultPillHeight = 32.0;
+
+  /// Schutzradius für Kontrollpunkte/Anfasser.
+  static const double defaultHandleRadius = 14.0;
+
+  /// Schutzradius für Kontrollpunkte/Anfasser bei Selektions-Ghosting auf dem Desktop.
+  static const double desktopHandleProtectionRadius = 18.0;
+
+  /// Schutzradius für Kontrollpunkte/Anfasser bei Selektions-Ghosting auf Mobile/Touch.
+  static const double mobileHandleProtectionRadius = 24.0;
+
+  /// Opazität für kollidierende Fremdpillen im Selektionsmodus.
+  static const double ghostedPillOpacity = 0.15;
+
+  /// Berechnet die Flächen-Label-Position für ein Rechteck.
+  /// Bei sehr kompakten Rechtecken weicht die Pille nach außen ab,
+  /// sodass die Eckpunkte frei bleiben.
+  static Offset calculateRectangleAreaLabelPosition(
+    Offset p1Pix,
+    Offset p2Pix,
+    Size size, {
+    double pillWidth = defaultPillWidth,
+    double pillHeight = defaultPillHeight,
+    double handleRadius = defaultHandleRadius,
+  }) {
+    final minX = min(p1Pix.dx, p2Pix.dx);
+    final maxX = max(p1Pix.dx, p2Pix.dx);
+    final minY = min(p1Pix.dy, p2Pix.dy);
+    final maxY = max(p1Pix.dy, p2Pix.dy);
+    final center = Offset((minX + maxX) / 2, (minY + maxY) / 2);
+
+    final corners = [
+      Offset(minX, minY),
+      Offset(maxX, minY),
+      Offset(minX, maxY),
+      Offset(maxX, maxY),
+    ];
+
+    bool collides(Offset candidate) {
+      final rect = Rect.fromCenter(
+        center: candidate,
+        width: pillWidth,
+        height: pillHeight,
+      );
+      for (final c in corners) {
+        if (rect.overlaps(Rect.fromCircle(center: c, radius: handleRadius))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (!collides(center)) {
+      return center;
+    }
+
+    final belowCandidate = Offset(center.dx, maxY + pillHeight / 2 + 14.0);
+    if (!collides(belowCandidate) &&
+        belowCandidate.dy + pillHeight / 2 <= size.height) {
+      return belowCandidate;
+    }
+
+    final rightCandidate = Offset(maxX + pillWidth / 2 + 14.0, center.dy);
+    if (!collides(rightCandidate) &&
+        rightCandidate.dx + pillWidth / 2 <= size.width) {
+      return rightCandidate;
+    }
+
+    final aboveCandidate = Offset(center.dx, minY - pillHeight / 2 - 14.0);
+    if (!collides(aboveCandidate) && aboveCandidate.dy - pillHeight / 2 >= 0) {
+      return aboveCandidate;
+    }
+
+    return center;
+  }
+
+  /// Berechnet die Label-Position für ein Polygon.
+  /// Liegt das Zentrum zu nah an einem Eckpunkt (kompaktes oder schmales Polygon),
+  /// weicht die Pille ab, sodass kein Eckpunkt überdeckt wird.
+  static Offset calculatePolygonLabelPosition(
+    List<Offset> pointsPix,
+    Size size, {
+    double pillWidth = defaultPillWidth,
+    double pillHeight = defaultPillHeight,
+    double handleRadius = defaultHandleRadius,
+  }) {
+    if (pointsPix.isEmpty) return Offset.zero;
+    if (pointsPix.length == 1) return pointsPix.first;
+
+    final centroidNorm = GeometryUtils.calculatePolygonCentroid(
+      pointsPix
+          .map((p) => Offset(p.dx / size.width, p.dy / size.height))
+          .toList(),
+    );
+    final centroid = centroidNorm.toPixel(size);
+
+    bool collides(Offset candidate) {
+      final rect = Rect.fromCenter(
+        center: candidate,
+        width: pillWidth,
+        height: pillHeight,
+      );
+      for (final p in pointsPix) {
+        if (rect.overlaps(Rect.fromCircle(center: p, radius: handleRadius))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    bool isInsideCanvas(Offset candidate) {
+      final halfW = pillWidth / 2;
+      final halfH = pillHeight / 2;
+      return candidate.dx - halfW >= 0 &&
+          candidate.dx + halfW <= size.width &&
+          candidate.dy - halfH >= 0 &&
+          candidate.dy + halfH <= size.height;
+    }
+
+    if (!collides(centroid) && isInsideCanvas(centroid)) {
+      return centroid;
+    }
+
+    const directions = [
+      Offset(0, -1),
+      Offset(1, -1),
+      Offset(-1, -1),
+      Offset(0, 1),
+      Offset(1, 1),
+      Offset(-1, 1),
+      Offset(1, 0),
+      Offset(-1, 0),
+    ];
+
+    Offset? bestCandidate;
+    double bestDistance = double.infinity;
+
+    for (final dir in directions) {
+      final normDir = dir / dir.distance;
+      for (double dist = 24.0; dist <= 120.0; dist += 6.0) {
+        final candidate = centroid + normDir * dist;
+        if (!collides(candidate) && isInsideCanvas(candidate)) {
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestCandidate = candidate;
+          }
+          break;
+        }
+      }
+    }
+
+    return bestCandidate ?? centroid;
+  }
+
+  /// Berechnet die Label-Position für eine Winkelmessung.
+  /// Platziert die Pille auf der Winkelhalbierenden mit ausreichendem Radius,
+  /// sodass weder der Scheitelpunkt (p1) noch der Schenkel-Endpunkt (p2) überdeckt werden.
+  static Offset calculateAngleLabelPosition(
+    Offset p1Pix,
+    Offset p2Pix,
+    Size size, {
+    double pillWidth = defaultPillWidth,
+    double pillHeight = defaultPillHeight,
+    double handleRadius = defaultHandleRadius,
+  }) {
+    final distance = (p2Pix - p1Pix).distance;
+    final dx = p2Pix.dx - p1Pix.dx;
+    final dy = p2Pix.dy - p1Pix.dy;
+    final direction = dx >= 0 ? 1.0 : -1.0;
+    final baseAngle = direction > 0 ? 0.0 : pi;
+    final angleRad = atan2(dy, dx);
+
+    double sweepAngle = angleRad - baseAngle;
+    while (sweepAngle > pi) {
+      sweepAngle -= 2 * pi;
+    }
+    while (sweepAngle < -pi) {
+      sweepAngle += 2 * pi;
+    }
+
+    final midAngleRad = baseAngle + (sweepAngle / 2);
+    final unitRay = Offset(cos(midAngleRad), sin(midAngleRad));
+
+    bool collidesWithHandles(Offset candidate) {
+      final rect = Rect.fromCenter(
+        center: candidate,
+        width: pillWidth,
+        height: pillHeight,
+      );
+      if (rect.overlaps(Rect.fromCircle(center: p1Pix, radius: handleRadius))) {
+        return true;
+      }
+      if (distance > 0 &&
+          rect.overlaps(Rect.fromCircle(center: p2Pix, radius: handleRadius))) {
+        return true;
+      }
+      return false;
+    }
+
+    double radius = max(60.0, distance * 0.45);
+
+    for (int i = 0; i < 30; i++) {
+      final candidate = p1Pix + unitRay * radius;
+      if (!collidesWithHandles(candidate)) {
+        return candidate;
+      }
+      radius += 8.0;
+    }
+
+    return p1Pix + unitRay * radius;
+  }
+
+  /// Standardmäßiger orthogonaler Versatz für Strecken-Labels (in Pixel).
+  static const double defaultLineLabelOffset = 32.0;
+
+  /// Geschätzte halbe Höhe der Mess-Pille für Kollisionsprüfungen am oberen Canvas-Rand.
+  static const double defaultPillHalfHeight = 16.0;
+
+  /// Berechnet die Label-Position für eine Strecke mit orthogonalem Versatz (32 px).
+  /// Klappt automatisch nach unten um (Auto-Flip), wenn die Pille über den oberen Bildrand ragen würde.
+  static Offset calculateLineLabelPosition(
+    Offset p1Pix,
+    Offset p2Pix,
+    Size size, {
+    double offsetDistance = defaultLineLabelOffset,
+    double pillHalfHeight = defaultPillHalfHeight,
+  }) {
+    final midpoint = Offset(
+      (p1Pix.dx + p2Pix.dx) / 2,
+      (p1Pix.dy + p2Pix.dy) / 2,
+    );
+    final dx = p2Pix.dx - p1Pix.dx;
+    final dy = p2Pix.dy - p1Pix.dy;
+    final length = sqrt(dx * dx + dy * dy);
+
+    if (length == 0) return midpoint;
+
+    // Normalenvektor senkrecht zur Strecke: (-dy, dx) / length
+    Offset normal = Offset(-dy / length, dx / length);
+    // Standardmäßig nach "oben" ausrichten (in Screen-Koordinaten ist dy negativ = oben)
+    if (normal.dy > 0 || (normal.dy == 0 && normal.dx < 0)) {
+      normal = -normal;
+    }
+
+    final candidate = midpoint + normal * offsetDistance;
+    // Auto-Flip: Wenn der obere Rand der Pille über den oberen Canvas-Rand ragen würde (dy < 0)
+    if (candidate.dy - pillHalfHeight < 0) {
+      return midpoint - normal * offsetDistance;
+    }
+    return candidate;
   }
 
   /// Returns the pixel coordinates where the main label should be drawn.
   static Offset? getMeasurementLabelPosition(DrawingEntity entity, Size size) {
-    return entity.map(
-      calibration: (_) => null,
+    final basePos = entity.map(
+      calibration: (calib) {
+        if (calib.p1 == null || calib.p2 == null) return null;
+        final p1Pix = calib.p1!.toPixel(size);
+        final p2Pix = calib.p2!.toPixel(size);
+        return calculateLineLabelPosition(p1Pix, p2Pix, size);
+      },
       perspective: (_) => null,
       line: (line) {
         if (line.p1 == null || line.p2 == null) return null;
         final p1Pix = line.p1!.toPixel(size);
         final p2Pix = line.p2!.toPixel(size);
-        return Offset((p1Pix.dx + p2Pix.dx) / 2, (p1Pix.dy + p2Pix.dy) / 2);
+        return calculateLineLabelPosition(p1Pix, p2Pix, size);
       },
       rectangle: (rect) {
         if (rect.p1 == null || rect.p2 == null) return null;
         final p1Pix = rect.p1!.toPixel(size);
         final p2Pix = rect.p2!.toPixel(size);
-        return Offset((p1Pix.dx + p2Pix.dx) / 2, (p1Pix.dy + p2Pix.dy) / 2);
+        return calculateRectangleAreaLabelPosition(p1Pix, p2Pix, size);
       },
       polygon: (poly) {
         if (poly.points.length < 3 || !poly.isClosed) return null;
-        final centroidNorm = GeometryUtils.calculatePolygonCentroid(
-          poly.points,
-        );
-        return centroidNorm.toPixel(size);
+        final pointsPix = poly.points.map((p) => p.toPixel(size)).toList();
+        return calculatePolygonLabelPosition(pointsPix, size);
       },
       angle: (angle) {
         if (angle.p1 == null || angle.p2 == null) return null;
         final p1Pix = angle.p1!.toPixel(size);
         final p2Pix = angle.p2!.toPixel(size);
-        final distance = (p2Pix - p1Pix).distance;
-        final dx = p2Pix.dx - p1Pix.dx;
-        final dy = p2Pix.dy - p1Pix.dy;
-        final direction = dx >= 0 ? 1.0 : -1.0;
-        final baseAngle = direction > 0 ? 0.0 : pi;
-        final angleRad = atan2(dy, dx);
+        return calculateAngleLabelPosition(p1Pix, p2Pix, size);
+      },
+    );
 
-        double sweepAngle = angleRad - baseAngle;
-        while (sweepAngle > pi) {
-          sweepAngle -= 2 * pi;
-        }
-        while (sweepAngle < -pi) {
-          sweepAngle += 2 * pi;
-        }
+    if (basePos == null) return null;
+    final customOffset = entity.customLabelOffset;
+    if (customOffset != null) {
+      return basePos + customOffset.toPixel(size);
+    }
+    return basePos;
+  }
 
-        final midAngleRad = baseAngle + (sweepAngle / 2);
-        final labelRadius = max(distance * 0.35, 35.0);
-        return Offset(
-          p1Pix.dx + cos(midAngleRad) * labelRadius,
-          p1Pix.dy + sin(midAngleRad) * labelRadius - 16.0,
-        );
+  /// Returns the anchor point (center / midpoint / centroid / apex) for the measurement entity.
+  /// Used as the origin for leader lines when the label is displaced.
+  static Offset? getMeasurementAnchorPosition(DrawingEntity entity, Size size) {
+    return entity.map(
+      calibration: (c) {
+        if (c.p1 == null || c.p2 == null) return null;
+        final p1 = c.p1!.toPixel(size);
+        final p2 = c.p2!.toPixel(size);
+        return Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
+      },
+      perspective: (_) => null,
+      line: (l) {
+        if (l.p1 == null || l.p2 == null) return null;
+        final p1 = l.p1!.toPixel(size);
+        final p2 = l.p2!.toPixel(size);
+        return Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
+      },
+      rectangle: (r) {
+        if (r.p1 == null || r.p2 == null) return null;
+        final p1 = r.p1!.toPixel(size);
+        final p2 = r.p2!.toPixel(size);
+        return Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
+      },
+      polygon: (p) {
+        if (p.points.length < 3 || !p.isClosed) return null;
+        return GeometryUtils.calculatePolygonCentroid(p.points).toPixel(size);
+      },
+      angle: (a) {
+        if (a.p1 == null) return null;
+        return a.p1!.toPixel(size);
       },
     );
   }
@@ -436,4 +780,111 @@ class MeasurementCalculator {
       },
     );
   }
+
+  /// Schätzt die Bounding-Box einer Mess-Pille anhand des Texts und des Selektionszustands.
+  static Size estimatePillSize(
+    String text, {
+    bool isSelected = false,
+    bool isMobile = false,
+    bool hasDelete = false,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: 12.0,
+          fontWeight: (isMobile || isSelected)
+              ? FontWeight.bold
+              : FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final hPadding = isMobile ? 20.0 : 16.0;
+    const vPadding = 8.0;
+    final borderWidth = isSelected ? 4.0 : (isMobile ? 3.0 : 2.4);
+    final deleteWidth = (isSelected && hasDelete) ? 30.0 : 0.0;
+
+    final width = textPainter.width + hPadding + borderWidth + deleteWidth;
+    final height = max(
+      textPainter.height + vPadding + borderWidth,
+      (isSelected && hasDelete) ? 30.0 : 24.0,
+    );
+    return Size(max(width, 40.0), max(height, 24.0));
+  }
+
+  /// Ermittelt alle interaktiven Kontrollpunkte/Anfasser einer Entität in Pixelkoordinaten.
+  static List<Offset> getEntityHandlePoints(DrawingEntity entity, Size size) {
+    return entity.map(
+      calibration: (c) => [
+        if (c.p1 != null) c.p1!.toPixel(size),
+        if (c.p2 != null) c.p2!.toPixel(size),
+      ],
+      perspective: (p) => p.points.map((pt) => pt.toPixel(size)).toList(),
+      line: (l) => [
+        if (l.p1 != null) l.p1!.toPixel(size),
+        if (l.p2 != null) l.p2!.toPixel(size),
+      ],
+      rectangle: (r) {
+        if (r.p1 == null || r.p2 == null) return <Offset>[];
+        final p1Pix = r.p1!.toPixel(size);
+        final p2Pix = r.p2!.toPixel(size);
+        return [
+          p1Pix,
+          Offset(p2Pix.dx, p1Pix.dy),
+          p2Pix,
+          Offset(p1Pix.dx, p2Pix.dy),
+        ];
+      },
+      polygon: (p) => p.points.map((pt) => pt.toPixel(size)).toList(),
+      angle: (a) => [
+        if (a.p1 != null) a.p1!.toPixel(size),
+        if (a.p2 != null) a.p2!.toPixel(size),
+      ],
+    );
+  }
+
+  /// Prüft, ob eine Fremdpille mit der Schutzzone eines selektierten Elements kollidiert.
+  /// Schutzzone = Griffe (Kreis mit Trefferradius) + Bounding-Boxes der selektierten Pillen.
+  static bool checkPillCollision({
+    required Rect foreignPillRect,
+    required List<Offset> selectedHandles,
+    required List<Rect> selectedPillRects,
+    required double handleRadius,
+  }) {
+    for (final handle in selectedHandles) {
+      if (GeometryUtils.rectIntersectsCircle(
+        foreignPillRect,
+        handle,
+        handleRadius,
+      )) {
+        return true;
+      }
+    }
+    for (final selPill in selectedPillRects) {
+      if (foreignPillRect.overlaps(selPill)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// Datenstruktur für die berechnete Platzierung eines Kanten-Badges eines Rechtecks.
+class RectangleBadgePlacement {
+  /// Berechnete Basis-Position (Zentrum der Kante bzw. umgeklappt).
+  final Offset position;
+
+  /// Gibt an, ob das Badge aufgrund von Platzmangel am Bildrand auf die gegenüberliegende Seite umgeklappt wurde.
+  final bool isFlipped;
+
+  /// Relativer Translations-Offset für die widget-basierte Platzierung.
+  final Offset widgetTranslation;
+
+  const RectangleBadgePlacement({
+    required this.position,
+    required this.isFlipped,
+    required this.widgetTranslation,
+  });
 }

@@ -124,9 +124,9 @@ void main() {
 
   group('MobileMeasureDock Tests', () {
     testWidgets(
-      'renders all 5 tools and default selected tool is Strecke (blue)',
+      'renders all 5 tools with vertical layout, default selection, and allows tool switching',
       (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
+        tester.view.physicalSize = const Size(360, 800);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
@@ -142,14 +142,24 @@ void main() {
         expect(find.byType(MobileMeasureDock), findsOneWidget);
         expect(find.byType(MobileDockContainer), findsOneWidget);
 
-        // 5 tools
-        expect(find.text('Strecke'), findsOneWidget);
-        expect(find.text('Rechteck'), findsOneWidget);
-        expect(find.text('Polygon'), findsOneWidget);
-        expect(find.text('Winkel'), findsOneWidget);
-        expect(find.text('Edit'), findsOneWidget);
+        // All 5 tools rendered with vertical Column layout
+        for (final label in [
+          'Strecke',
+          'Rechteck',
+          'Polygon',
+          'Winkel',
+          'Edit',
+        ]) {
+          final textFinder = find.text(label);
+          expect(textFinder, findsOneWidget);
+          final columnFinder = find.ancestor(
+            of: textFinder,
+            matching: find.byType(Column),
+          );
+          expect(columnFinder, findsWidgets);
+        }
 
-        // Strecke container is highlighted in tool color (Variante B: tinted background + border)
+        // Strecke container is highlighted in tool color (tinted background + border)
         final streckeContainerFinder = find.ancestor(
           of: find.text('Strecke'),
           matching: find.byType(Container),
@@ -166,14 +176,33 @@ void main() {
           (decoration?.border as Border?)?.top.color,
           const Color(0xFF38BDF8),
         );
+        expect(container.read(activeToolProvider), isA<DistanceTool>());
 
-        // Active tool is DistanceTool
+        // Switch to each tool sequentially
+        await tester.tap(find.text('Rechteck'));
+        await tester.pumpAndSettle();
+        expect(container.read(activeToolProvider), isA<RectangleTool>());
+
+        await tester.tap(find.text('Polygon'));
+        await tester.pumpAndSettle();
+        expect(container.read(activeToolProvider), isA<PolygonTool>());
+
+        await tester.tap(find.text('Winkel'));
+        await tester.pumpAndSettle();
+        expect(container.read(activeToolProvider), isA<AngleTool>());
+
+        await tester.tap(find.text('Edit'));
+        await tester.pumpAndSettle();
+        expect(container.read(activeToolProvider), isA<SelectTool>());
+
+        await tester.tap(find.text('Strecke'));
+        await tester.pumpAndSettle();
         expect(container.read(activeToolProvider), isA<DistanceTool>());
       },
     );
 
     testWidgets(
-      'tapping each tool switches active tool and updates highlighting',
+      'Zustand 1 and 3: Rückgängig and Export button states, actions, and callbacks',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -182,127 +211,93 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
+        bool nextStepCalled = false;
+
         container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: createMockImage());
+            WorkspaceState(loadedImage: createMockImage(), entities: []);
 
-        await tester.pumpWidget(buildTestWidget(container: container));
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: const Locale('de'),
+              home: Scaffold(
+                body: MobileMeasureDock(
+                  onNextStep: () {
+                    nextStepCalled = true;
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
         await tester.pumpAndSettle();
 
-        // Tap Rechteck
-        await tester.tap(find.text('Rechteck'));
-        await tester.pumpAndSettle();
-        expect(container.read(activeToolProvider), isA<RectangleTool>());
+        // 0 measurements: Undo and Export disabled
+        expect(find.text('Rückgängig'), findsOneWidget);
+        expect(find.text('Weiter zu Schritt 5 (Export)'), findsOneWidget);
 
-        // Tap Polygon
-        await tester.tap(find.text('Polygon'));
-        await tester.pumpAndSettle();
-        expect(container.read(activeToolProvider), isA<PolygonTool>());
+        var buttons = tester
+            .widgetList<MobileDockButton>(find.byType(MobileDockButton))
+            .toList();
+        var undoButton = buttons.firstWhere((b) => b.label == 'Rückgängig');
+        var exportButton = buttons.firstWhere(
+          (b) => b.label == 'Weiter zu Schritt 5 (Export)',
+        );
+        expect(undoButton.onPressed, isNull);
+        expect(exportButton.onPressed, isNull);
 
-        // Tap Winkel
-        await tester.tap(find.text('Winkel'));
-        await tester.pumpAndSettle();
-        expect(container.read(activeToolProvider), isA<AngleTool>());
+        // Verify semantics disabled
+        final exportSemantics = find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              w.properties.button == true &&
+              w.properties.label == 'Weiter zu Schritt 5 (Export)' &&
+              w.properties.enabled == false,
+        );
+        expect(exportSemantics, findsOneWidget);
 
-        // Tap Edit
-        await tester.tap(find.text('Edit'));
+        // Add 1 measurement -> both enabled
+        const lineEntity = DrawingEntity.line(
+          id: 'line_1',
+          p1: Offset(0.2, 0.2),
+          p2: Offset(0.5, 0.5),
+          color: Colors.cyan,
+        );
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [lineEntity],
+        );
         await tester.pumpAndSettle();
-        expect(container.read(activeToolProvider), isA<SelectTool>());
 
-        // Tap Strecke
-        await tester.tap(find.text('Strecke'));
+        buttons = tester
+            .widgetList<MobileDockButton>(find.byType(MobileDockButton))
+            .toList();
+        undoButton = buttons.firstWhere((b) => b.label == 'Rückgängig');
+        exportButton = buttons.firstWhere(
+          (b) => b.label == 'Weiter zu Schritt 5 (Export)',
+        );
+        expect(undoButton.onPressed, isNotNull);
+        expect(exportButton.onPressed, isNotNull);
+        expect(exportButton.backgroundColor, const Color(0xFF10B981));
+        expect(exportButton.isPrimary, isTrue);
+
+        // Tap Export -> triggers onNextStep
+        await tester.tap(find.text('Weiter zu Schritt 5 (Export)'));
         await tester.pumpAndSettle();
-        expect(container.read(activeToolProvider), isA<DistanceTool>());
+        expect(nextStepCalled, isTrue);
+
+        // Tap Undo -> removes measurement and clears
+        await tester.tap(find.text('Rückgängig'));
+        await tester.pumpAndSettle();
+        expect(container.read(workspaceControllerProvider).entities, isEmpty);
       },
     );
-
-    testWidgets('at 0 measurements, Rückgängig and Export are disabled', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: createMockImage(), entities: []);
-
-      await tester.pumpWidget(buildTestWidget(container: container));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Rückgängig'), findsOneWidget);
-      expect(find.text('Weiter zu Schritt 5 (Export)'), findsOneWidget);
-
-      final buttons = tester
-          .widgetList<MobileDockButton>(find.byType(MobileDockButton))
-          .toList();
-
-      final undoButton = buttons.firstWhere((b) => b.label == 'Rückgängig');
-      final exportButton = buttons.firstWhere(
-        (b) => b.label == 'Weiter zu Schritt 5 (Export)',
-      );
-
-      expect(undoButton.onPressed, isNull);
-      expect(exportButton.onPressed, isNull);
-
-      // Verify semantics disabled
-      final exportSemantics = find.byWidgetPredicate(
-        (w) =>
-            w is Semantics &&
-            w.properties.button == true &&
-            w.properties.label == 'Weiter zu Schritt 5 (Export)' &&
-            w.properties.enabled == false,
-      );
-      expect(exportSemantics, findsOneWidget);
-    });
-
-    testWidgets('with >= 1 measurement, Rückgängig and Export are enabled', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      const lineEntity = DrawingEntity.line(
-        id: 'line_1',
-        p1: Offset(0.2, 0.2),
-        p2: Offset(0.5, 0.5),
-        color: Colors.cyan,
-      );
-
-      container
-          .read(workspaceControllerProvider.notifier)
-          .state = WorkspaceState(
-        loadedImage: createMockImage(),
-        entities: [lineEntity],
-      );
-
-      await tester.pumpWidget(buildTestWidget(container: container));
-      await tester.pumpAndSettle();
-
-      final buttons = tester
-          .widgetList<MobileDockButton>(find.byType(MobileDockButton))
-          .toList();
-
-      final undoButton = buttons.firstWhere((b) => b.label == 'Rückgängig');
-      final exportButton = buttons.firstWhere(
-        (b) => b.label == 'Weiter zu Schritt 5 (Export)',
-      );
-
-      expect(undoButton.onPressed, isNotNull);
-      expect(exportButton.onPressed, isNotNull);
-
-      // Tap undo removes measurement
-      await tester.tap(find.text('Rückgängig'));
-      await tester.pumpAndSettle();
-
-      final stateAfterUndo = container.read(workspaceControllerProvider);
-      expect(stateAfterUndo.entities, isEmpty);
-    });
 
     testWidgets('all touch targets fulfill minimum 44x44 pt', (
       WidgetTester tester,
@@ -418,75 +413,7 @@ void main() {
     );
 
     testWidgets(
-      'Zustand 3: Rückgängig and Export are enabled and functional when measurements exist',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        bool nextStepCalled = false;
-
-        const line = DrawingEntity.line(
-          id: 'L1',
-          p1: Offset(0.3, 0.4),
-          p2: Offset(0.7, 0.4),
-          color: Color(0xFF38BDF8),
-        );
-
-        container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: createMockImage(), entities: [line]);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              theme: AppTheme.lightTheme,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              locale: const Locale('de'),
-              home: Scaffold(
-                body: MobileMeasureDock(
-                  onNextStep: () {
-                    nextStepCalled = true;
-                  },
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        // Undo is enabled
-        final undoButton = find.text('Rückgängig');
-        expect(undoButton, findsOneWidget);
-
-        // Export button is enabled and primary with green background (#10B981)
-        final exportButton = find.text('Weiter zu Schritt 5 (Export)');
-        expect(exportButton, findsOneWidget);
-
-        final exportButtonWidget = tester.widget<MobileDockButton>(
-          find.widgetWithText(MobileDockButton, 'Weiter zu Schritt 5 (Export)'),
-        );
-        expect(exportButtonWidget.backgroundColor, const Color(0xFF10B981));
-        expect(exportButtonWidget.isPrimary, isTrue);
-
-        // Tap Export button -> triggers onNextStep
-        await tester.tap(exportButton);
-        await tester.pumpAndSettle();
-        expect(nextStepCalled, isTrue);
-
-        // Tap Undo button -> removes measurement
-        await tester.tap(undoButton);
-        await tester.pumpAndSettle();
-        expect(container.read(workspaceControllerProvider).entities, isEmpty);
-      },
-    );
-
-    testWidgets(
-      'Zustand 4: transforms dock into inspector card with icon, title, details, badge, [ Löschen ] and [ Fertig ]',
+      'Zustand 4: inspector card renders entity details and handles Fertig and Löschen actions',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -526,107 +453,41 @@ void main() {
 
         // Werkzeugleiste ist nicht mehr sichtbar, stattdessen Inspektorkarte
         expect(find.text('Strecke'), findsNothing);
-        expect(
-          find.text('Rechteckfläche'),
-          findsNothing,
-        ); // Im Titel steht F1 · Rechteckfläche
         expect(find.text('F1 · Rechteckfläche'), findsOneWidget);
         expect(
           find.text('Fläche: 4,00 m² · Umfang: 8,08 m · 1,74 × 2,30 m'),
           findsOneWidget,
         );
         expect(find.text('Rechteck'), findsOneWidget); // Typ-Badge
-
-        // Buttons Löschen und Fertig vorhanden
         expect(find.text('Löschen'), findsOneWidget);
         expect(find.text('Fertig'), findsOneWidget);
-
-        // Keine Textfelder / Dialoge
         expect(find.byType(TextField), findsNothing);
-      },
-    );
 
-    testWidgets(
-      'Zustand 4: clicking [ Löschen ] removes entity, clears selection and returns to tool view',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        const rect = DrawingEntity.rectangle(
-          id: 'R1',
-          p1: Offset(0.2, 0.2),
-          p2: Offset(0.5, 0.5),
-          color: Color(0xFF10B981),
-        );
-
-        container
-            .read(workspaceControllerProvider.notifier)
-            .state = WorkspaceState(
-          loadedImage: createMockImage(),
-          entities: [rect],
-          selectedEntityId: 'R1',
-        );
-
-        await tester.pumpWidget(buildTestWidget(container: container));
-        await tester.pumpAndSettle();
-
-        expect(find.text('Löschen'), findsOneWidget);
-        await tester.tap(find.text('Löschen'));
-        await tester.pumpAndSettle();
-
-        final updatedState = container.read(workspaceControllerProvider);
-        expect(updatedState.entities, isEmpty);
-        expect(updatedState.selectedEntityId, isNull);
-
-        // Zurückgekehrt in Zustand 1 (Werkzeuge wieder sichtbar)
-        expect(find.text('Strecke'), findsOneWidget);
-        expect(find.text('Löschen'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'Zustand 4: clicking [ Fertig ] clears selection and returns to tool selection in Zustand 3',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        const rect = DrawingEntity.rectangle(
-          id: 'R1',
-          p1: Offset(0.2, 0.2),
-          p2: Offset(0.5, 0.5),
-          color: Color(0xFF10B981),
-        );
-
-        container
-            .read(workspaceControllerProvider.notifier)
-            .state = WorkspaceState(
-          loadedImage: createMockImage(),
-          entities: [rect],
-          selectedEntityId: 'R1',
-        );
-
-        await tester.pumpWidget(buildTestWidget(container: container));
-        await tester.pumpAndSettle();
-
-        expect(find.text('Fertig'), findsOneWidget);
+        // 1. Tap Fertig -> deselects entity, returns to tool view in Zustand 3
         await tester.tap(find.text('Fertig'));
         await tester.pumpAndSettle();
-
-        final updatedState = container.read(workspaceControllerProvider);
-        expect(updatedState.selectedEntityId, isNull);
-        expect(updatedState.entities.length, 1);
-
-        // Zurückgekehrt in Zustand 3
+        expect(
+          container.read(workspaceControllerProvider).selectedEntityId,
+          isNull,
+        );
         expect(find.text('Strecke'), findsOneWidget);
         expect(find.text('Fertig'), findsNothing);
+
+        // Reselect R1
+        container.read(workspaceControllerProvider.notifier).state = container
+            .read(workspaceControllerProvider)
+            .copyWith(selectedEntityId: 'R1');
+        await tester.pumpAndSettle();
+        expect(find.text('Löschen'), findsOneWidget);
+
+        // 2. Tap Löschen -> removes entity, clears selection and returns to tool view
+        await tester.tap(find.text('Löschen'));
+        await tester.pumpAndSettle();
+        final finalState = container.read(workspaceControllerProvider);
+        expect(finalState.entities.where((e) => e.id == 'R1'), isEmpty);
+        expect(finalState.selectedEntityId, isNull);
+        expect(find.text('Strecke'), findsOneWidget);
+        expect(find.text('Löschen'), findsNothing);
       },
     );
 
@@ -666,42 +527,6 @@ void main() {
         expect(updatedState.selectedEntityId, 'R1');
         // Transforms into inspector
         expect(find.text('F1 · Rechteckfläche'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Option C: tool items use vertical layout with icon above text and display full labels',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(360, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: createMockImage());
-
-        await tester.pumpWidget(buildTestWidget(container: container));
-        await tester.pumpAndSettle();
-
-        // Verify each tool item has a Column containing icon and text
-        for (final label in [
-          'Strecke',
-          'Rechteck',
-          'Polygon',
-          'Winkel',
-          'Edit',
-        ]) {
-          final textFinder = find.text(label);
-          expect(textFinder, findsOneWidget);
-
-          final columnFinder = find.ancestor(
-            of: textFinder,
-            matching: find.byType(Column),
-          );
-          expect(columnFinder, findsWidgets);
-        }
       },
     );
   });

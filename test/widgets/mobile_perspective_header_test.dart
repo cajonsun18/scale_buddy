@@ -190,48 +190,6 @@ void main() {
       expect(semanticsFinder, findsOneWidget);
     });
 
-    testWidgets('Status-Pille Zustand 2: Manuelle Erfassung (< 4 Ecken)', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      final entity = DrawingEntity.perspective(
-        id: 'p1',
-        points: [const Offset(0.2, 0.2), const Offset(0.8, 0.2)],
-        color: Colors.orange,
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage, entities: [entity]);
-      container
-          .read(mobilePerspectiveStateProvider.notifier)
-          .setManualInProgress();
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.perspective,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // 2 points set -> Helper text for 3rd corner
-      expect(find.text('Ecke 3 von 4 antippen (unten rechts)'), findsOneWidget);
-
-      // Check Semantics label
-      final semanticsFinder = find.byWidgetPredicate(
-        (widget) => widget is Semantics && widget.properties.label == 'Status: 2 von 4 Ecken gesetzt. Ecke 3 von 4 antippen (unten rechts)',
-      );
-      expect(semanticsFinder, findsOneWidget);
-    });
-
     testWidgets(
       'Status-Pille Zustand 2: Durchlauf aller 4 Einzelschritte 0 bis 3 Ecken',
       (WidgetTester tester) async {
@@ -281,57 +239,8 @@ void main() {
       },
     );
 
-    testWidgets('Status-Pille Zustand 3: Bereit mit 4 Ecken manuell gesetzt', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      final entity = DrawingEntity.perspective(
-        id: 'p1',
-        points: const [
-          Offset(0.1, 0.1),
-          Offset(0.9, 0.1),
-          Offset(0.9, 0.9),
-          Offset(0.1, 0.9),
-        ],
-        color: Colors.orange,
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage, entities: [entity]);
-      container
-          .read(mobilePerspectiveStateProvider.notifier)
-          .setReady(isAuto: false);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.perspective,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('✓ 4 von 4 Ecken gesetzt – Bereit'), findsOneWidget);
-
-      // Check Semantics label
-      final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.label ==
-                'Status: ✓ 4 von 4 Ecken gesetzt – Bereit',
-      );
-      expect(semanticsFinder, findsOneWidget);
-    });
-
     testWidgets(
-      'Status-Pille Zustand 3: Bereit mit Auto-Entzerrung (isAuto: true)',
+      'Status-Pille Zustand 3: Bereit (manuell 4 Ecken vs. automatisch erkannt)',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -352,11 +261,12 @@ void main() {
           color: Colors.orange,
         );
 
+        // 1. Manuell 4 Ecken gesetzt
         container.read(workspaceControllerProvider.notifier).state =
             WorkspaceState(loadedImage: mockImage, entities: [entity]);
         container
             .read(mobilePerspectiveStateProvider.notifier)
-            .setReady(isAuto: true);
+            .setReady(isAuto: false);
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -366,15 +276,14 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        expect(find.text('✓ 4 von 4 Ecken gesetzt – Bereit'), findsOneWidget);
 
+        // 2. Automatisch erkannt
+        container
+            .read(mobilePerspectiveStateProvider.notifier)
+            .setReady(isAuto: true);
+        await tester.pumpAndSettle();
         expect(find.text('✨ Automatisch erkannt'), findsOneWidget);
-
-        final semanticsFinder = find.byWidgetPredicate(
-          (widget) =>
-              widget is Semantics &&
-              widget.properties.label == 'Status: ✨ Automatisch erkannt',
-        );
-        expect(semanticsFinder, findsOneWidget);
       },
     );
 

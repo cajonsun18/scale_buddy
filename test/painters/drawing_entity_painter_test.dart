@@ -8,22 +8,18 @@ import 'dart:ui' as ui;
 
 void main() {
   group('Entity Painters', () {
-    test('CalibrationPainter visibility', () {
-      const painter = CalibrationPainter();
-      expect(painter.isVisibleInStep(WorkflowStepType.calibrate), isTrue);
-      expect(painter.isVisibleInStep(WorkflowStepType.measure), isFalse);
-    });
+    test('painters report correct visibility per workflow step', () {
+      const calibPainter = CalibrationPainter();
+      expect(calibPainter.isVisibleInStep(WorkflowStepType.calibrate), isTrue);
+      expect(calibPainter.isVisibleInStep(WorkflowStepType.measure), isFalse);
 
-    test('LinePainter visibility', () {
-      const painter = LinePainter();
-      expect(painter.isVisibleInStep(WorkflowStepType.measure), isTrue);
-      expect(painter.isVisibleInStep(WorkflowStepType.export), isTrue);
-      expect(painter.isVisibleInStep(WorkflowStepType.calibrate), isFalse);
-    });
+      const linePainter = LinePainter();
+      expect(linePainter.isVisibleInStep(WorkflowStepType.measure), isTrue);
+      expect(linePainter.isVisibleInStep(WorkflowStepType.export), isTrue);
+      expect(linePainter.isVisibleInStep(WorkflowStepType.calibrate), isFalse);
 
-    test('PolygonPainter visibility', () {
-      const painter = PolygonPainter();
-      expect(painter.isVisibleInStep(WorkflowStepType.measure), isTrue);
+      const polyPainter = PolygonPainter();
+      expect(polyPainter.isVisibleInStep(WorkflowStepType.measure), isTrue);
     });
 
     test('EntityPainterDispatcher does not throw when painting', () {
@@ -91,12 +87,13 @@ void main() {
       expect(painter.isVisibleInStep(WorkflowStepType.measure), isFalse);
     });
 
-    test('CalibrationPainter paints mobile mode with 1 point', () {
+    test('CalibrationPainter paints across mobile states and desktop mode without throwing', () {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      final size = const Size(400, 800);
+      const mobileSize = Size(400, 800);
+      const desktopSize = Size(1000, 800);
 
-      final context = PaintContext(
+      final mobileContext = PaintContext(
         activeStep: WorkflowStepType.calibrate,
         primaryColor: const Color(0xFF38BDF8),
         successColor: const Color(0xFF10B981),
@@ -104,103 +101,56 @@ void main() {
         isMobile: true,
       );
 
-      const calib = DrawingEntity.calibration(
+      const painter = CalibrationPainter();
+
+      // 1. Mobile with 1 point
+      const calib1 = DrawingEntity.calibration(
         id: 'calib_1',
         p1: Offset(0.3, 0.4),
       ) as CalibrationEntity;
-
-      const painter = CalibrationPainter();
       expect(
-        () => painter.paint(canvas, size, calib, context),
+        () => painter.paint(canvas, mobileSize, calib1, mobileContext),
         returnsNormally,
       );
-    });
 
-    test(
-      'CalibrationPainter paints mobile mode with 2 points, T-ends and badge',
-      () {
-        final recorder = ui.PictureRecorder();
-        final canvas = Canvas(recorder);
-        final size = const Size(400, 800);
+      // 2. Mobile with 2 points & unconfirmed
+      const calib2 = DrawingEntity.calibration(
+        id: 'calib_1',
+        p1: Offset(0.3, 0.2),
+        p2: Offset(0.3, 0.7),
+        enteredDistance: 2.10,
+        selectedUnit: 'm',
+      ) as CalibrationEntity;
+      expect(
+        () => painter.paint(canvas, mobileSize, calib2, mobileContext),
+        returnsNormally,
+      );
 
-        final context = PaintContext(
-          activeStep: WorkflowStepType.calibrate,
-          primaryColor: const Color(0xFF38BDF8),
-          successColor: const Color(0xFF10B981),
-          pointColor: Colors.white,
-          isMobile: true,
-        );
+      // 3. Mobile confirmed state with checkmark & custom label offset
+      const calibConfirmed = DrawingEntity.calibration(
+        id: 'calib_1',
+        p1: Offset(0.3, 0.2),
+        p2: Offset(0.3, 0.7),
+        enteredDistance: 2.10,
+        selectedUnit: 'm',
+        isConfirmed: true,
+        customLabelOffset: Offset(0.1, 0.1),
+      ) as CalibrationEntity;
+      expect(
+        () => painter.paint(canvas, mobileSize, calibConfirmed, mobileContext),
+        returnsNormally,
+      );
 
-        const calib = DrawingEntity.calibration(
-          id: 'calib_1',
-          p1: Offset(0.3, 0.2),
-          p2: Offset(0.3, 0.7),
-          enteredDistance: 2.10,
-          selectedUnit: 'm',
-        ) as CalibrationEntity;
-
-        const painter = CalibrationPainter();
-        expect(
-          () => painter.paint(canvas, size, calib, context),
-          returnsNormally,
-        );
-      },
-    );
-
-    test(
-      'CalibrationPainter paints mobile mode confirmed state with checkmark',
-      () {
-        final recorder = ui.PictureRecorder();
-        final canvas = Canvas(recorder);
-        final size = const Size(400, 800);
-
-        final context = PaintContext(
-          activeStep: WorkflowStepType.calibrate,
-          primaryColor: const Color(0xFF38BDF8),
-          successColor: const Color(0xFF10B981),
-          pointColor: Colors.white,
-          isMobile: true,
-        );
-
-        const calib = DrawingEntity.calibration(
-          id: 'calib_1',
-          p1: Offset(0.3, 0.2),
-          p2: Offset(0.3, 0.7),
-          enteredDistance: 2.10,
-          selectedUnit: 'm',
-          isConfirmed: true,
-        ) as CalibrationEntity;
-
-        const painter = CalibrationPainter();
-        expect(
-          () => painter.paint(canvas, size, calib, context),
-          returnsNormally,
-        );
-      },
-    );
-
-    test('CalibrationPainter paints desktop mode without throwing', () {
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      final size = const Size(1000, 800);
-
-      final context = PaintContext(
+      // 4. Desktop mode
+      final desktopContext = PaintContext(
         activeStep: WorkflowStepType.calibrate,
         primaryColor: const Color(0xFF38BDF8),
         successColor: const Color(0xFF10B981),
         pointColor: Colors.white,
         isMobile: false,
       );
-
-      const calib = DrawingEntity.calibration(
-        id: 'calib_1',
-        p1: Offset(0.3, 0.2),
-        p2: Offset(0.3, 0.7),
-      ) as CalibrationEntity;
-
-      const painter = CalibrationPainter();
       expect(
-        () => painter.paint(canvas, size, calib, context),
+        () => painter.paint(canvas, desktopSize, calib2, desktopContext),
         returnsNormally,
       );
     });

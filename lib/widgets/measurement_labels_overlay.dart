@@ -22,38 +22,27 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
     final isMobile = context.isMobile;
 
     void handleTap(String id) {
-      Focus.of(context).requestFocus();
+      Focus.maybeOf(context)?.requestFocus();
       controller.selectEntity(id);
       if (isMobile) {
         ref.read(activeToolProvider.notifier).setTool(const SelectTool());
       }
     }
 
-    void handlePanStart(DragStartDetails details, String id) {
-      Focus.of(context).requestFocus();
+    void handlePillPanStart(DragStartDetails details, String id) {
+      Focus.maybeOf(context)?.requestFocus();
       controller.selectEntity(id);
-    }
-
-    void handlePanUpdate(DragUpdateDetails details) {
-      final activeTool = ref.read(activeToolProvider);
-      if (activeTool is SelectTool) {
-        final renderBox = context.findRenderObject() as RenderBox;
-        final newDetails = DragUpdateDetails(
-          sourceTimeStamp: details.sourceTimeStamp,
-          delta: details.delta,
-          primaryDelta: details.primaryDelta,
-          globalPosition: details.globalPosition,
-        );
-        controller.handlePanUpdate(newDetails, renderBox.size);
+      if (isMobile) {
+        ref.read(activeToolProvider.notifier).setTool(const SelectTool());
       }
     }
 
-    void handlePanEnd(DragEndDetails details) {
-      final activeTool = ref.read(activeToolProvider);
-      if (activeTool is SelectTool) {
-        final renderBox = context.findRenderObject() as RenderBox;
-        controller.handlePanEnd(details, renderBox.size);
-      }
+    void handlePillPanUpdate(DragUpdateDetails details, String id) {
+      controller.moveEntityLabel(id, details.delta, size);
+    }
+
+    void handlePillDoubleTap(String id) {
+      controller.resetEntityLabelOffset(id);
     }
 
     final calib = state.entities.whereType<CalibrationEntity>().firstOrNull;
@@ -66,10 +55,147 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
     );
 
     final widgets = <Widget>[];
+    final leaderLines = <MeasurementLeaderLine>[];
     final lineEntities = state.entities.whereType<LineEntity>().toList();
     final rectEntities = state.entities.whereType<RectangleEntity>().toList();
     final polyEntities = state.entities.whereType<PolygonEntity>().toList();
     final angleEntities = state.entities.whereType<AngleEntity>().toList();
+
+    final selectedEntity = state.selectedEntityId != null
+        ? state.entities
+              .where((e) => e.id == state.selectedEntityId)
+              .firstOrNull
+        : null;
+
+    final handleRadius = isMobile
+        ? MeasurementCalculator.mobileHandleProtectionRadius
+        : MeasurementCalculator.desktopHandleProtectionRadius;
+    final selectedHandles = selectedEntity != null
+        ? MeasurementCalculator.getEntityHandlePoints(selectedEntity, size)
+        : <Offset>[];
+    final selectedPillRects = <Rect>[];
+
+    if (selectedEntity != null && selectedEntity is! PerspectiveEntity) {
+      final selPos = MeasurementCalculator.getMeasurementLabelPosition(
+        selectedEntity,
+        size,
+      );
+      if (selPos != null) {
+        String? selText;
+        if (selectedEntity is CalibrationEntity) {
+          selText = MeasurementCalculator.getMeasurementText(
+            selectedEntity,
+            size,
+            pixelsPerMeter,
+            useComma: isMobile,
+          );
+        } else {
+          int? selIdx;
+          if (selectedEntity is LineEntity) {
+            selIdx = lineEntities.indexOf(selectedEntity) + 1;
+          } else if (selectedEntity is RectangleEntity) {
+            selIdx = rectEntities.indexOf(selectedEntity) + 1;
+          } else if (selectedEntity is PolygonEntity) {
+            selIdx = polyEntities.indexOf(selectedEntity) + 1;
+          } else if (selectedEntity is AngleEntity) {
+            selIdx = angleEntities.indexOf(selectedEntity) + 1;
+          }
+
+          selText = MeasurementCalculator.getMeasurementText(
+            selectedEntity,
+            size,
+            pixelsPerMeter,
+            index: selIdx,
+            useComma: isMobile,
+          );
+        }
+
+        if (selText != null) {
+          final selPillSize = MeasurementCalculator.estimatePillSize(
+            selText,
+            isSelected: true,
+            isMobile: isMobile,
+            hasDelete: selectedEntity is! CalibrationEntity,
+          );
+          selectedPillRects.add(
+            Rect.fromCenter(
+              center: selPos,
+              width: selPillSize.width,
+              height: selPillSize.height,
+            ),
+          );
+        }
+      }
+
+      if (selectedEntity is RectangleEntity) {
+        final selWidthText = isMobile
+            ? MeasurementCalculator.getMobileRectangleWidthBadgeText(
+                selectedEntity,
+                size,
+                pixelsPerMeter,
+                useComma: true,
+              )
+            : MeasurementCalculator.getRectangleWidthText(
+                selectedEntity,
+                size,
+                pixelsPerMeter,
+              );
+        final widthPlacement =
+            MeasurementCalculator.getRectangleWidthBadgePlacement(
+              selectedEntity,
+              size,
+            );
+        if (selWidthText != null && widthPlacement != null) {
+          final widthSize = MeasurementCalculator.estimatePillSize(
+            selWidthText,
+            isSelected: true,
+            isMobile: isMobile,
+            hasDelete: false,
+          );
+          selectedPillRects.add(
+            Rect.fromLTWH(
+              widthPlacement.position.dx +
+                  widthPlacement.widgetTranslation.dx * widthSize.width,
+              widthPlacement.position.dy +
+                  widthPlacement.widgetTranslation.dy * widthSize.height,
+              widthSize.width,
+              widthSize.height,
+            ),
+          );
+        }
+
+        if (!isMobile) {
+          final selHeightText = MeasurementCalculator.getRectangleHeightText(
+            selectedEntity,
+            size,
+            pixelsPerMeter,
+          );
+          final heightPlacement =
+              MeasurementCalculator.getRectangleHeightBadgePlacement(
+                selectedEntity,
+                size,
+              );
+          if (selHeightText != null && heightPlacement != null) {
+            final heightSize = MeasurementCalculator.estimatePillSize(
+              selHeightText,
+              isSelected: true,
+              isMobile: isMobile,
+              hasDelete: false,
+            );
+            selectedPillRects.add(
+              Rect.fromLTWH(
+                heightPlacement.position.dx +
+                    heightPlacement.widgetTranslation.dx * heightSize.width,
+                heightPlacement.position.dy +
+                    heightPlacement.widgetTranslation.dy * heightSize.height,
+                heightSize.width,
+                heightSize.height,
+              ),
+            );
+          }
+        }
+      }
+    }
 
     for (final entity in state.entities) {
       if (entity is CalibrationEntity || entity is PerspectiveEntity) continue;
@@ -229,10 +355,106 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
         size,
       );
 
-      final isDimmed =
-          isMobile && state.selectedEntityId != null && !isSelected;
+      final pillSize = MeasurementCalculator.estimatePillSize(
+        text ?? '',
+        isSelected: isSelected,
+        isMobile: isMobile,
+        hasDelete: isSelected,
+      );
+      final pillRect = position != null
+          ? Rect.fromCenter(
+              center: position,
+              width: pillSize.width,
+              height: pillSize.height,
+            )
+          : null;
+
+      final isGhosted =
+          !isSelected &&
+          selectedEntity != null &&
+          pillRect != null &&
+          MeasurementCalculator.checkPillCollision(
+            foreignPillRect: pillRect,
+            selectedHandles: selectedHandles,
+            selectedPillRects: selectedPillRects,
+            handleRadius: handleRadius,
+          );
 
       if (text != null && position != null) {
+        if (entity is LineEntity && entity.p1 != null && entity.p2 != null) {
+          final p1Pix = entity.p1!.toPixel(size);
+          final p2Pix = entity.p2!.toPixel(size);
+          final midpoint = Offset(
+            (p1Pix.dx + p2Pix.dx) / 2,
+            (p1Pix.dy + p2Pix.dy) / 2,
+          );
+          if ((position - midpoint).distance > 1.0) {
+            leaderLines.add(
+              MeasurementLeaderLine(
+                start: midpoint,
+                end: position,
+                color: borderColor ?? MeasureToolColors.distance,
+                opacity: isGhosted
+                    ? MeasurementCalculator.ghostedPillOpacity
+                    : 1.0,
+              ),
+            );
+          }
+        } else if (entity is RectangleEntity &&
+            entity.p1 != null &&
+            entity.p2 != null) {
+          final p1Pix = entity.p1!.toPixel(size);
+          final p2Pix = entity.p2!.toPixel(size);
+          final center = Offset(
+            (p1Pix.dx + p2Pix.dx) / 2,
+            (p1Pix.dy + p2Pix.dy) / 2,
+          );
+          if ((position - center).distance > 1.0) {
+            leaderLines.add(
+              MeasurementLeaderLine(
+                start: center,
+                end: position,
+                color: borderColor ?? MeasureToolColors.rectangle,
+                opacity: isGhosted
+                    ? MeasurementCalculator.ghostedPillOpacity
+                    : 1.0,
+              ),
+            );
+          }
+        } else if (entity is PolygonEntity &&
+            entity.points.length >= 3 &&
+            entity.isClosed) {
+          final centroid = GeometryUtils.calculatePolygonCentroid(entity.points)
+              .toPixel(size);
+          if ((position - centroid).distance > 1.0) {
+            leaderLines.add(
+              MeasurementLeaderLine(
+                start: centroid,
+                end: position,
+                color: borderColor ?? MeasureToolColors.polygon,
+                opacity: isGhosted
+                    ? MeasurementCalculator.ghostedPillOpacity
+                    : 1.0,
+              ),
+            );
+          }
+        } else if (entity is AngleEntity && entity.p1 != null) {
+          final apexPix = entity.p1!.toPixel(size);
+          if (entity.customLabelOffset != null &&
+              (position - apexPix).distance > 1.0) {
+            leaderLines.add(
+              MeasurementLeaderLine(
+                start: apexPix,
+                end: position,
+                color: borderColor ?? MeasureToolColors.angle,
+                opacity: isGhosted
+                    ? MeasurementCalculator.ghostedPillOpacity
+                    : 1.0,
+              ),
+            );
+          }
+        }
+
         Widget labelWidget = MeasurementLabelWidget(
           text: text,
           isSelected: isSelected,
@@ -240,14 +462,16 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
           borderColor: borderColor,
           textColor: textColor,
           onTap: () => handleTap(entity.id),
-          onPanStart: (details) => handlePanStart(details, entity.id),
-          onPanUpdate: handlePanUpdate,
-          onPanEnd: handlePanEnd,
+          onDoubleTap: () => handlePillDoubleTap(entity.id),
+          onPanStart: (details) => handlePillPanStart(details, entity.id),
+          onPanUpdate: (details) => handlePillPanUpdate(details, entity.id),
           onDelete: () => controller.removeEntity(entity.id),
         );
-        if (isDimmed) {
-          labelWidget = Opacity(opacity: 0.35, child: labelWidget);
-        }
+        labelWidget = AnimatedOpacity(
+          opacity: isGhosted ? MeasurementCalculator.ghostedPillOpacity : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: IgnorePointer(ignoring: isGhosted, child: labelWidget),
+        );
         widgets.add(
           Positioned(
             left: position.dx,
@@ -260,6 +484,7 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
         );
       }
 
+      // Rectangle side lengths (width & height)
       // Rectangle side lengths (width & height)
       if (entity is RectangleEntity) {
         final widthText = isMobile
@@ -274,11 +499,33 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
                 size,
                 pixelsPerMeter,
               );
-        final widthPos = MeasurementCalculator.getRectangleWidthLabelPosition(
-          entity,
-          size,
-        );
-        if (widthText != null && widthPos != null) {
+        final widthPlacement =
+            MeasurementCalculator.getRectangleWidthBadgePlacement(entity, size);
+        if (widthText != null && widthPlacement != null) {
+          final widthSize = MeasurementCalculator.estimatePillSize(
+            widthText,
+            isSelected: isSelected,
+            isMobile: isMobile,
+            hasDelete: false,
+          );
+          final widthRect = Rect.fromLTWH(
+            widthPlacement.position.dx +
+                widthPlacement.widgetTranslation.dx * widthSize.width,
+            widthPlacement.position.dy +
+                widthPlacement.widgetTranslation.dy * widthSize.height,
+            widthSize.width,
+            widthSize.height,
+          );
+          final isWidthGhosted =
+              !isSelected &&
+              selectedEntity != null &&
+              MeasurementCalculator.checkPillCollision(
+                foreignPillRect: widthRect,
+                selectedHandles: selectedHandles,
+                selectedPillRects: selectedPillRects,
+                handleRadius: handleRadius,
+              );
+
           Widget widthWidget = MeasurementLabelWidget(
             text: widthText,
             isSelected: isSelected,
@@ -288,19 +535,20 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
                 ? MeasureToolColors.rectangle
                 : const Color(0xFF047857),
             onTap: () => handleTap(entity.id),
-            onPanStart: (details) => handlePanStart(details, entity.id),
-            onPanUpdate: handlePanUpdate,
-            onPanEnd: handlePanEnd,
           );
-          if (isDimmed) {
-            widthWidget = Opacity(opacity: 0.35, child: widthWidget);
-          }
+          widthWidget = AnimatedOpacity(
+            opacity: isWidthGhosted
+                ? MeasurementCalculator.ghostedPillOpacity
+                : 1.0,
+            duration: const Duration(milliseconds: 150),
+            child: IgnorePointer(ignoring: isWidthGhosted, child: widthWidget),
+          );
           widgets.add(
             Positioned(
-              left: widthPos.dx,
-              top: widthPos.dy,
+              left: widthPlacement.position.dx,
+              top: widthPlacement.position.dy,
               child: FractionalTranslation(
-                translation: const Offset(-0.5, -1.2),
+                translation: widthPlacement.widgetTranslation,
                 child: widthWidget,
               ),
             ),
@@ -313,28 +561,60 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
             size,
             pixelsPerMeter,
           );
-          final heightPos =
-              MeasurementCalculator.getRectangleHeightLabelPosition(
+          final heightPlacement =
+              MeasurementCalculator.getRectangleHeightBadgePlacement(
                 entity,
                 size,
               );
-          if (heightText != null && heightPos != null) {
+          if (heightText != null && heightPlacement != null) {
+            final heightSize = MeasurementCalculator.estimatePillSize(
+              heightText,
+              isSelected: isSelected,
+              isMobile: isMobile,
+              hasDelete: false,
+            );
+            final heightRect = Rect.fromLTWH(
+              heightPlacement.position.dx +
+                  heightPlacement.widgetTranslation.dx * heightSize.width,
+              heightPlacement.position.dy +
+                  heightPlacement.widgetTranslation.dy * heightSize.height,
+              heightSize.width,
+              heightSize.height,
+            );
+            final isHeightGhosted =
+                !isSelected &&
+                selectedEntity != null &&
+                MeasurementCalculator.checkPillCollision(
+                  foreignPillRect: heightRect,
+                  selectedHandles: selectedHandles,
+                  selectedPillRects: selectedPillRects,
+                  handleRadius: handleRadius,
+                );
+
+            Widget heightWidget = MeasurementLabelWidget(
+              text: heightText,
+              isSelected: isSelected,
+              borderColor: MeasureToolColors.rectangle,
+              textColor: const Color(0xFF047857),
+              onTap: () => handleTap(entity.id),
+            );
+            heightWidget = AnimatedOpacity(
+              opacity: isHeightGhosted
+                  ? MeasurementCalculator.ghostedPillOpacity
+                  : 1.0,
+              duration: const Duration(milliseconds: 150),
+              child: IgnorePointer(
+                ignoring: isHeightGhosted,
+                child: heightWidget,
+              ),
+            );
             widgets.add(
               Positioned(
-                left: heightPos.dx,
-                top: heightPos.dy,
+                left: heightPlacement.position.dx,
+                top: heightPlacement.position.dy,
                 child: FractionalTranslation(
-                  translation: const Offset(-1.2, -0.5),
-                  child: MeasurementLabelWidget(
-                    text: heightText,
-                    isSelected: isSelected,
-                    borderColor: MeasureToolColors.rectangle,
-                    textColor: const Color(0xFF047857),
-                    onTap: () => handleTap(entity.id),
-                    onPanStart: (details) => handlePanStart(details, entity.id),
-                    onPanUpdate: handlePanUpdate,
-                    onPanEnd: handlePanEnd,
-                  ),
+                  translation: heightPlacement.widgetTranslation,
+                  child: heightWidget,
                 ),
               ),
             );
@@ -343,6 +623,67 @@ class MeasurementLabelsOverlay extends ConsumerWidget {
       }
     }
 
-    return Stack(clipBehavior: Clip.none, children: widgets);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        if (leaderLines.isNotEmpty)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                size: size,
+                painter: MeasurementLeaderLinesPainter(lines: leaderLines),
+              ),
+            ),
+          ),
+        ...widgets,
+      ],
+    );
+  }
+}
+
+class MeasurementLeaderLine {
+  final Offset start;
+  final Offset end;
+  final Color color;
+  final double opacity;
+
+  const MeasurementLeaderLine({
+    required this.start,
+    required this.end,
+    required this.color,
+    this.opacity = 1.0,
+  });
+}
+
+class MeasurementLeaderLinesPainter extends CustomPainter {
+  final List<MeasurementLeaderLine> lines;
+
+  MeasurementLeaderLinesPainter({required this.lines});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final line in lines) {
+      GeometryUtils.drawDashedLeaderLine(
+        canvas,
+        line.start,
+        line.end,
+        line.color,
+        opacity: line.opacity * 0.75,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant MeasurementLeaderLinesPainter oldDelegate) {
+    if (oldDelegate.lines.length != lines.length) return true;
+    for (int i = 0; i < lines.length; i++) {
+      if (oldDelegate.lines[i].start != lines[i].start ||
+          oldDelegate.lines[i].end != lines[i].end ||
+          oldDelegate.lines[i].color != lines[i].color ||
+          oldDelegate.lines[i].opacity != lines[i].opacity) {
+        return true;
+      }
+    }
+    return false;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scale_buddy/utils/geometry_utils.dart';
@@ -175,6 +177,32 @@ void main() {
 
       final list = [const Offset(0.2, 0.5)];
       expect(list.toPixels(size), [const Offset(100, 200)]);
+    });
+
+    test('drawDashedLeaderLine draws line on Canvas without crashing', () {
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+
+      // Distance <= 1.0 does not draw
+      GeometryUtils.drawDashedLeaderLine(
+        canvas,
+        const Offset(10, 10),
+        const Offset(10.5, 10.5),
+        Colors.blue,
+      );
+
+      // Distance > 1.0 draws leader line
+      GeometryUtils.drawDashedLeaderLine(
+        canvas,
+        const Offset(10, 10),
+        const Offset(100, 100),
+        Colors.red,
+        opacity: 0.8,
+        scale: 1.5,
+      );
+
+      final picture = recorder.endRecording();
+      expect(picture, isNotNull);
     });
   });
 }

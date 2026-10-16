@@ -6,6 +6,7 @@ import '../models/entities/drawing_entity.dart';
 import '../models/workflow_step.dart';
 import '../utils/calibration_input_utils.dart';
 import '../utils/geometry_utils.dart';
+import '../utils/measurement_calculator.dart';
 
 class PaintContext {
   final WorkflowStepType activeStep;
@@ -299,8 +300,14 @@ class CalibrationPainter extends DrawingEntityPainter<CalibrationEntity> {
     final badgeHeight = textPainter.height + (badgePaddingV * 2);
 
     final mid = Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
+    final badgeCenter =
+        MeasurementCalculator.getMeasurementLabelPosition(entity, size) ?? mid;
+
+    // Gestrichelte Hinweislinie (Leader Line), wenn Badge vom Linienmittelpunkt versetzt ist
+    GeometryUtils.drawDashedLeaderLine(canvas, mid, badgeCenter, strokeColor);
+
     final badgeRect = Rect.fromCenter(
-      center: mid,
+      center: badgeCenter,
       width: badgeWidth,
       height: badgeHeight,
     );
@@ -1288,26 +1295,14 @@ class PerspectivePainter extends DrawingEntityPainter<PerspectiveEntity> {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
-    final dx = p2.dx - p1.dx;
-    final dy = p2.dy - p1.dy;
-    final distance = sqrt(dx * dx + dy * dy);
-    if (distance == 0) return;
-
-    const dashWidth = 6.0;
-    const dashSpace = 4.0;
-    double drawn = 0.0;
-
-    while (drawn < distance) {
-      final startFraction = drawn / distance;
-      final endFraction = min((drawn + dashWidth) / distance, 1.0);
-
-      canvas.drawLine(
-        Offset(p1.dx + dx * startFraction, p1.dy + dy * startFraction),
-        Offset(p1.dx + dx * endFraction, p1.dy + dy * endFraction),
-        paint,
-      );
-      drawn += dashWidth + dashSpace;
-    }
+    GeometryUtils.drawDashedLine(
+      canvas,
+      p1,
+      p2,
+      paint,
+      dashWidth: 6.0,
+      dashSpace: 4.0,
+    );
   }
 
   void _drawCornerLabel(

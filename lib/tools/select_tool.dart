@@ -146,41 +146,44 @@ class SelectTool extends WorkspaceTool {
     DragUpdateDetails details,
     Size size,
   ) {
+    if (size.width == 0 || size.height == 0) return state;
+
     final selectedId = state.selectedEntityId;
     if (selectedId == null) return state;
-
-    final delta = Offset(
-      details.delta.dx / size.width,
-      details.delta.dy / size.height,
-    );
 
     final dragDetail = state.activeDragDetail;
     if (dragDetail is DragDetailEntityPoint &&
         dragDetail.entityId == selectedId) {
-      // Einzelnen Punkt verschieben
-      final pointIdx = (dragDetail).pointIndex;
+      // Einzelnen Punkt verschieben (absolut zentriert am Cursor / Finger)
+      final pointIdx = dragDetail.pointIndex;
+      final rawNormPoint = normalizePosition(details.localPosition, size);
+      final normPoint = Offset(
+        rawNormPoint.dx.clamp(0.0, 1.0),
+        rawNormPoint.dy.clamp(0.0, 1.0),
+      );
+
       return state.updateEntity(selectedId, (entity) {
         return entity.map(
           calibration: (e) => e,
           line: (e) => e.copyWith(
-            p1: pointIdx == 0 && e.p1 != null ? e.p1! + delta : e.p1,
-            p2: pointIdx == 1 && e.p2 != null ? e.p2! + delta : e.p2,
+            p1: pointIdx == 0 ? normPoint : e.p1,
+            p2: pointIdx == 1 ? normPoint : e.p2,
           ),
           rectangle: (e) {
             if (e.p1 == null || e.p2 == null) return e;
             if (pointIdx == 0) {
-              return e.copyWith(p1: e.p1! + delta);
+              return e.copyWith(p1: normPoint);
             } else if (pointIdx == 1) {
               return e.copyWith(
-                p1: Offset(e.p1!.dx, e.p1!.dy + delta.dy),
-                p2: Offset(e.p2!.dx + delta.dx, e.p2!.dy),
+                p1: Offset(e.p1!.dx, normPoint.dy),
+                p2: Offset(normPoint.dx, e.p2!.dy),
               );
             } else if (pointIdx == 2) {
-              return e.copyWith(p2: e.p2! + delta);
+              return e.copyWith(p2: normPoint);
             } else if (pointIdx == 3) {
               return e.copyWith(
-                p1: Offset(e.p1!.dx + delta.dx, e.p1!.dy),
-                p2: Offset(e.p2!.dx, e.p2!.dy + delta.dy),
+                p1: Offset(normPoint.dx, e.p1!.dy),
+                p2: Offset(e.p2!.dx, normPoint.dy),
               );
             }
             return e;
@@ -188,13 +191,13 @@ class SelectTool extends WorkspaceTool {
           polygon: (e) {
             final newPoints = List<Offset>.from(e.points);
             if (pointIdx >= 0 && pointIdx < newPoints.length) {
-              newPoints[pointIdx] += delta;
+              newPoints[pointIdx] = normPoint;
             }
             return e.copyWith(points: newPoints);
           },
           angle: (e) => e.copyWith(
-            p1: pointIdx == 0 && e.p1 != null ? e.p1! + delta : e.p1,
-            p2: pointIdx == 1 && e.p2 != null ? e.p2! + delta : e.p2,
+            p1: pointIdx == 0 ? normPoint : e.p1,
+            p2: pointIdx == 1 ? normPoint : e.p2,
           ),
           perspective: (e) => e,
         );
@@ -202,6 +205,11 @@ class SelectTool extends WorkspaceTool {
     }
 
     // Ganze Form verschieben
+    final delta = Offset(
+      details.delta.dx / size.width,
+      details.delta.dy / size.height,
+    );
+
     return state.updateEntity(selectedId, (entity) {
       return entity.map(
         calibration: (e) => e, // Calibration is not moved by SelectTool

@@ -16,6 +16,7 @@ sealed class DrawingEntity with _$DrawingEntity {
     @Default('m') String selectedUnit,
     @Default(false) bool isConfirmed,
     @Default(0.5) double labelPosition,
+    Offset? customLabelOffset,
   }) = CalibrationEntity;
 
   const factory DrawingEntity.line({
@@ -23,6 +24,7 @@ sealed class DrawingEntity with _$DrawingEntity {
     Offset? p1,
     Offset? p2,
     required Color color,
+    Offset? customLabelOffset,
   }) = LineEntity;
 
   const factory DrawingEntity.polygon({
@@ -30,6 +32,7 @@ sealed class DrawingEntity with _$DrawingEntity {
     required List<Offset> points,
     required Color color,
     @Default(false) bool isClosed,
+    Offset? customLabelOffset,
   }) = PolygonEntity;
 
   const factory DrawingEntity.rectangle({
@@ -37,6 +40,7 @@ sealed class DrawingEntity with _$DrawingEntity {
     Offset? p1,
     Offset? p2,
     required Color color,
+    Offset? customLabelOffset,
   }) = RectangleEntity;
 
   const factory DrawingEntity.angle({
@@ -44,12 +48,14 @@ sealed class DrawingEntity with _$DrawingEntity {
     Offset? p1,
     Offset? p2,
     required Color color,
+    Offset? customLabelOffset,
   }) = AngleEntity;
 
   const factory DrawingEntity.perspective({
     required String id,
     required List<Offset> points,
     required Color color,
+    Offset? customLabelOffset,
   }) = PerspectiveEntity;
 }
 
@@ -74,4 +80,14 @@ extension DrawingEntityStatus on DrawingEntity {
       this is RectangleEntity ||
       this is PolygonEntity ||
       this is AngleEntity;
+
+  /// Liefert das optionale relative Versatzfeld für die Mess-Pille.
+  Offset? get customLabelOffset => map(
+    calibration: (c) => c.customLabelOffset,
+    perspective: (p) => p.customLabelOffset,
+    line: (l) => l.customLabelOffset,
+    rectangle: (r) => r.customLabelOffset,
+    polygon: (p) => p.customLabelOffset,
+    angle: (a) => a.customLabelOffset,
+  );
 }

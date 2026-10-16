@@ -1,5 +1,6 @@
 import '../painters/drawing_entity_painter.dart';
 import '../utils/geometry_utils.dart';
+import '../utils/measurement_calculator.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import '../models/entities/drawing_entity.dart';
 import '../models/mobile_calibration_state.dart';
 import '../models/mobile_perspective_state.dart';
 import '../models/workflow_step.dart';
+import '../models/workspace_state.dart';
 import '../tools/calibration_tool.dart';
 import 'calibration_input_widget.dart';
 import 'measurement_labels_overlay.dart';
@@ -37,8 +39,6 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
     final state = ref.watch(workspaceControllerProvider);
     final info = state.loadedImage;
     if (info == null) return const SizedBox.shrink();
-
-    final isCalibrateStep = widget.activeStep == WorkflowStepType.calibrate;
 
     return Stack(
       children: [
@@ -82,18 +82,6 @@ class _WorkspaceImageViewState extends ConsumerState<WorkspaceImageView> {
             ),
           ),
         ),
-        if (isCalibrateStep)
-          const Positioned(
-            bottom: 40,
-            right: 40,
-            child: IgnorePointer(
-              child: SizedBox(
-                width: 150,
-                height: 150,
-                child: ClipOval(child: ColoredBox(color: Colors.transparent)),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -111,7 +99,6 @@ class _ImageWithPointsOverlay extends ConsumerStatefulWidget {
 
 class _ImageWithPointsOverlayState
     extends ConsumerState<_ImageWithPointsOverlay> {
-  double? _localLabelPosition;
   bool _showMagnifier = false;
   Offset? _magnifierPosition;
 
@@ -233,6 +220,7 @@ class _ImageWithPointsOverlayState
                             delta: details.delta,
                             primaryDelta: details.primaryDelta,
                             globalPosition: details.globalPosition,
+                            localPosition: localPos,
                           );
                           controller.handlePanUpdate(
                             newDetails,
@@ -286,58 +274,78 @@ class _ImageWithPointsOverlayState
               Positioned.fill(
                 child: Builder(
                   builder: (context) {
-                    final currentLabelPos =
-                        _localLabelPosition ?? calib.labelPosition;
-                    final pos = _calculateLabelOffset(
-                      calib.p1!,
-                      calib.p2!,
-                      currentLabelPos,
-                      size,
+                    final p1Pix = calib.p1!.toPixel(size);
+                    final p2Pix = calib.p2!.toPixel(size);
+                    final mid = Offset(
+                      (p1Pix.dx + p2Pix.dx) / 2,
+                      (p1Pix.dy + p2Pix.dy) / 2,
                     );
+                    final pos =
+                        MeasurementCalculator.getMeasurementLabelPosition(
+                          calib,
+                          size,
+                        ) ??
+                        mid;
+
+                    final isOffset = (pos - mid).distance > 1.0;
+
+                    final isGhosted = _isCalibrationCardGhosted(
+                      state: state,
+                      calib: calib,
+                      cardCenter: pos,
+                      size: size,
+                    );
+
+                    Widget cardWidget = CalibrationInputWidget(
+                      key: const ValueKey('calib_input_card'),
+                      isDraggable:
+                          widget.activeStep == WorkflowStepType.calibrate,
+                      onDragUpdate: (details) {
+                        controller.moveEntityLabel(
+                          calib.id,
+                          details.delta,
+                          size,
+                        );
+                      },
+                      onDoubleTap: () {
+                        controller.resetEntityLabelOffset(calib.id);
+                      },
+                    );
+
+                    if (isGhosted) {
+                      cardWidget = AnimatedOpacity(
+                        opacity: MeasurementCalculator.ghostedPillOpacity,
+                        duration: const Duration(milliseconds: 150),
+                        child: IgnorePointer(ignoring: true, child: cardWidget),
+                      );
+                    }
 
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
+                        if (isOffset)
+                          CustomPaint(
+                            painter: MeasurementLeaderLinesPainter(
+                              lines: [
+                                MeasurementLeaderLine(
+                                  start: mid,
+                                  end: pos,
+                                  color: calib.isConfirmed
+                                      ? AppColors.of(context).success
+                                      : Theme.of(context).colorScheme.primary,
+                                  opacity: isGhosted
+                                      ? MeasurementCalculator.ghostedPillOpacity
+                                      : 1.0,
+                                ),
+                              ],
+                            ),
+                          ),
                         Positioned(
                           left: pos.dx,
                           top: pos.dy,
                           child: FractionalTranslation(
                             translation: const Offset(-0.5, -0.5),
-                            child: CalibrationInputWidget(
-                              key: const ValueKey('calib_input_card'),
-                              isDraggable:
-                                  (widget.activeStep ==
-                                  WorkflowStepType.calibrate),
-                              onDragStart: () {
-                                setState(() {
-                                  _localLabelPosition = calib.labelPosition;
-                                });
-                              },
-                              onDragUpdate: (details) {
-                                _handleLabelDragLocal(details, calib, size);
-                              },
-                              onDragEnd: () {
-                                if (_localLabelPosition != null) {
-                                  final state = ref.read(
-                                    workspaceControllerProvider,
-                                  );
-                                  final currentCalib = state.entities
-                                      .whereType<CalibrationEntity>()
-                                      .firstOrNull;
-                                  if (currentCalib != null) {
-                                    controller.addOrUpdateEntity(
-                                      currentCalib.copyWith(
-                                        labelPosition: _localLabelPosition!
-                                            .clamp(0.15, 0.85),
-                                      ),
-                                    );
-                                  }
-                                  setState(() {
-                                    _localLabelPosition = null;
-                                  });
-                                }
-                              },
-                            ),
+                            child: cardWidget,
                           ),
                         ),
                       ],
@@ -401,7 +409,7 @@ class _ImageWithPointsOverlayState
             if (_showMagnifier && _magnifierPosition != null)
               Builder(
                 builder: (context) {
-                  const verticalOffset = 70.0;
+                  final verticalOffset = context.isMobile ? 70.0 : 0.0;
                   final magCenter = Offset(
                     _magnifierPosition!.dx,
                     _magnifierPosition!.dy - verticalOffset,
@@ -418,7 +426,7 @@ class _ImageWithPointsOverlayState
                           alignment: Alignment.center,
                           children: [
                             RawMagnifier(
-                              focalPointOffset: const Offset(0, verticalOffset),
+                              focalPointOffset: Offset(0, verticalOffset),
                               decoration: MagnifierDecoration(
                                 opacity: 1.0,
                                 shadows: [
@@ -464,7 +472,7 @@ class _ImageWithPointsOverlayState
     String? entityId,
     bool isCalibration = false,
   }) {
-    const handleSize = 48.0;
+    final handleSize = context.isMobile ? 48.0 : 20.0;
     final center = Offset(
       normPoint.dx * size.width,
       normPoint.dy * size.height,
@@ -543,7 +551,7 @@ class _ImageWithPointsOverlayState
               }
             }
           },
-          child: const SizedBox(width: handleSize, height: handleSize),
+          child: SizedBox(width: handleSize, height: handleSize),
         ),
       ),
     );
@@ -648,63 +656,40 @@ class _ImageWithPointsOverlayState
     return handles;
   }
 
-  Offset _calculateLabelOffset(Offset p1, Offset p2, double t, Size size) {
-    final p1Pix = p1.toPixel(size);
-    final p2Pix = p2.toPixel(size);
-    final lineVec = p2Pix - p1Pix;
-    final length = lineVec.distance;
-
-    double offsetX = 0;
-    double offsetY = 0;
-
-    if (length > 0) {
-      double nx = -lineVec.dy / length;
-      double ny = lineVec.dx / length;
-
-      final centerPix = Offset(size.width / 2, size.height / 2);
-      final midPix = Offset(
-        (p1Pix.dx + p2Pix.dx) / 2,
-        (p1Pix.dy + p2Pix.dy) / 2,
-      );
-      final toCenterPix = centerPix - midPix;
-
-      if ((nx * toCenterPix.dx + ny * toCenterPix.dy) < 0) {
-        nx = -nx;
-        ny = -ny;
-      }
-
-      const offsetDistance = 55.0;
-      offsetX = nx * offsetDistance;
-      offsetY = ny * offsetDistance;
+  bool _isCalibrationCardGhosted({
+    required WorkspaceState state,
+    required CalibrationEntity calib,
+    required Offset cardCenter,
+    required Size size,
+  }) {
+    final selectedId = state.selectedEntityId;
+    if (selectedId == null || selectedId == calib.id) {
+      return false;
     }
+    final selectedEntity = state.entities
+        .where((e) => e.id == selectedId)
+        .firstOrNull;
+    if (selectedEntity == null) return false;
 
-    return Offset(
-      p1Pix.dx + lineVec.dx * t + offsetX,
-      p1Pix.dy + lineVec.dy * t + offsetY,
+    final selectedHandles = MeasurementCalculator.getEntityHandlePoints(
+      selectedEntity,
+      size,
     );
-  }
+    if (selectedHandles.isEmpty) return false;
 
-  void _handleLabelDragLocal(
-    DragUpdateDetails details,
-    CalibrationEntity calib,
-    Size size,
-  ) {
-    final p1 = calib.p1!;
-    final p2 = calib.p2!;
-    final p1Pix = p1.toPixel(size);
-    final p2Pix = p2.toPixel(size);
-    final lineVec = p2Pix - p1Pix;
-    final length = lineVec.distance;
-
-    if (length == 0) return;
-
-    final dt =
-        (details.delta.dx * lineVec.dx + details.delta.dy * lineVec.dy) /
-        (length * length);
-
-    setState(() {
-      _localLabelPosition = (_localLabelPosition ?? calib.labelPosition) + dt;
-    });
+    final cardRect = Rect.fromCenter(
+      center: cardCenter,
+      width: CalibrationInputWidget.cardWidth,
+      height: CalibrationInputWidget.cardHeight,
+    );
+    return MeasurementCalculator.checkPillCollision(
+      foreignPillRect: cardRect,
+      selectedHandles: selectedHandles,
+      selectedPillRects: const [],
+      handleRadius: context.isMobile
+          ? MeasurementCalculator.mobileHandleProtectionRadius
+          : MeasurementCalculator.desktopHandleProtectionRadius,
+    );
   }
 }
 

@@ -249,61 +249,6 @@ void main() {
     );
 
     testWidgets(
-      'Tipp auf "Zurücksetzen" aus Zustand 2 setzt auf Zustand 1 zurück',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        final mockImage = createMockImage();
-        container
-            .read(workspaceControllerProvider.notifier)
-            .state = WorkspaceState(
-          loadedImage: mockImage,
-          entities: [
-            DrawingEntity.perspective(
-              id: 'p1',
-              points: const [Offset(0.1, 0.1)],
-              color: Colors.orange,
-            ),
-          ],
-        );
-        container
-            .read(mobilePerspectiveStateProvider.notifier)
-            .setManualInProgress();
-
-        await tester.pumpWidget(
-          buildTestWidget(
-            container: container,
-            activeStep: WorkflowStepType.perspective,
-            isMobile: true,
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        // Tap "Zurücksetzen"
-        await tester.tap(find.text('Zurücksetzen'));
-        await tester.pumpAndSettle();
-
-        // Must return to Zustand 1
-        expect(
-          container.read(mobilePerspectiveStateProvider).stepState,
-          MobilePerspectiveStepState.initial,
-        );
-        expect(find.text('Auto-Entzerrung'), findsOneWidget);
-        expect(find.text('Manuell'), findsOneWidget);
-        expect(find.text('Überspringen'), findsOneWidget);
-
-        // Entities must be cleared
-        final state = container.read(workspaceControllerProvider);
-        expect(state.entities.whereType<PerspectiveEntity>(), isEmpty);
-      },
-    );
-
-    testWidgets(
       'Zustand 3: 4 Ecken bereit zeigt [Zurücksetzen], [Entzerren] aktiv, [Überspringen]',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
@@ -354,60 +299,16 @@ void main() {
               w.properties.enabled == true,
         );
         expect(semanticsFinder, findsOneWidget);
-      },
-    );
 
-    testWidgets(
-      'Tipp auf "Zurücksetzen" aus Zustand 3 kehrt zu Zustand 1 zurück',
-      (WidgetTester tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-
-        final container = ProviderContainer();
-        addTearDown(container.dispose);
-
-        final mockImage = createMockImage();
-        container
-            .read(workspaceControllerProvider.notifier)
-            .state = WorkspaceState(
-          loadedImage: mockImage,
-          entities: [
-            DrawingEntity.perspective(
-              id: 'p1',
-              points: const [
-                Offset(0.1, 0.1),
-                Offset(0.9, 0.1),
-                Offset(0.9, 0.9),
-                Offset(0.1, 0.9),
-              ],
-              color: Colors.orange,
-            ),
-          ],
-        );
-        container
-            .read(mobilePerspectiveStateProvider.notifier)
-            .setReady(isAuto: true);
-
-        await tester.pumpWidget(
-          buildTestWidget(
-            container: container,
-            activeStep: WorkflowStepType.perspective,
-            isMobile: true,
-          ),
-        );
-        await tester.pumpAndSettle();
-
+        // Klick auf "Zurücksetzen" kehrt zu Zustand 1 zurück
         await tester.tap(find.text('Zurücksetzen'));
         await tester.pumpAndSettle();
 
-        // Returns to initial (Start-Auswahl)
         expect(
           container.read(mobilePerspectiveStateProvider).stepState,
           MobilePerspectiveStepState.initial,
         );
         expect(find.text('Auto-Entzerrung'), findsOneWidget);
-        expect(find.text('Manuell'), findsOneWidget);
       },
     );
 

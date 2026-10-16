@@ -518,7 +518,7 @@ class _MobileMeasureDockState extends ConsumerState<MobileMeasureDock> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (renderedIcon != null) renderedIcon,
+                  ?renderedIcon,
                   const SizedBox(height: 3.0),
                   Text(
                     label,

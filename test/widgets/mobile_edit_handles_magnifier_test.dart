@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -220,9 +221,25 @@ void main() {
         expect(magnifier.magnificationScale, AppTheme.magnifierScale);
         expect(magnifier.magnificationScale, 2.0);
 
-        // Position of magnifier is above finger (smaller Y coordinate)
+        // Position of magnifier is 70px above finger on mobile
+        final currentPointerPos = cornerScreenPos + const Offset(40, 40);
         final magnifierRect = tester.getRect(find.byType(RawMagnifier));
-        expect(magnifierRect.center.dy, lessThan(cornerScreenPos.dy));
+        expect(
+          magnifierRect.center.dy,
+          closeTo(currentPointerPos.dy - 70.0, 0.001),
+        );
+        expect(magnifierRect.center.dx, closeTo(currentPointerPos.dx, 0.001));
+        expect(magnifier.focalPointOffset, const Offset(0, 70.0));
+        expect(magnifier.size, const Size(80.0, 80.0));
+
+        // Crosshair is rendered in magnifier
+        final crosshairFinder = find.byWidgetPredicate(
+          (w) =>
+              w is CustomPaint &&
+              w.painter != null &&
+              w.painter.runtimeType.toString() == '_CrosshairPainter',
+        );
+        expect(crosshairFinder, findsOneWidget);
 
         // Move further
         await gesture.moveBy(const Offset(30, 30));
@@ -243,6 +260,83 @@ void main() {
             .first;
         expect(updatedRect.p2!.dx, isNot(closeTo(0.6, 0.001)));
         expect(updatedRect.p2!.dy, isNot(closeTo(0.6, 0.001)));
+      },
+    );
+
+    testWidgets(
+      'On Desktop (width >= 800), magnifier has 0px vertical offset and focalPointOffset is Offset.zero',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1024, 768);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const rect = DrawingEntity.rectangle(
+          id: 'R1',
+          p1: Offset(0.2, 0.2),
+          p2: Offset(0.6, 0.6),
+          color: Color(0xFF10B981),
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [rect],
+          selectedEntityId: 'R1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: false,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final handleFinder = find.byKey(const ValueKey('point_handle_R1_2'));
+        expect(handleFinder, findsOneWidget);
+
+        final cornerScreenPos = tester.getCenter(handleFinder);
+        final gesture = await tester.startGesture(
+          cornerScreenPos,
+          kind: PointerDeviceKind.mouse,
+        );
+        await tester.pump();
+        await gesture.moveBy(const Offset(40, 40));
+        await tester.pump();
+
+        expect(find.byType(RawMagnifier), findsOneWidget);
+
+        final magnifier = tester.widget<RawMagnifier>(
+          find.byType(RawMagnifier),
+        );
+        expect(magnifier.magnificationScale, 2.0);
+        expect(magnifier.size, const Size(80.0, 80.0));
+        expect(magnifier.focalPointOffset, Offset.zero);
+
+        // Position of magnifier on desktop is exactly centered at pointer position (0px offset)
+        final magnifierRect = tester.getRect(find.byType(RawMagnifier));
+        final currentPointerPos = cornerScreenPos + const Offset(40, 40);
+        expect(magnifierRect.center.dx, closeTo(currentPointerPos.dx, 0.001));
+        expect(magnifierRect.center.dy, closeTo(currentPointerPos.dy, 0.001));
+
+        // Crosshair is rendered
+        final crosshairFinder = find.byWidgetPredicate(
+          (w) =>
+              w is CustomPaint &&
+              w.painter != null &&
+              w.painter.runtimeType.toString() == '_CrosshairPainter',
+        );
+        expect(crosshairFinder, findsOneWidget);
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
       },
     );
 
@@ -296,6 +390,394 @@ void main() {
         await gesture.up();
         await tester.pumpAndSettle();
         expect(find.byType(RawMagnifier), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Handle drag with initial touch offset snaps point directly to pointer with zero drift',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const line = DrawingEntity.line(
+          id: 'L1',
+          p1: Offset(0.2, 0.3),
+          p2: Offset(0.7, 0.3),
+          color: Color(0xFF38BDF8),
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [line],
+          selectedEntityId: 'L1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final p2HandleFinder = find.byKey(const ValueKey('point_handle_L1_1'));
+        final handleCenter = tester.getCenter(p2HandleFinder);
+
+        // Touch slightly off-center (e.g. +14, +12 px away from handle center)
+        final offCenterTouch = handleCenter + const Offset(14, 12);
+        final gesture = await tester.startGesture(offCenterTouch);
+        await tester.pump();
+
+        // First move triggers onPanStart
+        await gesture.moveBy(const Offset(40, 40));
+        await tester.pump();
+
+        // Second move triggers onPanUpdate
+        await gesture.moveBy(const Offset(30, 30));
+        await tester.pump();
+
+        final currentPointerPos = offCenterTouch + const Offset(70, 70);
+
+        // Magnifier is active
+        expect(find.byType(RawMagnifier), findsOneWidget);
+
+        // Endpoint p2 must match the pointer position directly (normalized to image overlay)
+        final overlayFinder = find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_ImageWithPointsOverlay',
+        );
+        final overlayBox = tester.renderObject<RenderBox>(overlayFinder);
+        final localPointerPos = overlayBox.globalToLocal(currentPointerPos);
+        final expectedNorm = Offset(
+          localPointerPos.dx / overlayBox.size.width,
+          localPointerPos.dy / overlayBox.size.height,
+        );
+
+        final updatedLine = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<LineEntity>()
+            .first;
+        expect(updatedLine.p2!.dx, closeTo(expectedNorm.dx, 0.001));
+        expect(updatedLine.p2!.dy, closeTo(expectedNorm.dy, 0.001));
+        // Opposite point p1 unchanged
+        expect(updatedLine.p1, const Offset(0.2, 0.3));
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Dragging a rectangle corner keeps opposite corner fixed and snaps dragged corner to pointer',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const rect = DrawingEntity.rectangle(
+          id: 'R1',
+          p1: Offset(0.2, 0.2),
+          p2: Offset(0.6, 0.6),
+          color: Color(0xFF10B981),
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [rect],
+          selectedEntityId: 'R1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Drag Corner 1: top-right corner (p2.dx, p1.dy) = (0.6, 0.2)
+        // Opposite is Corner 3: (p1.dx, p2.dy) = (0.2, 0.6)
+        final corner1Finder = find.byKey(const ValueKey('point_handle_R1_1'));
+        final corner1Center = tester.getCenter(corner1Finder);
+
+        final gesture = await tester.startGesture(corner1Center);
+        await tester.pump();
+        await gesture.moveBy(const Offset(40, -30));
+        await tester.pump();
+        await gesture.moveBy(const Offset(10, -10));
+        await tester.pump();
+
+        expect(find.byType(RawMagnifier), findsOneWidget);
+
+        final overlayFinder = find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_ImageWithPointsOverlay',
+        );
+        final overlayBox = tester.renderObject<RenderBox>(overlayFinder);
+        final targetPos = corner1Center + const Offset(50, -40);
+        final localPointerPos = overlayBox.globalToLocal(targetPos);
+        final expectedDx = localPointerPos.dx / overlayBox.size.width;
+        final expectedDy = localPointerPos.dy / overlayBox.size.height;
+
+        final updatedRect = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<RectangleEntity>()
+            .first;
+
+        // Dragged corner matches pointer
+        expect(updatedRect.p2!.dx, closeTo(expectedDx, 0.001));
+        expect(updatedRect.p1!.dy, closeTo(expectedDy, 0.001));
+
+        // Opposite corner 3 remains fixed at (0.2, 0.6)
+        expect(updatedRect.p1!.dx, closeTo(0.2, 0.001));
+        expect(updatedRect.p2!.dy, closeTo(0.6, 0.001));
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Dragging a polygon vertex snaps it directly to the pointer position',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const poly = DrawingEntity.polygon(
+          id: 'P1',
+          points: [Offset(0.2, 0.2), Offset(0.6, 0.2), Offset(0.4, 0.6)],
+          color: Color(0xFF8B5CF6),
+          isClosed: true,
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [poly],
+          selectedEntityId: 'P1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final vertexFinder = find.byKey(const ValueKey('point_handle_P1_1'));
+        final vertexCenter = tester.getCenter(vertexFinder);
+
+        final gesture = await tester.startGesture(vertexCenter);
+        await tester.pump();
+        await gesture.moveBy(const Offset(30, 40));
+        await tester.pump();
+        await gesture.moveBy(const Offset(10, 10));
+        await tester.pump();
+
+        expect(find.byType(RawMagnifier), findsOneWidget);
+
+        final overlayFinder = find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_ImageWithPointsOverlay',
+        );
+        final overlayBox = tester.renderObject<RenderBox>(overlayFinder);
+        final targetPos = vertexCenter + const Offset(40, 50);
+        final localPointerPos = overlayBox.globalToLocal(targetPos);
+        final expectedNorm = Offset(
+          localPointerPos.dx / overlayBox.size.width,
+          localPointerPos.dy / overlayBox.size.height,
+        );
+
+        final updatedPoly = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<PolygonEntity>()
+            .first;
+
+        expect(updatedPoly.points[1].dx, closeTo(expectedNorm.dx, 0.001));
+        expect(updatedPoly.points[1].dy, closeTo(expectedNorm.dy, 0.001));
+        // Other vertices unchanged
+        expect(updatedPoly.points[0], const Offset(0.2, 0.2));
+        expect(updatedPoly.points[2], const Offset(0.4, 0.6));
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Dragging an angle endpoint snaps it directly to the pointer position',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const angle = DrawingEntity.angle(
+          id: 'A1',
+          p1: Offset(0.3, 0.3),
+          p2: Offset(0.7, 0.5),
+          color: Color(0xFFF59E0B),
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [angle],
+          selectedEntityId: 'A1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final handleFinder = find.byKey(const ValueKey('point_handle_A1_1'));
+        final handleCenter = tester.getCenter(handleFinder);
+
+        final gesture = await tester.startGesture(handleCenter);
+        await tester.pump();
+        await gesture.moveBy(const Offset(-40, 30));
+        await tester.pump();
+        await gesture.moveBy(const Offset(-10, 10));
+        await tester.pump();
+
+        expect(find.byType(RawMagnifier), findsOneWidget);
+
+        final overlayFinder = find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_ImageWithPointsOverlay',
+        );
+        final overlayBox = tester.renderObject<RenderBox>(overlayFinder);
+        final targetPos = handleCenter + const Offset(-50, 40);
+        final localPointerPos = overlayBox.globalToLocal(targetPos);
+        final expectedNorm = Offset(
+          localPointerPos.dx / overlayBox.size.width,
+          localPointerPos.dy / overlayBox.size.height,
+        );
+
+        final updatedAngle = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<AngleEntity>()
+            .first;
+
+        expect(updatedAngle.p2!.dx, closeTo(expectedNorm.dx, 0.001));
+        expect(updatedAngle.p2!.dy, closeTo(expectedNorm.dy, 0.001));
+        expect(updatedAngle.p1, const Offset(0.3, 0.3));
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Dragging the body of a shape moves it relatively and does NOT activate magnifier',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        const line = DrawingEntity.line(
+          id: 'L1',
+          p1: Offset(0.2, 0.3),
+          p2: Offset(0.8, 0.3),
+          color: Color(0xFF38BDF8),
+        );
+
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [line],
+          selectedEntityId: 'L1',
+        );
+        container.read(activeToolProvider.notifier).setTool(const SelectTool());
+
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final overlayFinder = find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_ImageWithPointsOverlay',
+        );
+        final overlayBox = tester.renderObject<RenderBox>(overlayFinder);
+        // Midpoint of line: (0.5, 0.3)
+        final midpoint = overlayBox.localToGlobal(
+          Offset(0.5 * overlayBox.size.width, 0.3 * overlayBox.size.height),
+        );
+
+        // Drag the body of the line
+        final gesture = await tester.startGesture(midpoint);
+        await tester.pump();
+        await gesture.moveBy(const Offset(30, 20));
+        await tester.pump();
+        await gesture.moveBy(const Offset(20, 20));
+        await tester.pump();
+
+        // NO magnifier should be shown during body drag!
+        expect(find.byType(RawMagnifier), findsNothing);
+
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.byType(RawMagnifier), findsNothing);
+
+        // Entire line moved relatively (by second move delta 20, 20)
+        final deltaNorm = Offset(
+          20 / overlayBox.size.width,
+          20 / overlayBox.size.height,
+        );
+        final updatedLine = container
+            .read(workspaceControllerProvider)
+            .entities
+            .whereType<LineEntity>()
+            .first;
+
+        expect(updatedLine.p1!.dx, closeTo(0.2 + deltaNorm.dx, 0.001));
+        expect(updatedLine.p1!.dy, closeTo(0.3 + deltaNorm.dy, 0.001));
+        expect(updatedLine.p2!.dx, closeTo(0.8 + deltaNorm.dx, 0.001));
+        expect(updatedLine.p2!.dy, closeTo(0.3 + deltaNorm.dy, 0.001));
       },
     );
   });

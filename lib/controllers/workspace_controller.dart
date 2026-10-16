@@ -75,6 +75,43 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     state = state.copyWith(selectedEntityId: null);
   }
 
+  void updateEntityLabelOffset(String id, Offset? offset) {
+    updateEntity(id, (entity) {
+      return entity.map(
+        calibration: (e) => e.copyWith(customLabelOffset: offset),
+        perspective: (e) => e.copyWith(customLabelOffset: offset),
+        line: (e) => e.copyWith(customLabelOffset: offset),
+        rectangle: (e) => e.copyWith(customLabelOffset: offset),
+        polygon: (e) => e.copyWith(customLabelOffset: offset),
+        angle: (e) => e.copyWith(customLabelOffset: offset),
+      );
+    });
+  }
+
+  void moveEntityLabel(String id, Offset deltaPixel, Size size) {
+    if (size.width == 0 || size.height == 0) return;
+    updateEntity(id, (entity) {
+      final currentOffset = entity.customLabelOffset ?? Offset.zero;
+      final deltaNorm = Offset(
+        deltaPixel.dx / size.width,
+        deltaPixel.dy / size.height,
+      );
+      final newOffset = currentOffset + deltaNorm;
+      return entity.map(
+        calibration: (e) => e.copyWith(customLabelOffset: newOffset),
+        perspective: (e) => e.copyWith(customLabelOffset: newOffset),
+        line: (e) => e.copyWith(customLabelOffset: newOffset),
+        rectangle: (e) => e.copyWith(customLabelOffset: newOffset),
+        polygon: (e) => e.copyWith(customLabelOffset: newOffset),
+        angle: (e) => e.copyWith(customLabelOffset: newOffset),
+      );
+    });
+  }
+
+  void resetEntityLabelOffset(String id) {
+    updateEntityLabelOffset(id, null);
+  }
+
   void clearCalibration() {
     final newList = state.entities
         .where((e) => e is! CalibrationEntity)

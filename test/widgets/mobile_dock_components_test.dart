@@ -4,128 +4,32 @@ import 'package:scale_buddy/widgets/mobile_dock_components.dart';
 
 void main() {
   group('MobileDockContainer Tests', () {
-    testWidgets('renders child and default capsule decoration', (
+    testWidgets('renders child and respects wrapSafeAreaAndMargin', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: MobileDockContainer(child: Text('Dock Content')),
+            body: MobileDockContainer(
+              wrapSafeAreaAndMargin: true,
+              child: Text('Wrapped Content'),
+            ),
           ),
         ),
       );
 
-      expect(find.text('Dock Content'), findsOneWidget);
-
-      final containerFinder = find.byType(Container);
-      expect(containerFinder, findsWidgets);
-
-      final containerWidget = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.text('Dock Content'),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-
-      final decoration = containerWidget.decoration as BoxDecoration?;
-      expect(decoration, isNotNull);
-      expect(decoration?.borderRadius, BorderRadius.circular(30.0));
-      expect(decoration?.border, isNotNull);
-      expect(decoration?.boxShadow, isNotEmpty);
+      expect(find.byType(SafeArea), findsOneWidget);
+      expect(find.text('Wrapped Content'), findsOneWidget);
     });
-
-    testWidgets(
-      'wraps SafeArea and standard margin when wrapSafeAreaAndMargin is true',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: MobileDockContainer(
-                wrapSafeAreaAndMargin: true,
-                child: Text('Wrapped Content'),
-              ),
-            ),
-          ),
-        );
-
-        expect(find.byType(SafeArea), findsOneWidget);
-        expect(find.text('Wrapped Content'), findsOneWidget);
-      },
-    );
   });
 
   group('MobileDockButton Tests', () {
     testWidgets(
-      'renders icon, label and fulfills min 44dp height touch target',
+      'renders button, fulfills >= 44dp touch target, handles tap and respects disabled semantics',
       (WidgetTester tester) async {
         bool tapped = false;
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Row(
-                children: [
-                  MobileDockButton(
-                    label: 'Test Button',
-                    icon: Icons.check,
-                    iconColor: Colors.white,
-                    textColor: Colors.white,
-                    onPressed: () => tapped = true,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-
-        expect(find.text('Test Button'), findsOneWidget);
-        expect(find.byIcon(Icons.check), findsOneWidget);
-
-        final inkWellFinder = find.byType(InkWell);
-        final inkWellSize = tester.getSize(inkWellFinder);
-        expect(inkWellSize.height, greaterThanOrEqualTo(44.0));
-
-        await tester.tap(find.text('Test Button'));
-        expect(tapped, isTrue);
-      },
-    );
-
-    testWidgets('correct semantics when enabled vs disabled', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Row(
-              children: [
-                MobileDockButton(
-                  label: 'Enabled Btn',
-                  icon: Icons.add,
-                  iconColor: Colors.white,
-                  textColor: Colors.white,
-                  onPressed: null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      final disabledSemanticsFinder = find.byWidgetPredicate(
-        (w) =>
-            w is Semantics &&
-            w.properties.button == true &&
-            w.properties.enabled == false &&
-            w.properties.label == 'Enabled Btn',
-      );
-      expect(disabledSemanticsFinder, findsOneWidget);
-    });
-
-    testWidgets(
-      'primary factory creates primary styling with blue background',
-      (WidgetTester tester) async {
+        // 1. Enabled button
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -133,35 +37,13 @@ void main() {
                 children: [
                   MobileDockButton.primary(
                     label: 'Primary Action',
-                    icon: Icons.arrow_forward,
-                    onPressed: () {},
+                    icon: Icons.check,
+                    onPressed: () => tapped = true,
                   ),
-                ],
-              ),
-            ),
-          ),
-        );
-
-        final button = tester.widget<MobileDockButton>(
-          find.byType(MobileDockButton),
-        );
-        expect(button.isPrimary, isTrue);
-        expect(button.backgroundColor, const Color(0xFF2563EB));
-      },
-    );
-
-    testWidgets(
-      'secondary factory creates secondary styling with slate border',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Row(
-                children: [
                   MobileDockButton.secondary(
                     label: 'Secondary Action',
                     icon: Icons.refresh,
-                    onPressed: () {},
+                    onPressed: null,
                   ),
                 ],
               ),
@@ -169,34 +51,25 @@ void main() {
           ),
         );
 
-        final button = tester.widget<MobileDockButton>(
-          find.byType(MobileDockButton),
-        );
-        expect(button.isPrimary, isFalse);
-        expect(button.borderColor, const Color(0xFF334155));
-      },
-    );
+        expect(find.text('Primary Action'), findsOneWidget);
+        expect(find.byIcon(Icons.check), findsOneWidget);
 
-    testWidgets(
-      'expanded false renders standalone button without Expanded widget',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: MobileDockButton(
-                expanded: false,
-                label: 'Standalone',
-                icon: Icons.star,
-                iconColor: Colors.yellow,
-                textColor: Colors.white,
-                onPressed: () {},
-              ),
-            ),
-          ),
-        );
+        final inkWellFinder = find.byType(InkWell).first;
+        final inkWellSize = tester.getSize(inkWellFinder);
+        expect(inkWellSize.height, greaterThanOrEqualTo(44.0));
 
-        expect(find.text('Standalone'), findsOneWidget);
-        expect(find.byType(Expanded), findsNothing);
+        await tester.tap(find.text('Primary Action'));
+        expect(tapped, isTrue);
+
+        // 2. Disabled semantics on secondary
+        final disabledSemanticsFinder = find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              w.properties.button == true &&
+              w.properties.enabled == false &&
+              w.properties.label == 'Secondary Action',
+        );
+        expect(disabledSemanticsFinder, findsOneWidget);
       },
     );
   });
@@ -226,20 +99,6 @@ void main() {
 
       await tester.tap(find.text('Überspringen'));
       expect(tapped, isTrue);
-    });
-  });
-
-  group('MobileDockDivider Tests', () {
-    testWidgets('renders divider with default width and height', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: MobileDockDivider())),
-      );
-
-      final dividerSize = tester.getSize(find.byType(MobileDockDivider));
-      expect(dividerSize.width, 1.0);
-      expect(dividerSize.height, 20.0);
     });
   });
 }

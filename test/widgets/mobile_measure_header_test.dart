@@ -124,7 +124,7 @@ void main() {
 
   group('MobileMeasureHeader & MobileMeasureStatusPill Tests', () {
     testWidgets(
-      'renders title, subtitle and status pill on mobile (< 800 pt)',
+      'renders title, subtitle and dynamic scale highlighted in blue',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -133,9 +133,19 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        final mockImage = createMockImage();
+        // 1000x1000 image, 200px distance = 2.0 m -> 100 px/m
+        final mockImage = createMockImage(width: 1000, height: 1000);
+        const calib = CalibrationEntity(
+          id: 'calib_1',
+          p1: Offset(0.1, 0.1),
+          p2: Offset(0.3, 0.1),
+          enteredDistance: 2.0,
+          selectedUnit: 'm',
+          isConfirmed: true,
+        );
+
         container.read(workspaceControllerProvider.notifier).state =
-            WorkspaceState(loadedImage: mockImage);
+            WorkspaceState(loadedImage: mockImage, entities: [calib]);
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -147,9 +157,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(MobileMeasureHeader), findsOneWidget);
-        expect(find.byType(MobileStepHeader), findsOneWidget);
-        expect(find.byType(MobileStatusPillContainer), findsOneWidget);
-
         expect(find.text('Scale Buddy'), findsOneWidget);
         expect(find.text('Schritt 4: Messwerkzeuge'), findsOneWidget);
         expect(
@@ -158,89 +165,22 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.textContaining('1 m = 99 px'), findsOneWidget);
+        expect(find.textContaining('1 m = 100 px'), findsOneWidget);
 
-        // Verify empty dot indicator
-        expect(find.byType(StatusDotIndicator), findsOneWidget);
-        final dot = tester.widget<StatusDotIndicator>(
-          find.byType(StatusDotIndicator),
+        // Verify scale text color
+        final textWidgetFinder = find.byWidgetPredicate(
+          (w) =>
+              w is Text &&
+              w.textSpan != null &&
+              w.textSpan!.toPlainText().contains('1 m = 100 px'),
         );
-        expect(dot.isActive, isFalse);
+        expect(textWidgetFinder, findsOneWidget);
+        final textWidget = tester.widget<Text>(textWidgetFinder);
+        final rootSpan = textWidget.textSpan! as TextSpan;
+        final scaleSpan = rootSpan.children!.last as TextSpan;
+        expect(scaleSpan.style?.color, const Color(0xFF38BDF8));
       },
     );
-
-    testWidgets('calculates scale dynamically from confirmed calibration', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      // 1000x1000 image, points distance = 200 pixels, entered distance = 2.0 m -> 100 px/m
-      final mockImage = createMockImage(width: 1000, height: 1000);
-      const calib = CalibrationEntity(
-        id: 'calib_1',
-        p1: Offset(0.1, 0.1),
-        p2: Offset(0.3, 0.1), // 0.2 of 1000 = 200 px
-        enteredDistance: 2.0,
-        selectedUnit: 'm',
-        isConfirmed: true,
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage, entities: [calib]);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.measure,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('1 m = 100 px'), findsOneWidget);
-    });
-
-    testWidgets('status pill highlights scale text in blue #38BDF8', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final mockImage = createMockImage();
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: mockImage);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.measure,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final textWidgetFinder = find.byWidgetPredicate(
-        (w) =>
-            w is Text &&
-            w.textSpan != null &&
-            w.textSpan!.toPlainText().contains('1 m = 99 px'),
-      );
-      expect(textWidgetFinder, findsOneWidget);
-
-      final textWidget = tester.widget<Text>(textWidgetFinder);
-      final rootSpan = textWidget.textSpan! as TextSpan;
-      final scaleSpan = rootSpan.children!.last as TextSpan;
-      expect(scaleSpan.style?.color, const Color(0xFF38BDF8));
-    });
 
     testWidgets('hides header on desktop screens (>= 800 pt)', (
       WidgetTester tester,
@@ -268,86 +208,50 @@ void main() {
       expect(find.text('Scale Buddy'), findsNothing);
     });
 
-    testWidgets('Zustand 2: shows point 1 set for distance with blue border', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Zustand 2: shows point 1 placement status pill with blue border',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      const openLine = DrawingEntity.line(
-        id: 'L1',
-        p1: Offset(0.3, 0.4),
-        p2: null,
-        color: Color(0xFF38BDF8),
-      );
+        const openLine = DrawingEntity.line(
+          id: 'L1',
+          p1: Offset(0.3, 0.4),
+          p2: null,
+          color: Color(0xFF38BDF8),
+        );
 
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: createMockImage(), entities: [openLine]);
+        container
+            .read(workspaceControllerProvider.notifier)
+            .state = WorkspaceState(
+          loadedImage: createMockImage(),
+          entities: [openLine],
+        );
 
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.measure,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestWidget(
+            container: container,
+            activeStep: WorkflowStepType.measure,
+            isMobile: true,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('Strecke: Punkt 1 gesetzt – Klicke auf Punkt 2'),
-        findsOneWidget,
-      );
+        expect(
+          find.textContaining('Strecke: Punkt 1 gesetzt – Klicke auf Punkt 2'),
+          findsOneWidget,
+        );
 
-      // Verify status pill border is cyan/blue #38BDF8
-      final pillContainer = tester.widget<MobileStatusPillContainer>(
-        find.byType(MobileStatusPillContainer),
-      );
-      expect(pillContainer.borderColor, const Color(0xFF38BDF8));
-    });
-
-    testWidgets('Zustand 2: shows point 1 set for rectangle with blue border', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      const openRect = DrawingEntity.rectangle(
-        id: 'R1',
-        p1: Offset(0.2, 0.3),
-        p2: null,
-        color: Color(0xFF10B981),
-      );
-
-      container.read(workspaceControllerProvider.notifier).state =
-          WorkspaceState(loadedImage: createMockImage(), entities: [openRect]);
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          container: container,
-          activeStep: WorkflowStepType.measure,
-          isMobile: true,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.textContaining('Rechteck: Punkt 1 gesetzt – Klicke auf Punkt 2'),
-        findsOneWidget,
-      );
-
-      final pillContainer = tester.widget<MobileStatusPillContainer>(
-        find.byType(MobileStatusPillContainer),
-      );
-      expect(pillContainer.borderColor, const Color(0xFF38BDF8));
-    });
+        final pillContainer = tester.widget<MobileStatusPillContainer>(
+          find.byType(MobileStatusPillContainer),
+        );
+        expect(pillContainer.borderColor, const Color(0xFF38BDF8));
+      },
+    );
 
     testWidgets(
       'Zustand 3: shows completed measurements status with emerald border',

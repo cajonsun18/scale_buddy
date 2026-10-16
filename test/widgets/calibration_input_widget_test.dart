@@ -8,12 +8,21 @@ import 'package:scale_buddy/theme/app_theme.dart';
 import 'package:scale_buddy/widgets/calibration_input_widget.dart';
 
 void main() {
-  Widget createWidgetUnderTest(ProviderContainer container) {
+  Widget createWidgetUnderTest(
+    ProviderContainer container, {
+    VoidCallback? onDoubleTap,
+    ValueChanged<DragUpdateDetails>? onDragUpdate,
+  }) {
     return UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
-        home: const Scaffold(body: CalibrationInputWidget()),
+        home: Scaffold(
+          body: CalibrationInputWidget(
+            onDoubleTap: onDoubleTap,
+            onDragUpdate: onDragUpdate,
+          ),
+        ),
       ),
     );
   }
@@ -87,4 +96,71 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     expect(find.text('5 m'), findsOneWidget); // formatted text
   });
+
+  testWidgets('CalibrationInputWidget - dragging handle calls onDragUpdate', (
+    WidgetTester tester,
+  ) async {
+    final container = ProviderContainer();
+    final controller = container.read(workspaceControllerProvider.notifier);
+
+    controller.addOrUpdateEntity(
+      const DrawingEntity.calibration(
+        id: CalibrationTool.defaultCalibrationId,
+        p1: Offset(0, 0),
+        p2: Offset(10, 10),
+      ),
+    );
+
+    DragUpdateDetails? lastDetails;
+    await tester.pumpWidget(
+      createWidgetUnderTest(
+        container,
+        onDragUpdate: (details) => lastDetails = details,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final dragHandle = find.byIcon(Icons.drag_indicator);
+    expect(dragHandle, findsOneWidget);
+
+    await tester.drag(dragHandle, const Offset(30, 40));
+    await tester.pumpAndSettle();
+
+    expect(lastDetails, isNotNull);
+  });
+
+  testWidgets(
+    'CalibrationInputWidget - double tap calls onDoubleTap callback',
+    (WidgetTester tester) async {
+      final container = ProviderContainer();
+      final controller = container.read(workspaceControllerProvider.notifier);
+
+      controller.addOrUpdateEntity(
+        const DrawingEntity.calibration(
+          id: CalibrationTool.defaultCalibrationId,
+          p1: Offset(0, 0),
+          p2: Offset(10, 10),
+        ),
+      );
+
+      bool doubleTapped = false;
+      await tester.pumpWidget(
+        createWidgetUnderTest(
+          container,
+          onDoubleTap: () => doubleTapped = true,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final dragHandle = find.byIcon(Icons.drag_indicator);
+      expect(dragHandle, findsOneWidget);
+
+      await tester.tap(dragHandle);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(dragHandle);
+      await tester.pumpAndSettle();
+
+      expect(doubleTapped, isTrue);
+    },
+  );
 }

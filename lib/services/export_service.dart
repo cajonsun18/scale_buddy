@@ -71,20 +71,82 @@ class ExportService {
       );
 
       if (text != null && position != null) {
-        _drawLabel(
-          canvas,
-          position,
-          text,
-          entity.map(
-            calibration: (_) => Colors.green,
-            perspective: (_) => Colors.blue,
-            line: (e) => e.color,
-            rectangle: (e) => e.color,
-            polygon: (e) => e.color,
-            angle: (e) => e.color,
-          ),
+        final color = entity.map(
+          calibration: (_) => Colors.green,
+          perspective: (_) => Colors.blue,
+          line: (e) => e.color,
+          rectangle: (e) => e.color,
+          polygon: (e) => e.color,
+          angle: (e) => e.color,
+        );
+
+        final anchor = MeasurementCalculator.getMeasurementAnchorPosition(
+          entity,
           size,
         );
+        final shouldDrawLeader = entity is AngleEntity
+            ? entity.customLabelOffset != null
+            : true;
+        if (anchor != null && shouldDrawLeader) {
+          GeometryUtils.drawDashedLeaderLine(
+            canvas,
+            anchor,
+            position,
+            color,
+            opacity: 0.8,
+            scale: size.width / 1000.0,
+          );
+        }
+
+        _drawLabel(canvas, position, text, color, size);
+
+        if (entity is RectangleEntity) {
+          final widthText = MeasurementCalculator.getRectangleWidthText(
+            entity,
+            size,
+            pixelsPerMeter,
+          );
+          final widthPlacement =
+              MeasurementCalculator.getRectangleWidthBadgePlacement(
+                entity,
+                size,
+              );
+          if (widthText != null && widthPlacement != null) {
+            final widthY = widthPlacement.isFlipped
+                ? widthPlacement.position.dy + 14.0
+                : widthPlacement.position.dy - 14.0;
+            _drawLabel(
+              canvas,
+              Offset(widthPlacement.position.dx, widthY),
+              widthText,
+              color,
+              size,
+            );
+          }
+
+          final heightText = MeasurementCalculator.getRectangleHeightText(
+            entity,
+            size,
+            pixelsPerMeter,
+          );
+          final heightPlacement =
+              MeasurementCalculator.getRectangleHeightBadgePlacement(
+                entity,
+                size,
+              );
+          if (heightText != null && heightPlacement != null) {
+            final heightX = heightPlacement.isFlipped
+                ? heightPlacement.position.dx + 35.0
+                : heightPlacement.position.dx - 35.0;
+            _drawLabel(
+              canvas,
+              Offset(heightX, heightPlacement.position.dy),
+              heightText,
+              color,
+              size,
+            );
+          }
+        }
       }
     }
 
